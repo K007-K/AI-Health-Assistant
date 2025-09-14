@@ -175,23 +175,26 @@ class MessageController {
       
       let language = '';
       
-      // Handle button IDs and text selections
+      // Handle button IDs and numbered selections ONLY - no free text
       if (selection.startsWith('lang_')) {
         language = LanguageUtils.getLanguageFromButtonId(selection);
+      } else if (selection === '1' || selection === '1️⃣') {
+        language = 'en';
+      } else if (selection === '2' || selection === '2️⃣') {
+        language = 'hi';
+      } else if (selection === '3' || selection === '3️⃣') {
+        language = 'te';
+      } else if (selection === '4' || selection === '4️⃣') {
+        language = 'ta';
+      } else if (selection === '5' || selection === '5️⃣') {
+        language = 'or';
       } else {
-        // Handle text-based selections with numbers or language names
-        const lowerSelection = selection.toLowerCase();
-        if (selection.includes('1️⃣') || lowerSelection.includes('english') || selection === '1') {
-          language = 'en';
-        } else if (selection.includes('2️⃣') || lowerSelection.includes('hindi') || lowerSelection.includes('हिंदी') || selection === '2') {
-          language = 'hi';
-        } else if (selection.includes('3️⃣') || lowerSelection.includes('telugu') || lowerSelection.includes('తెలుగు') || selection === '3') {
-          language = 'te';
-        } else if (selection.includes('4️⃣') || lowerSelection.includes('tamil') || lowerSelection.includes('தமிழ்') || selection === '4') {
-          language = 'ta';
-        } else if (selection.includes('5️⃣') || lowerSelection.includes('odia') || lowerSelection.includes('ଓଡ଼ିଆ') || selection === '5') {
-          language = 'or';
-        }
+        // Invalid selection - show language options again
+        await this.whatsappService.sendMessage(
+          user.phone_number,
+          'Please select a valid option (1, 2, 3, 4, or 5) or use the interactive buttons above.'
+        );
+        return;
       }
       
       if (!language || !LanguageUtils.isValidLanguage(language)) {
@@ -325,7 +328,21 @@ Choose an option.`;
   // Handle script selection
   async handleScriptSelection(user, selection) {
     try {
-      const scriptType = LanguageUtils.getScriptFromButtonId(selection);
+      let scriptType = '';
+      
+      // Only accept button IDs or numbered options
+      if (selection === 'script_native' || selection === '1' || selection === '1️⃣') {
+        scriptType = 'native';
+      } else if (selection === 'script_trans' || selection === '2' || selection === '2️⃣') {
+        scriptType = 'transliteration';
+      } else {
+        // Invalid selection - show script options again
+        await this.whatsappService.sendMessage(
+          user.phone_number,
+          'Please select option 1 or 2, or use the interactive buttons above.'
+        );
+        return;
+      }
 
       // Update user script preference
       await this.userService.updateUserPreferences(user.id, {

@@ -80,6 +80,14 @@ class MessageController {
           await this.handleAppointments(user);
           break;
 
+        case 'more_options':
+          await this.showMoreOptionsMenu(user);
+          break;
+
+        case 'back_to_menu':
+          await this.showMainMenu(user);
+          break;
+
         case 'outbreak_alerts':
           await this.handleOutbreakAlerts(user);
           break;
@@ -244,6 +252,37 @@ class MessageController {
       );
     } catch (error) {
       console.error('Error in showMainMenu:', error);
+      throw error;
+    }
+  }
+
+  // Show more options menu
+  async showMoreOptionsMenu(user) {
+    try {
+      const moreOptionsText = LanguageUtils.getText('more_options_menu', user.preferred_language) || 
+        'Additional Options — Choose what you need:';
+      
+      const buttons = this.whatsappService.getMoreOptionsButtons(user.preferred_language);
+      
+      // Note: Don't add back button here to stay within 3-button limit
+      // Users can use the "Main Menu" quick action after any response
+
+      await this.whatsappService.sendInteractiveButtons(
+        user.phone_number,
+        moreOptionsText,
+        buttons
+      );
+
+      await this.userService.updateUserSession(user.id, 'more_options');
+      
+      await this.conversationService.saveBotMessage(
+        user.id,
+        moreOptionsText,
+        'more_options_menu',
+        user.preferred_language
+      );
+    } catch (error) {
+      console.error('Error in showMoreOptionsMenu:', error);
       throw error;
     }
   }

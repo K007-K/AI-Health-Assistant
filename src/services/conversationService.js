@@ -142,6 +142,15 @@ class ConversationService {
     if (message === 'symptom_check') return 'symptom_check';
     if (message === 'outbreak_alerts') return 'outbreak_alerts';
     if (message === 'feedback') return 'feedback';
+    if (message === 'more_options') return 'more_options';
+    if (message === 'back_to_menu') return 'back_to_menu';
+    if (message === 'menu') return 'menu_request';
+
+    // Tip category buttons
+    if (message.startsWith('tip_')) return 'preventive_tips';
+    
+    // Feedback buttons
+    if (message.startsWith('feedback_')) return 'feedback';
 
     // Accessibility commands
     if (message.startsWith('/')) {
@@ -197,6 +206,8 @@ class ConversationService {
         return 'preventive_tips_request';
       case 'feedback':
         return 'feedback_input';
+      case 'more_options':
+        return 'more_options';
       default:
         return 'general_message';
     }

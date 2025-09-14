@@ -235,26 +235,67 @@ class WhatsAppService {
     ];
   }
 
-  // Main menu buttons
+  // Main menu buttons (WhatsApp allows max 3 buttons)
   getMainMenuButtons(language = 'en') {
     const menus = {
       en: [
         { id: 'chat_ai', title: '🤖 Chat with AI' },
-        { id: 'appointments', title: '📅 Appointments' },
-        { id: 'preventive_tips', title: '🌱 Health Tips' },
         { id: 'symptom_check', title: '🩺 Check Symptoms' },
-        { id: 'outbreak_alerts', title: '🚨 Outbreak Alerts' },
-        { id: 'feedback', title: '📊 Feedback' }
+        { id: 'more_options', title: '➕ More Options' }
       ],
       hi: [
         { id: 'chat_ai', title: '🤖 AI se baat' },
-        { id: 'appointments', title: '📅 Appointment' },
-        { id: 'preventive_tips', title: '🌱 Swasthya tips' },
         { id: 'symptom_check', title: '🩺 Lakshan check' },
-        { id: 'outbreak_alerts', title: '🚨 Bimari alert' },
-        { id: 'feedback', title: '📊 Feedback' }
+        { id: 'more_options', title: '➕ Aur options' }
+      ],
+      te: [
+        { id: 'chat_ai', title: '🤖 AI తో మాట్లాడు' },
+        { id: 'symptom_check', title: '🩺 లక్షణాలు చెక్' },
+        { id: 'more_options', title: '➕ మరిన్ని ఆప్షన్స్' }
+      ],
+      ta: [
+        { id: 'chat_ai', title: '🤖 AI உடன் பேசு' },
+        { id: 'symptom_check', title: '🩺 அறிகுறிகள் சரிபார்' },
+        { id: 'more_options', title: '➕ மேலும் விருப்பங்கள்' }
+      ],
+      or: [
+        { id: 'chat_ai', title: '🤖 AI ସହିତ କଥା' },
+        { id: 'symptom_check', title: '🩺 ଲକ୍ଷଣ ଯାଞ୍ଚ' },
+        { id: 'more_options', title: '➕ ଅଧିକ ବିକଳ୍ପ' }
       ]
-      // Add other languages as needed
+    };
+
+    return menus[language] || menus.en;
+  }
+
+  // Secondary menu buttons for more options
+  getMoreOptionsButtons(language = 'en') {
+    const menus = {
+      en: [
+        { id: 'preventive_tips', title: '🌱 Health Tips' },
+        { id: 'appointments', title: '📅 Appointments' },
+        { id: 'feedback', title: '📊 Feedback' }
+      ],
+      hi: [
+        { id: 'preventive_tips', title: '🌱 Swasthya tips' },
+        { id: 'appointments', title: '📅 Appointment' },
+        { id: 'feedback', title: '📊 Feedback' }
+      ],
+      te: [
+        { id: 'preventive_tips', title: '🌱 ఆరోగ్య చిట్కాలు' },
+        { id: 'appointments', title: '📅 అపాయింట్మెంట్స్' },
+        { id: 'feedback', title: '📊 ఫీడ్బ్యాక్' }
+      ],
+      ta: [
+        { id: 'preventive_tips', title: '🌱 உடல்நலக் குறிப்புகள்' },
+        { id: 'appointments', title: '📅 முன்பதிவுகள்' },
+        { id: 'feedback', title: '📊 கருத்து' }
+      ],
+      or: [
+        { id: 'preventive_tips', title: '🌱 ସ୍ୱାସ୍ଥ୍ୟ ଟିପ୍ସ' },
+        { id: 'appointments', title: '📅 ନିଯୁକ୍ତି' },
+        { id: 'feedback', title: '📊 ମତାମତ' }
+      ]
     };
 
     return menus[language] || menus.en;

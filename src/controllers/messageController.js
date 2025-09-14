@@ -56,6 +56,10 @@ class MessageController {
         case 'language_selection':
           await this.handleLanguageSelection(user, content);
           break;
+          
+        case 'change_language':
+          await this.handleChangeLanguage(user);
+          break;
 
         case 'script_selection':
           await this.handleScriptSelection(user, content);
@@ -182,6 +186,34 @@ class MessageController {
       }
     } catch (error) {
       console.error('Error in handleLanguageSelection:', error);
+      throw error;
+    }
+  }
+
+  // Handle language change request
+  async handleChangeLanguage(user) {
+    try {
+      const changeLanguageText = LanguageUtils.getText('change_language', user.preferred_language) || 
+        'Select your preferred language:';
+      const languageList = this.whatsappService.getLanguageSelectionList();
+
+      await this.whatsappService.sendList(
+        user.phone_number,
+        changeLanguageText,
+        languageList.sections,
+        'Choose Language'
+      );
+
+      await this.userService.updateUserSession(user.id, 'language_selection');
+      
+      await this.conversationService.saveBotMessage(
+        user.id,
+        changeLanguageText,
+        'change_language',
+        user.preferred_language
+      );
+    } catch (error) {
+      console.error('Error in handleChangeLanguage:', error);
       throw error;
     }
   }

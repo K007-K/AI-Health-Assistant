@@ -295,7 +295,27 @@ class WhatsAppService {
     return menus[language] || menus.en;
   }
 
-  // Script preference buttons for Indian languages
+  // Get more options menu buttons (3-button limit)
+  getMoreOptionsButtons(language = 'en') {
+    const buttons = {
+      en: [
+        { id: 'change_language', title: '🌐 Change Language' },
+        { id: 'outbreak_alerts', title: '🚨 Outbreak Alerts' },
+        { id: 'feedback', title: '📊 Feedback' }
+      ],
+      hi: [
+        { id: 'change_language', title: '🌐 भाषा बदलें' },
+        { id: 'outbreak_alerts', title: '🚨 बीमारी अलर्ट' },
+        { id: 'feedback', title: '📊 फीडबैक' }
+      ],
+      te: [
+        { id: 'change_language', title: '🌐 భాష మార్చండి' },
+        { id: 'outbreak_alerts', title: '🚨 వ్యాధి హెచ్చరికలు' },
+        { id: 'feedback', title: '📊 ఫీడ్‌బ్యాక్' }
+      ]
+    };
+    return buttons[language] || buttons.en;
+  }
   getScriptPreferenceButtons(language) {
     const scripts = {
       hi: ['🇮🇳 हिंदी script', '🔤 English letters'],

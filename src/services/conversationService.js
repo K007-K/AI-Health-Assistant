@@ -153,6 +153,9 @@ class ConversationService {
     if (trimmedMessage.includes('🚨 Outbreak Alerts') || lowerMessage.includes('outbreak alerts')) return 'outbreak_alerts';
     if (trimmedMessage.includes('📊 Feedback') || lowerMessage.includes('feedback & accuracy')) return 'feedback';
     
+    // More options menu selections
+    if (trimmedMessage.includes('🌐 Change Language') || trimmedMessage.includes('🌐 भाषा बदलें') || lowerMessage.includes('change language')) return 'change_language';
+    
     // Language selections
     if (trimmedMessage.includes('English') && (trimmedMessage.includes('🇺🇸') || lowerMessage.includes('english language'))) return 'language_selection';
     if (trimmedMessage.includes('हिंदी') || trimmedMessage.includes('Hindi')) return 'language_selection';
@@ -173,6 +176,11 @@ class ConversationService {
     // Navigation commands  
     if (trimmedMessage.includes('📋 Main Menu') || lowerMessage.includes('menu') || lowerMessage.includes('back') || lowerMessage.includes('main menu')) {
       return 'menu_request';
+    }
+    
+    // Language change commands
+    if (lowerMessage.includes('change language') || lowerMessage.includes('switch language') || lowerMessage.includes('language settings') || trimmedMessage.includes('🌐')) {
+      return 'change_language';
     }
 
     // Accessibility commands

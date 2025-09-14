@@ -479,7 +479,7 @@ class MessageController {
   async handlePreventiveTips(user, message, currentState) {
     try {
       const userSession = await this.userService.getUserSession(user.id);
-      const sessionData = userSession?.session_data || {};
+      const sessionData = userSession?.context_data || {};
       
       if (currentState !== 'preventive_tips') {
         // Show tip categories using list
@@ -520,6 +520,7 @@ class MessageController {
         setTimeout(async () => {
           await this.showPreventiveTipsFollowUpOptions(user);
         }, 2000);
+        return; // Important: return here to avoid falling through to other logic
       } else {
         // User selected category - determine category and provide detailed information
         let category = 'general health';

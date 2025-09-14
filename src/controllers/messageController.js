@@ -128,16 +128,17 @@ class MessageController {
     }
   }
 
-  // Show language selection
+  // Show language selection using list (supports 5 languages)
   async showLanguageSelection(user) {
     try {
       const welcomeText = LanguageUtils.getText('welcome', 'en');
-      const buttons = this.whatsappService.getLanguageSelectionButtons();
+      const languageList = this.whatsappService.getLanguageSelectionList();
 
-      await this.whatsappService.sendInteractiveButtons(
+      await this.whatsappService.sendList(
         user.phone_number,
         welcomeText,
-        buttons
+        languageList.sections,
+        'Choose Language'
       );
 
       await this.userService.updateUserSession(user.id, 'language_selection');
@@ -146,8 +147,7 @@ class MessageController {
         user.id,
         welcomeText,
         'language_selection',
-        'en',
-        { buttons: buttons.map(b => b.title) }
+        'en'
       );
     } catch (error) {
       console.error('Error in showLanguageSelection:', error);
@@ -230,16 +230,17 @@ class MessageController {
     }
   }
 
-  // Show main menu
+  // Show main menu using list (supports 6 options)
   async showMainMenu(user) {
     try {
       const menuText = LanguageUtils.getText('main_menu', user.preferred_language);
-      const buttons = this.whatsappService.getMainMenuButtons(user.preferred_language);
+      const menuList = this.whatsappService.getMainMenuList(user.preferred_language);
 
-      await this.whatsappService.sendInteractiveButtons(
+      await this.whatsappService.sendList(
         user.phone_number,
         menuText,
-        buttons
+        menuList.sections,
+        'Choose Option'
       );
 
       await this.userService.updateUserSession(user.id, 'main_menu');
@@ -287,7 +288,7 @@ class MessageController {
     }
   }
 
-  // Handle AI chat
+  // Handle AI chat - continuous conversation
   async handleAIChat(user, message) {
     try {
       await this.userService.updateUserSession(user.id, 'ai_chat');
@@ -295,7 +296,7 @@ class MessageController {
       // Get conversation context
       const context = await this.conversationService.getRecentContext(user.id);
 
-      // Generate AI response
+      // Generate AI response with better prompts
       const aiResponse = await this.geminiService.generateResponse(
         message,
         user.preferred_language,
@@ -304,7 +305,7 @@ class MessageController {
         user.accessibility_mode
       );
 
-      // Send response
+      // Send response without menu options (continuous chat)
       await this.whatsappService.sendMessage(user.phone_number, aiResponse);
 
       // Save bot response
@@ -315,10 +316,8 @@ class MessageController {
         user.preferred_language
       );
 
-      // Show menu options after response
-      setTimeout(async () => {
-        await this.showQuickActions(user);
-      }, 1000);
+      // Stay in ai_chat mode - no automatic menu switching
+      // User needs to manually type 'menu' or 'back' to exit
 
     } catch (error) {
       console.error('Error in handleAIChat:', error);
@@ -369,24 +368,20 @@ class MessageController {
   async handlePreventiveTips(user, message, currentState) {
     try {
       if (currentState !== 'preventive_tips') {
-        // Show tip categories
-        const categoryButtons = [
-          { id: 'tip_nutrition', title: '🥗 Nutrition' },
-          { id: 'tip_exercise', title: '🏃 Exercise' },
-          { id: 'tip_hygiene', title: '🧼 Hygiene' },
-          { id: 'tip_general', title: '🌱 General' }
-        ];
-
-        await this.whatsappService.sendInteractiveButtons(
+        // Show tip categories using list
+        const tipsList = this.whatsappService.getPreventiveTipsList(user.preferred_language);
+        
+        await this.whatsappService.sendList(
           user.phone_number,
-          'Choose a health tip category:',
-          categoryButtons
+          '🌱 Preventive Healthcare Tips\nChoose a category:',
+          tipsList.sections,
+          'Choose Category'
         );
 
         await this.userService.updateUserSession(user.id, 'preventive_tips');
       } else {
-        // User selected category
-        const category = message.replace('tip_', '');
+        // User selected category - generate tips
+        const category = message.replace('learn_', '').replace('_', ' ');
         
         const userProfile = {
           preferred_language: user.preferred_language,
@@ -404,9 +399,10 @@ class MessageController {
           user.preferred_language
         );
 
+        // Return to main menu after tips
         setTimeout(async () => {
-          await this.showQuickActions(user);
-        }, 1000);
+          await this.showMainMenu(user);
+        }, 2000);
       }
     } catch (error) {
       console.error('Error in handlePreventiveTips:', error);

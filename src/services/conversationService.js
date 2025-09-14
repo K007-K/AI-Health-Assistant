@@ -133,7 +133,7 @@ class ConversationService {
   detectIntent(message, currentState = 'main_menu') {
     const lowerMessage = message.toLowerCase();
 
-    // Button-based intents
+    // Button-based intents (list selections)
     if (message.startsWith('lang_')) return 'language_selection';
     if (message.startsWith('script_')) return 'script_selection';
     if (message === 'chat_ai') return 'ai_chat';
@@ -142,15 +142,16 @@ class ConversationService {
     if (message === 'symptom_check') return 'symptom_check';
     if (message === 'outbreak_alerts') return 'outbreak_alerts';
     if (message === 'feedback') return 'feedback';
-    if (message === 'more_options') return 'more_options';
-    if (message === 'back_to_menu') return 'back_to_menu';
-    if (message === 'menu') return 'menu_request';
-
-    // Tip category buttons
-    if (message.startsWith('tip_')) return 'preventive_tips';
     
-    // Feedback buttons
-    if (message.startsWith('feedback_')) return 'feedback';
+    // Preventive tips categories
+    if (message === 'learn_diseases' || message === 'nutrition_hygiene' || message === 'exercise_lifestyle') {
+      return 'preventive_tips';
+    }
+    
+    // Navigation commands
+    if (lowerMessage.includes('menu') || lowerMessage.includes('back') || lowerMessage.includes('main menu')) {
+      return 'menu_request';
+    }
 
     // Accessibility commands
     if (message.startsWith('/')) {
@@ -182,11 +183,6 @@ class ConversationService {
       return 'greeting';
     }
 
-    // Menu navigation
-    if (lowerMessage.includes('menu') || lowerMessage.includes('option') || lowerMessage.includes('help')) {
-      return 'menu_request';
-    }
-
     // Feedback
     if (lowerMessage.includes('feedback') || lowerMessage.includes('rating') || lowerMessage.includes('review')) {
       return 'feedback_request';
@@ -199,15 +195,13 @@ class ConversationService {
       case 'script_selection':
         return 'script_selection';
       case 'ai_chat':
-        return 'ai_chat_message';
+        return 'ai_chat_message'; // Continue in AI chat mode
       case 'symptom_check':
         return 'symptom_input';
       case 'preventive_tips':
         return 'preventive_tips_request';
       case 'feedback':
         return 'feedback_input';
-      case 'more_options':
-        return 'more_options';
       default:
         return 'general_message';
     }

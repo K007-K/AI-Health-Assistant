@@ -460,6 +460,9 @@ class MessageController {
   // Handle preventive tips with enhanced information and follow-up
   async handlePreventiveTips(user, message, currentState) {
     try {
+      const userSession = await this.userService.getUserSession(user.id);
+      const sessionData = userSession?.session_data || {};
+      
       if (currentState !== 'preventive_tips') {
         // Show tip categories using list
         const tipsList = this.whatsappService.getPreventiveTipsList(user.preferred_language);
@@ -472,6 +475,33 @@ class MessageController {
         );
 
         await this.userService.updateUserSession(user.id, 'preventive_tips');
+      } else if (sessionData.waitingForDiseaseName) {
+        // User entered disease name
+        const diseaseName = message.trim();
+        
+        const userProfile = {
+          preferred_language: user.preferred_language,
+          script_preference: user.script_preference
+        };
+
+        console.log('🦠 Generating disease information for:', diseaseName);
+        const diseaseInfo = await this.geminiService.getPreventiveTips('disease prevention', userProfile, diseaseName);
+        
+        await this.whatsappService.sendMessage(user.phone_number, diseaseInfo);
+        
+        await this.conversationService.saveBotMessage(
+          user.id,
+          diseaseInfo,
+          'disease_information',
+          user.preferred_language
+        );
+
+        // Clear waiting state and show follow-up options
+        await this.userService.updateUserSession(user.id, 'preventive_tips', { waitingForDiseaseName: false });
+        
+        setTimeout(async () => {
+          await this.showPreventiveTipsFollowUpOptions(user);
+        }, 2000);
       } else {
         // User selected category - determine category and provide detailed information
         let category = 'general health';
@@ -480,6 +510,21 @@ class MessageController {
         // Check for exact button IDs first
         if (message === 'learn_diseases') {
           category = 'disease prevention';
+          // Ask user to enter disease name
+          const promptTexts = {
+            en: '🦠 **Learn about Diseases**\n\nPlease type the name of the disease you want to learn about.\n\n*Examples:* diabetes, hypertension, malaria, tuberculosis, heart disease, cancer, covid, dengue, etc.',
+            hi: '🦠 **बीमारियों के बारे में जानें**\n\nकृपया उस बीमारी का नाम टाइप करें जिसके बारे में आप जानना चाहते हैं।\n\n*उदाहरण:* मधुमेह, उच्च रक्तचाप, मलेरिया, तपेदिक, हृदय रोग, कैंसर, कोविड, डेंगू आदि।',
+            te: '🦠 **వ్యాధుల గురించి తెలుసుకోండి**\n\nదయచేసి మీరు తెలుసుకోవాలనుకుంటున్న వ్యాధి పేరు టైప్ చేయండి।\n\n*ఉదాహరణలు:* మధుమేహం, రక్తపోటు, మలేరియా, క్షయవ్యాధి, గుండె జబ్బులు, క్యాన్సర్, కోవిడ్, డెంగ్యూ వంటివి।'
+          };
+          
+          await this.whatsappService.sendMessage(
+            user.phone_number, 
+            promptTexts[user.preferred_language] || promptTexts.en
+          );
+          
+          // Set session to wait for disease name
+          await this.userService.updateUserSession(user.id, 'preventive_tips', { waitingForDiseaseName: true });
+          return;
         } else if (message === 'nutrition_hygiene') {
           category = 'nutrition and hygiene';
         } else if (message === 'exercise_lifestyle') {
@@ -487,15 +532,20 @@ class MessageController {
         } 
         // Check for text-based selections
         else if (message.includes('🦠 Learn about Diseases') || message.toLowerCase().includes('learn about diseases')) {
-          category = 'disease prevention';
-          // Extract specific disease if mentioned
-          const diseaseKeywords = ['diabetes', 'hypertension', 'tuberculosis', 'malaria', 'dengue', 'covid', 'fever', 'heart disease', 'cancer'];
-          for (const disease of diseaseKeywords) {
-            if (message.toLowerCase().includes(disease)) {
-              specificTopic = disease;
-              break;
-            }
-          }
+          // Same as learn_diseases button
+          const promptTexts = {
+            en: '🦠 **Learn about Diseases**\n\nPlease type the name of the disease you want to learn about.\n\n*Examples:* diabetes, hypertension, malaria, tuberculosis, heart disease, cancer, covid, dengue, etc.',
+            hi: '🦠 **बीमारियों के बारे में जानें**\n\nकृपया उस बीमारी का नाम टाइप करें जिसके बारे में आप जानना चाहते हैं।\n\n*उदाहरण:* मधुमेह, उच्च रक्तचाप, मलेरिया, तपेदिक, हृदय रोग, कैंसर, कोविड, डेंगू आदि।',
+            te: '🦠 **వ్యాధుల గురించి తెలుసుకోండి**\n\nదయచేసి మీరు తెలుసుకోవాలనుకుంటున్న వ్యాధి పేరు టైప్ చేయండి।\n\n*ఉదాహరణలు:* మధుమేహం, రక్తపోటు, మలేరియా, క్షయవ్యాధి, గుండె జబ్బులు, క్యాన్సర్, కోవిడ్, డెంగ్యూ వంటివి।'
+          };
+          
+          await this.whatsappService.sendMessage(
+            user.phone_number, 
+            promptTexts[user.preferred_language] || promptTexts.en
+          );
+          
+          await this.userService.updateUserSession(user.id, 'preventive_tips', { waitingForDiseaseName: true });
+          return;
         } else if (message.includes('🥗 Nutrition') || message.toLowerCase().includes('nutrition') || message.toLowerCase().includes('hygiene')) {
           category = 'nutrition and hygiene';
         } else if (message.includes('🏃 Exercise') || message.toLowerCase().includes('exercise') || message.toLowerCase().includes('lifestyle')) {

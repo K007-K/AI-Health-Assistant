@@ -328,12 +328,13 @@ Choose an option.`;
   // Handle script selection
   async handleScriptSelection(user, selection) {
     try {
+      console.log('📋 Script selection received:', selection);
       let scriptType = '';
       
       // Only accept button IDs or numbered options
-      if (selection === 'script_native' || selection === '1' || selection === '1️⃣') {
+      if (selection === 'script_native' || selection === '1' || selection === '1️⃣' || selection.includes('1️⃣ Native script') || selection.includes('1️⃣ తెలుగు script')) {
         scriptType = 'native';
-      } else if (selection === 'script_trans' || selection === '2' || selection === '2️⃣') {
+      } else if (selection === 'script_trans' || selection === '2' || selection === '2️⃣' || selection.includes('2️⃣ English letters') || selection.includes('English letters')) {
         scriptType = 'transliteration';
       } else {
         // Invalid selection - show script options again
@@ -344,16 +345,24 @@ Choose an option.`;
         return;
       }
 
+      console.log('✅ Script type selected:', scriptType);
+
       // Update user script preference
       await this.userService.updateUserPreferences(user.id, {
         script_preference: scriptType
       });
 
+      console.log('✅ User preferences updated');
+
       // Show main menu
       await this.showMainMenu(user);
     } catch (error) {
-      console.error('Error in handleScriptSelection:', error);
-      throw error;
+      console.error('❌ Error in handleScriptSelection:', error);
+      // Send error message to user
+      await this.whatsappService.sendMessage(
+        user.phone_number,
+        'Sorry, there was an error processing your script selection. Please try again or type "menu" to return to main menu.'
+      );
     }
   }
 

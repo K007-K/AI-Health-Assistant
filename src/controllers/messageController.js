@@ -172,16 +172,17 @@ class MessageController {
       if (selection.startsWith('lang_')) {
         language = LanguageUtils.getLanguageFromButtonId(selection);
       } else {
-        // Handle text-based selections
-        if (selection.includes('English') || selection.includes('1️⃣ English')) {
+        // Handle text-based selections with numbers or language names
+        const lowerSelection = selection.toLowerCase();
+        if (selection.includes('1️⃣') || lowerSelection.includes('english') || selection === '1') {
           language = 'en';
-        } else if (selection.includes('हिंदी') || selection.includes('Hindi') || selection.includes('2️⃣')) {
+        } else if (selection.includes('2️⃣') || lowerSelection.includes('hindi') || lowerSelection.includes('हिंदी') || selection === '2') {
           language = 'hi';
-        } else if (selection.includes('తెలుగు') || selection.includes('Telugu') || selection.includes('3️⃣')) {
+        } else if (selection.includes('3️⃣') || lowerSelection.includes('telugu') || lowerSelection.includes('తెలుగు') || selection === '3') {
           language = 'te';
-        } else if (selection.includes('தமிழ்') || selection.includes('Tamil') || selection.includes('4️⃣')) {
+        } else if (selection.includes('4️⃣') || lowerSelection.includes('tamil') || lowerSelection.includes('தமிழ்') || selection === '4') {
           language = 'ta';
-        } else if (selection.includes('ଓଡ଼ିଆ') || selection.includes('Odia') || selection.includes('5️⃣')) {
+        } else if (selection.includes('5️⃣') || lowerSelection.includes('odia') || lowerSelection.includes('ଓଡ଼ିଆ') || selection === '5') {
           language = 'or';
         }
       }
@@ -237,13 +238,20 @@ class MessageController {
       const languageButtons = [
         { id: 'lang_en', title: '1️⃣ English' },
         { id: 'lang_hi', title: '2️⃣ हिंदी (Hindi)' },
-        { id: 'lang_te', title: '3️⃣ తెలుగు (Telugu)' }
+        { id: 'lang_te', title: '3️⃣ తెలుగు (Telugu)' },
+        { id: 'lang_ta', title: '4️⃣ தமிழ் (Tamil)' },
+        { id: 'lang_or', title: '5️⃣ ଓଡ଼ିଆ (Odia)' }
       ];
 
+      // Note: WhatsApp only allows 3 buttons max, so we'll use the first 3 and handle others via text
+      const firstThreeButtons = languageButtons.slice(0, 3);
+      
       await this.whatsappService.sendInteractiveButtons(
         user.phone_number,
-        changeLanguageText,
-        languageButtons
+        changeLanguageText + '\n\n' + 
+        languageButtons.map(btn => btn.title).join('\n') + 
+        '\n\nChoose an option.',
+        firstThreeButtons
       );
 
       await this.userService.updateUserSession(user.id, 'language_selection');
@@ -261,7 +269,7 @@ class MessageController {
       // Send fallback message
       await this.whatsappService.sendMessage(
         user.phone_number,
-        '🌐 Please choose your language:\n1️⃣ English\n2️⃣ हिंदी (Hindi)\n3️⃣ తెలుగు (Telugu)\n4️⃣ தமிழ் (Tamil)\n5️⃣ ଓଡ଼ିଆ (Odia)'
+        '🌐 Please choose your language:\n1️⃣ English\n2️⃣ हिंदी (Hindi)\n3️⃣ తెలుగు (Telugu)\n4️⃣ தமிழ் (Tamil)\n5️⃣ ଓଡ଼ିଆ (Odia)\n\nChoose an option.'
       );
     }
   }
@@ -269,8 +277,18 @@ class MessageController {
   // Show script selection for Indian languages
   async showScriptSelection(user, language) {
     try {
-      const scriptText = LanguageUtils.getText('script_selection', language);
-      const buttons = this.whatsappService.getScriptPreferenceButtons(language);
+      const scriptTexts = {
+        hi: 'Do you want:\n1️⃣ हिंदी script\n2️⃣ English letters (transliteration)',
+        te: 'Do you want:\n1️⃣ తెలుగు script\n2️⃣ English letters (transliteration)',
+        ta: 'Do you want:\n1️⃣ தமிழ் script\n2️⃣ English letters (transliteration)',
+        or: 'Do you want:\n1️⃣ ଓଡ଼ିଆ script\n2️⃣ English letters (transliteration)'
+      };
+      
+      const scriptText = scriptTexts[language] || 'Choose script type:';
+      const buttons = [
+        { id: 'script_native', title: '1️⃣ Native script' },
+        { id: 'script_trans', title: '2️⃣ English letters' }
+      ];
 
       await this.whatsappService.sendInteractiveButtons(
         user.phone_number,

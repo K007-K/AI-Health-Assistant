@@ -96,64 +96,226 @@ Please respond appropriately:`;
     }
   }
 
-  // Analyze symptoms with context
-  async analyzeSymptoms(symptoms, userProfile = {}) {
+  // Analyze symptoms with context - enhanced with detailed questions
+  async analyzeSymptoms(symptoms, userProfile = {}, mediaData = null) {
     try {
       const language = userProfile.preferred_language || 'en';
       const scriptType = userProfile.script_preference || 'native';
       
-      const systemPrompt = `You are a medical triage assistant. Analyze the following symptoms and provide:
-1. Possible conditions (most likely first)
-2. Severity assessment (mild/moderate/severe)
-3. Immediate care recommendations
-4. When to seek professional help
-5. Self-care measures if appropriate
+      let analysisPrompt = '';
+      
+      if (mediaData) {
+        // Image-based symptom analysis
+        analysisPrompt = `You are a medical triage assistant analyzing health-related images. 
 
-IMPORTANT: Always emphasize that this is not a substitute for professional medical diagnosis.`;
+For the image provided along with symptoms: "${symptoms}"
 
-      const prompt = `User symptoms: ${symptoms}
+Provide:
+1. 📋 What I observe in the image
+2. 🤔 Follow-up questions for better diagnosis (ask 2-3 specific questions)
+3. ⚕️ Possible conditions and recommendations
+4. 🚨 When to seek immediate medical help
+5. 🏠 Self-care measures if appropriate
+
+⚠️ IMPORTANT: This is not a medical diagnosis. Please consult a healthcare professional for proper evaluation.
+
+Keep response SHORT and practical (max 3-4 sentences per section).`;
+      } else {
+        // Text-based symptom analysis
+        analysisPrompt = `You are a medical triage assistant. For symptoms: "${symptoms}"
+
 User profile: Age: ${userProfile.age || 'not specified'}, Gender: ${userProfile.gender || 'not specified'}
 
-Please analyze these symptoms and provide guidance in ${language} language.`;
+Provide:
+1. 🤔 **Follow-up Questions** (Ask 2-3 specific questions to better understand the condition)
+2. ⚕️ **Possible Conditions** (List 2-3 most likely conditions)
+3. 🚨 **Urgency Level** (Low/Medium/High - when to seek help)
+4. 🏠 **Immediate Care** (What to do right now)
+5. 📅 **Next Steps** (When and where to seek professional help)
 
-      return await this.generateResponse(prompt, language, scriptType);
+⚠️ **Important**: This is not a medical diagnosis. Please consult a healthcare professional.
+
+Keep each section SHORT and practical (2-3 sentences max).`;
+      }
+
+      const result = await this.generateResponse(analysisPrompt, language, scriptType);
+      return result;
     } catch (error) {
       console.error('Symptom analysis error:', error);
       throw error;
     }
   }
 
-  // Get preventive health tips
-  async getPreventiveTips(category, userProfile = {}) {
+  // Get preventive health tips - enhanced with detailed disease information
+  async getPreventiveTips(category, userProfile = {}, specificTopic = '') {
     try {
       const language = userProfile.preferred_language || 'en';
       const scriptType = userProfile.script_preference || 'native';
       
-      const prompts = {
-        nutrition: `Provide 3 practical nutrition tips for maintaining good health. Focus on accessible, affordable foods common in India. Keep each tip under 50 words.`,
-        exercise: `Provide 3 simple exercise tips that can be done at home without equipment. Focus on activities suitable for all fitness levels. Keep each tip under 50 words.`,
-        hygiene: `Provide 3 essential hygiene tips for preventing diseases. Focus on practical daily habits. Keep each tip under 50 words.`,
-        general: `Provide 3 general preventive healthcare tips for maintaining good health. Focus on actionable advice. Keep each tip under 50 words.`
-      };
-
-      const prompt = prompts[category] || prompts.general;
+      let prompt = '';
       
-      return await this.generateResponse(prompt, language, scriptType);
+      if (category === 'disease prevention' || category.includes('disease')) {
+        if (specificTopic) {
+          // Specific disease information
+          prompt = `Provide detailed information about "${specificTopic}" disease:
+
+📋 **Disease Overview**:
+- What is ${specificTopic}?
+- How common is it?
+
+🔍 **Causes & Risk Factors**:
+- Main causes
+- Who is at risk?
+
+🚨 **Symptoms**:
+- Early warning signs
+- Progressive symptoms
+
+⏰ **Duration & Timeline**:
+- How long does it last?
+- Recovery timeline
+
+💊 **Treatment & Cure**:
+- Available treatments
+- Management options
+
+🛡️ **Prevention Steps**:
+- Specific preventive measures
+- Lifestyle changes
+- Vaccination (if applicable)
+
+Keep each section SHORT and practical (2-3 sentences max).`;
+        } else {
+          // General disease prevention
+          prompt = `Provide information about preventing common diseases:
+
+🦠 **Top 3 Preventable Diseases** in India:
+1. Disease name - key prevention tip
+2. Disease name - key prevention tip  
+3. Disease name - key prevention tip
+
+🛡️ **Universal Prevention Strategies**:
+- Vaccination schedule
+- Personal hygiene practices
+- Lifestyle modifications
+- Regular health checkups
+
+Include specific, actionable advice. Keep it practical and SHORT.`;
+        }
+      } else if (category === 'nutrition and hygiene' || category.includes('nutrition')) {
+        prompt = `Provide comprehensive nutrition and hygiene guidance:
+
+🥗 **Best Nutrition Tips**:
+- 3 essential nutrients and food sources
+- Daily meal planning advice
+- Foods to include and avoid
+
+🧼 **Essential Hygiene Practices**:
+- Personal hygiene routine
+- Food safety measures
+- Environmental cleanliness
+
+💡 **Practical Implementation**:
+- Budget-friendly healthy foods
+- Simple hygiene habits
+- Daily routine suggestions
+
+Provide SPECIFIC, actionable advice. Keep each tip SHORT and practical.`;
+      } else if (category === 'exercise and lifestyle' || category.includes('exercise')) {
+        prompt = `Provide comprehensive exercise and lifestyle guidance:
+
+🏃 **Best Exercise Tips**:
+- 3 types of essential exercises (cardio, strength, flexibility)
+- Home workout options without equipment
+- Weekly exercise schedule
+
+🌟 **Healthy Lifestyle Habits**:
+- Sleep hygiene tips
+- Stress management techniques
+- Work-life balance strategies
+
+⏰ **Daily Routine Integration**:
+- Morning routines
+- Workplace wellness tips
+- Evening wind-down practices
+
+Provide SPECIFIC, actionable advice suitable for all fitness levels. Keep it practical and achievable.`;
+      } else {
+        // General health tips
+        prompt = `Provide general preventive healthcare tips:
+
+🎯 **Top 5 Daily Health Habits**:
+1. Habit - why it matters
+2. Habit - why it matters
+3. Habit - why it matters
+4. Habit - why it matters
+5. Habit - why it matters
+
+🔄 **Weekly Health Routine**:
+- Health checkups schedule
+- Exercise planning
+- Meal prep strategies
+
+Provide SPECIFIC, actionable advice. Keep each tip SHORT and practical.`;
+      }
+      
+      const result = await this.generateResponse(prompt, language, scriptType);
+      return result;
     } catch (error) {
       console.error('Preventive tips error:', error);
       throw error;
     }
   }
 
-  // Process image for health analysis (future feature)
-  async analyzeHealthImage(imageData, description = '') {
+  // Process image for health analysis with Gemini Vision
+  async analyzeHealthImage(imageData, description = '', language = 'en') {
     try {
-      // This would analyze health-related images like rashes, symptoms, etc.
-      // For now, return a placeholder response
-      return 'Image analysis feature is coming soon. Please describe your symptoms in text for now.';
+      // Convert image data to base64 if needed
+      let base64Image = '';
+      if (Buffer.isBuffer(imageData)) {
+        base64Image = imageData.toString('base64');
+      } else if (typeof imageData === 'string') {
+        base64Image = imageData;
+      } else {
+        throw new Error('Invalid image data format');
+      }
+
+      const imagePart = {
+        inlineData: {
+          data: base64Image,
+          mimeType: 'image/jpeg' // Default, should be detected properly
+        }
+      };
+
+      const prompt = `You are a medical image analysis assistant. Analyze this health-related image${description ? ` with context: "${description}"` : ''}.
+
+Provide:
+1. 👁️ **Visual Observations**: What do you see in the image?
+2. 🤔 **Health Assessment**: Possible conditions or concerns
+3. 📋 **Follow-up Questions**: 2-3 questions to ask the patient
+4. ⚠️ **Urgency Level**: Low/Medium/High - when to seek help
+5. 🏠 **Self-Care Advice**: Immediate care recommendations
+6. 📞 **Next Steps**: When and where to get professional help
+
+⚠️ **IMPORTANT**: This is not a medical diagnosis. Always consult a healthcare professional for proper evaluation.
+
+Keep response SHORT and practical (2-3 sentences per section).`;
+
+      const result = await this.model.generateContent([prompt, imagePart]);
+      const response = await result.response;
+      
+      return response.text();
     } catch (error) {
       console.error('Image analysis error:', error);
-      throw error;
+      
+      // Fallback response
+      const fallbackMessages = {
+        en: '📱 I can see you\'ve sent an image, but I\'m having trouble analyzing it right now. Please describe what you\'re seeing or concerned about in text, and I\'ll be happy to help! For urgent medical concerns, please consult a healthcare professional.',
+        hi: '📱 मैं देख सकता हूं कि आपने एक छवि भेजी है, लेकिन अभी मुझे इसका विश्लेषण करने में परेशानी हो रही है। कृपया बताएं कि आप क्या देख रहे हैं या चिंतित हैं, और मैं मदद करूंगा!',
+        te: '📱 మీరు ఒక చిత్రం పంపించారని నేను చూడగలను, కానీ ప్రస్తుతం దాన్ni విశ్లేషించడంలో నాకు ఇబ్బంది ఉంది। దయచేసి మీరు ఏమి చూస్తున్నారో లేదా ఆందోళన చెందుతున్నారో వివరించండి!'
+      };
+      
+      return fallbackMessages[language] || fallbackMessages.en;
     }
   }
 

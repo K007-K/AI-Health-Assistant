@@ -116,6 +116,18 @@ class WebhookController {
             mime_type: message.image.mime_type,
             sha256: message.image.sha256
           };
+          
+          // Download the actual image data for analysis
+          try {
+            console.log('🖼️ Downloading image for analysis...');
+            const imageUrl = await this.whatsappService.getMediaUrl(message.image.id);
+            const imageBuffer = await this.whatsappService.downloadMedia(imageUrl);
+            mediaData.data = imageBuffer;
+            console.log('✅ Image downloaded successfully');
+          } catch (downloadError) {
+            console.error('❌ Error downloading image:', downloadError);
+            // Continue without image data, will fallback to text analysis
+          }
           break;
         
         case 'audio':

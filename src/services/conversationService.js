@@ -153,8 +153,8 @@ class ConversationService {
     if (trimmedMessage.includes('🚨 Outbreak Alerts') || lowerMessage.includes('outbreak alerts')) return 'outbreak_alerts';
     if (trimmedMessage.includes('📊 Feedback') || lowerMessage.includes('feedback & accuracy')) return 'feedback';
     
-    // More options menu selections
-    if (trimmedMessage.includes('🌐 Change Language') || trimmedMessage.includes('🌐 भाषा बदलें') || lowerMessage.includes('change language')) return 'change_language';
+    // More options menu selections and Change Language from main menu
+    if (trimmedMessage.includes('🌐 Change Language') || trimmedMessage.includes('🌐 भाषा बदलें') || trimmedMessage.includes('🌐 భాష మార్చండి') || lowerMessage.includes('change language') || lowerMessage.includes('switch to different language')) return 'change_language';
     
     // Language selections
     if (trimmedMessage.includes('English') && (trimmedMessage.includes('🇺🇸') || lowerMessage.includes('english language'))) return 'language_selection';

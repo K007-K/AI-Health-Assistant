@@ -24,6 +24,7 @@ class MessageController {
       // Detect intent
       const currentState = userSession?.session_state || 'main_menu';
       const intent = this.conversationService.detectIntent(content, currentState);
+      console.log(`🎯 Intent Detection: "${content}" → ${intent} (state: ${currentState})`);
 
       // Save user message
       await this.conversationService.saveUserMessage(user.id, content, {
@@ -58,6 +59,7 @@ class MessageController {
           break;
           
         case 'change_language':
+          console.log('🌐 Handling change_language intent');
           await this.handleChangeLanguage(user);
           break;
 
@@ -67,12 +69,12 @@ class MessageController {
 
         case 'ai_chat':
         case 'ai_chat_message':
-          await this.handleAIChat(user, content);
+          await this.handleAIChat(user, content, mediaData);
           break;
 
         case 'symptom_check':
         case 'symptom_input':
-          await this.handleSymptomCheck(user, content, currentState);
+          await this.handleSymptomCheck(user, content, currentState, mediaData);
           break;
 
         case 'preventive_tips':
@@ -162,12 +164,32 @@ class MessageController {
   // Handle language selection
   async handleLanguageSelection(user, selection) {
     try {
-      const language = LanguageUtils.getLanguageFromButtonId(selection);
+      console.log('🌍 Language selection received:', selection);
+      
+      let language = '';
+      
+      // Handle button IDs and text selections
+      if (selection.startsWith('lang_')) {
+        language = LanguageUtils.getLanguageFromButtonId(selection);
+      } else {
+        // Handle text-based selections
+        if (selection.includes('English') || selection.includes('1️⃣ English')) {
+          language = 'en';
+        } else if (selection.includes('हिंदी') || selection.includes('Hindi') || selection.includes('2️⃣')) {
+          language = 'hi';
+        } else if (selection.includes('తెలుగు') || selection.includes('Telugu') || selection.includes('3️⃣')) {
+          language = 'te';
+        } else if (selection.includes('தமிழ்') || selection.includes('Tamil') || selection.includes('4️⃣')) {
+          language = 'ta';
+        } else if (selection.includes('ଓଡ଼ିଆ') || selection.includes('Odia') || selection.includes('5️⃣')) {
+          language = 'or';
+        }
+      }
       
       if (!language || !LanguageUtils.isValidLanguage(language)) {
         await this.whatsappService.sendMessage(
           user.phone_number,
-          'Please select a valid language option.'
+          'Please select a valid language option from the menu.'
         );
         return;
       }
@@ -177,12 +199,28 @@ class MessageController {
         preferred_language: language
       });
 
-      // Check if language has script options
+      // Send confirmation message in selected language
+      const confirmationTexts = {
+        en: '✅ Language changed to English successfully!',
+        hi: '✅ भाषा सफलतापूर्वक हिंदी में बदल गई!',
+        te: '✅ భాష విజయవంతంగా తెలుగులో మారింది!',
+        ta: '✅ மெழி வெற்றிகரமாக தமிழ் இல் மாற்றப்பட்டது!',
+        or: '✅ ଭାଷା ସଫଳତାରେ ଓଡ଼ିଆରେ ବଦଳାଇଲା!'
+      };
+      
+      await this.whatsappService.sendMessage(
+        user.phone_number,
+        confirmationTexts[language] || confirmationTexts.en
+      );
+
+      // Check if language has script options (for Indian languages)
       if (LanguageUtils.hasScriptOptions(language)) {
         await this.showScriptSelection(user, language);
       } else {
         // Go directly to main menu for English
-        await this.showMainMenu(user);
+        setTimeout(async () => {
+          await this.showMainMenu(user);
+        }, 1500);
       }
     } catch (error) {
       console.error('Error in handleLanguageSelection:', error);
@@ -193,15 +231,19 @@ class MessageController {
   // Handle language change request
   async handleChangeLanguage(user) {
     try {
-      const changeLanguageText = LanguageUtils.getText('change_language', user.preferred_language) || 
-        'Select your preferred language:';
-      const languageList = this.whatsappService.getLanguageSelectionList();
+      console.log('🌐 handleChangeLanguage called for user:', user.phone_number);
+      
+      const changeLanguageText = '🌐 Please choose your language:';
+      const languageButtons = [
+        { id: 'lang_en', title: '1️⃣ English' },
+        { id: 'lang_hi', title: '2️⃣ हिंदी (Hindi)' },
+        { id: 'lang_te', title: '3️⃣ తెలుగు (Telugu)' }
+      ];
 
-      await this.whatsappService.sendList(
+      await this.whatsappService.sendInteractiveButtons(
         user.phone_number,
         changeLanguageText,
-        languageList.sections,
-        'Choose Language'
+        languageButtons
       );
 
       await this.userService.updateUserSession(user.id, 'language_selection');
@@ -212,9 +254,15 @@ class MessageController {
         'change_language',
         user.preferred_language
       );
+      
+      console.log('✅ Language selection sent successfully');
     } catch (error) {
-      console.error('Error in handleChangeLanguage:', error);
-      throw error;
+      console.error('❌ Error in handleChangeLanguage:', error);
+      // Send fallback message
+      await this.whatsappService.sendMessage(
+        user.phone_number,
+        '🌐 Please choose your language:\n1️⃣ English\n2️⃣ हिंदी (Hindi)\n3️⃣ తెలుగు (Telugu)\n4️⃣ தமிழ் (Tamil)\n5️⃣ ଓଡ଼ିଆ (Odia)'
+      );
     }
   }
 
@@ -320,22 +368,34 @@ class MessageController {
     }
   }
 
-  // Handle AI chat - continuous conversation
-  async handleAIChat(user, message) {
+  // Handle AI chat - continuous conversation with image support
+  async handleAIChat(user, message, mediaData = null) {
     try {
       await this.userService.updateUserSession(user.id, 'ai_chat');
 
       // Get conversation context
       const context = await this.conversationService.getRecentContext(user.id);
 
-      // Generate AI response with better prompts
-      const aiResponse = await this.geminiService.generateResponse(
-        message,
-        user.preferred_language,
-        user.script_preference,
-        context,
-        user.accessibility_mode
-      );
+      let aiResponse = '';
+      
+      if (mediaData) {
+        // Handle image analysis in AI chat
+        console.log('🖼️ Processing image in AI chat...');
+        aiResponse = await this.geminiService.analyzeHealthImage(
+          mediaData.data, 
+          message, 
+          user.preferred_language
+        );
+      } else {
+        // Generate AI response with better prompts
+        aiResponse = await this.geminiService.generateResponse(
+          message,
+          user.preferred_language,
+          user.script_preference,
+          context,
+          user.accessibility_mode
+        );
+      }
 
       // Send response without menu options (continuous chat)
       await this.whatsappService.sendMessage(user.phone_number, aiResponse);
@@ -357,8 +417,8 @@ class MessageController {
     }
   }
 
-  // Handle symptom checking
-  async handleSymptomCheck(user, message, currentState) {
+  // Handle symptom checking with enhanced analysis and follow-up
+  async handleSymptomCheck(user, message, currentState, mediaData = null) {
     try {
       if (currentState !== 'symptom_check') {
         // First time - ask for symptoms
@@ -366,7 +426,7 @@ class MessageController {
         await this.whatsappService.sendMessage(user.phone_number, promptText);
         await this.userService.updateUserSession(user.id, 'symptom_check');
       } else {
-        // User provided symptoms - analyze
+        // User provided symptoms - analyze with enhanced questions
         const userProfile = {
           preferred_language: user.preferred_language,
           script_preference: user.script_preference,
@@ -374,7 +434,8 @@ class MessageController {
           gender: user.gender
         };
 
-        const analysis = await this.geminiService.analyzeSymptoms(message, userProfile);
+        console.log('🩺 Analyzing symptoms:', message, mediaData ? 'with image' : 'text only');
+        const analysis = await this.geminiService.analyzeSymptoms(message, userProfile, mediaData);
         
         await this.whatsappService.sendMessage(user.phone_number, analysis);
         
@@ -385,10 +446,10 @@ class MessageController {
           user.preferred_language
         );
 
-        // Show menu after analysis
+        // Show follow-up options after analysis
         setTimeout(async () => {
-          await this.showQuickActions(user);
-        }, 1000);
+          await this.showSymptomFollowUpOptions(user);
+        }, 2000);
       }
     } catch (error) {
       console.error('Error in handleSymptomCheck:', error);
@@ -396,7 +457,7 @@ class MessageController {
     }
   }
 
-  // Handle preventive tips
+  // Handle preventive tips with enhanced information and follow-up
   async handlePreventiveTips(user, message, currentState) {
     try {
       if (currentState !== 'preventive_tips') {
@@ -412,8 +473,9 @@ class MessageController {
 
         await this.userService.updateUserSession(user.id, 'preventive_tips');
       } else {
-        // User selected category - determine category from message
+        // User selected category - determine category and provide detailed information
         let category = 'general health';
+        let specificTopic = '';
         
         // Check for exact button IDs first
         if (message === 'learn_diseases') {
@@ -426,6 +488,14 @@ class MessageController {
         // Check for text-based selections
         else if (message.includes('🦠 Learn about Diseases') || message.toLowerCase().includes('learn about diseases')) {
           category = 'disease prevention';
+          // Extract specific disease if mentioned
+          const diseaseKeywords = ['diabetes', 'hypertension', 'tuberculosis', 'malaria', 'dengue', 'covid', 'fever', 'heart disease', 'cancer'];
+          for (const disease of diseaseKeywords) {
+            if (message.toLowerCase().includes(disease)) {
+              specificTopic = disease;
+              break;
+            }
+          }
         } else if (message.includes('🥗 Nutrition') || message.toLowerCase().includes('nutrition') || message.toLowerCase().includes('hygiene')) {
           category = 'nutrition and hygiene';
         } else if (message.includes('🏃 Exercise') || message.toLowerCase().includes('exercise') || message.toLowerCase().includes('lifestyle')) {
@@ -437,7 +507,8 @@ class MessageController {
           script_preference: user.script_preference
         };
 
-        const tips = await this.geminiService.getPreventiveTips(category, userProfile);
+        console.log('🌱 Generating preventive tips for:', category, specificTopic ? `(${specificTopic})` : '');
+        const tips = await this.geminiService.getPreventiveTips(category, userProfile, specificTopic);
         
         await this.whatsappService.sendMessage(user.phone_number, tips);
         
@@ -448,9 +519,9 @@ class MessageController {
           user.preferred_language
         );
 
-        // Return to main menu after tips
+        // Show follow-up options after tips
         setTimeout(async () => {
-          await this.showMainMenu(user);
+          await this.showPreventiveTipsFollowUpOptions(user);
         }, 2000);
       }
     } catch (error) {
@@ -651,6 +722,58 @@ class MessageController {
     } catch (error) {
       console.error('Error in showQuickActions:', error);
       // Fail silently for quick actions
+    }
+  }
+
+  // Show follow-up options after symptom analysis
+  async showSymptomFollowUpOptions(user) {
+    try {
+      const followUpTexts = {
+        en: '🤔 Want to know more about your symptoms or have additional questions?',
+        hi: '🤔 क्या आप अपने लक्षणों के बारे में और जानना चाहते हैं?',
+        te: '🤔 మీ లక్షణాల గురించి ఎక్కువ తెలుసుకోవాలనుకుంటున్నారా?'
+      };
+      
+      const followUpButtons = [
+        { id: 'ai_chat', title: '🤖 Ask AI More Questions' },
+        { id: 'menu', title: '📋 Main Menu' },
+        { id: 'symptom_check', title: '🔄 Check Other Symptoms' }
+      ];
+
+      await this.whatsappService.sendInteractiveButtons(
+        user.phone_number,
+        followUpTexts[user.preferred_language] || followUpTexts.en,
+        followUpButtons
+      );
+    } catch (error) {
+      console.error('Error in showSymptomFollowUpOptions:', error);
+      // Fail silently
+    }
+  }
+
+  // Show follow-up options after preventive tips
+  async showPreventiveTipsFollowUpOptions(user) {
+    try {
+      const followUpTexts = {
+        en: '💬 Want to learn more details or have specific questions about this topic?',
+        hi: '💬 क्या आप इस विषय में और जानकारी चाहते हैं?',
+        te: '💬 ఈ విషయం గురించి మరిన్ని వివరాలు తెలుసుకోవాలనుకుంటున్నారా?'
+      };
+      
+      const followUpButtons = [
+        { id: 'ai_chat', title: '🤖 Chat with AI' },
+        { id: 'menu', title: '📋 Main Menu' },
+        { id: 'preventive_tips', title: '🔄 More Tips' }
+      ];
+
+      await this.whatsappService.sendInteractiveButtons(
+        user.phone_number,
+        followUpTexts[user.preferred_language] || followUpTexts.en,
+        followUpButtons
+      );
+    } catch (error) {
+      console.error('Error in showPreventiveTipsFollowUpOptions:', error);
+      // Fail silently
     }
   }
 

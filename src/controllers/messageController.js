@@ -244,28 +244,28 @@ class MessageController {
     try {
       console.log('🌐 handleChangeLanguage called for user:', user.phone_number);
       
-      // Send text message with language options and interactive buttons
-      const changeLanguageText = `🌐 Please choose your language:
-
-1️⃣ English
-2️⃣ हिंदी (Hindi)
-3️⃣ తెలుగు (Telugu)
-4️⃣ தமிழ் (Tamil)
-5️⃣ ଓଡ଼ିଆ (Odia)
-
-Choose an option.`;
+      // Send clean text message with language options
+      const changeLanguageText = `🌐 Please choose your language:`;
       
-      // Also send interactive buttons for first 3 languages
-      const languageButtons = [
-        { id: 'lang_en', title: '1️⃣ English' },
-        { id: 'lang_hi', title: '2️⃣ Hindi' },
-        { id: 'lang_te', title: '3️⃣ Telugu' }
-      ];
+      // Create interactive list for all 5 languages
+      const languageList = {
+        sections: [{
+          title: "🌐 Available Languages",
+          rows: [
+            { id: 'lang_en', title: '🇺🇸 English', description: 'English Language' },
+            { id: 'lang_hi', title: '🇮🇳 हिंदी (Hindi)', description: 'Hindi Language' },
+            { id: 'lang_te', title: '🇮🇳 తెలుగు (Telugu)', description: 'Telugu Language' },
+            { id: 'lang_ta', title: '🇮🇳 தமிழ் (Tamil)', description: 'Tamil Language' },
+            { id: 'lang_or', title: '🇮🇳 ଓଡ଼ିଆ (Odia)', description: 'Odia Language' }
+          ]
+        }]
+      };
 
-      await this.whatsappService.sendInteractiveButtons(
+      await this.whatsappService.sendList(
         user.phone_number,
         changeLanguageText,
-        languageButtons
+        languageList.sections,
+        'Choose Language'
       );
 
       await this.userService.updateUserSession(user.id, 'language_selection');
@@ -283,7 +283,7 @@ Choose an option.`;
       // Send fallback message
       await this.whatsappService.sendMessage(
         user.phone_number,
-        '🌐 Please choose your language:\n\n1️⃣ English\n2️⃣ हिंदी (Hindi)\n3️⃣ తెలుగు (Telugu)\n4️⃣ தமிழ் (Tamil)\n5️⃣ ଓଡ଼ିଆ (Odia)\n\nChoose an option.'
+        '🌐 Please choose your language:\n\nType: 1 (English), 2 (Hindi), 3 (Telugu), 4 (Tamil), 5 (Odia)'
       );
       await this.userService.updateUserSession(user.id, 'language_selection');
     }

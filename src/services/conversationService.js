@@ -132,8 +132,9 @@ class ConversationService {
   // Detect intent from user message
   detectIntent(message, currentState = 'main_menu') {
     const lowerMessage = message.toLowerCase();
+    const trimmedMessage = message.trim();
 
-    // Button-based intents (list selections)
+    // Button-based intents (list selections) - exact IDs
     if (message.startsWith('lang_')) return 'language_selection';
     if (message.startsWith('script_')) return 'script_selection';
     if (message === 'chat_ai') return 'ai_chat';
@@ -143,13 +144,34 @@ class ConversationService {
     if (message === 'outbreak_alerts') return 'outbreak_alerts';
     if (message === 'feedback') return 'feedback';
     
+    // Handle text-based selections (when users type the display text)
+    // Main menu options
+    if (trimmedMessage.includes('🤖 Chat with AI') || lowerMessage.includes('chat with ai')) return 'ai_chat';
+    if (trimmedMessage.includes('📅 My Appointments') || lowerMessage.includes('my appointments') || lowerMessage.includes('appointments')) return 'appointments';
+    if (trimmedMessage.includes('🌱 Health Tips') || trimmedMessage.includes('🌱 Preventive Healthcare Tips') || lowerMessage.includes('health tips') || lowerMessage.includes('preventive tips')) return 'preventive_tips';
+    if (trimmedMessage.includes('🩺 Check Symptoms') || lowerMessage.includes('check symptoms') || lowerMessage.includes('symptom check')) return 'symptom_check';
+    if (trimmedMessage.includes('🚨 Outbreak Alerts') || lowerMessage.includes('outbreak alerts')) return 'outbreak_alerts';
+    if (trimmedMessage.includes('📊 Feedback') || lowerMessage.includes('feedback & accuracy')) return 'feedback';
+    
+    // Language selections
+    if (trimmedMessage.includes('English') && (trimmedMessage.includes('🇺🇸') || lowerMessage.includes('english language'))) return 'language_selection';
+    if (trimmedMessage.includes('हिंदी') || trimmedMessage.includes('Hindi')) return 'language_selection';
+    if (trimmedMessage.includes('తెలుగు') || trimmedMessage.includes('Telugu')) return 'language_selection';
+    if (trimmedMessage.includes('தமிழ்') || trimmedMessage.includes('Tamil')) return 'language_selection';
+    if (trimmedMessage.includes('ଓଡ଼ିଆ') || trimmedMessage.includes('Odia')) return 'language_selection';
+    
     // Preventive tips categories
     if (message === 'learn_diseases' || message === 'nutrition_hygiene' || message === 'exercise_lifestyle') {
       return 'preventive_tips';
     }
     
-    // Navigation commands
-    if (lowerMessage.includes('menu') || lowerMessage.includes('back') || lowerMessage.includes('main menu')) {
+    // Handle category text selections
+    if (trimmedMessage.includes('🦠 Learn about Diseases') || lowerMessage.includes('learn about diseases')) return 'preventive_tips';
+    if (trimmedMessage.includes('🥗 Nutrition & Hygiene') || lowerMessage.includes('nutrition') || lowerMessage.includes('hygiene')) return 'preventive_tips';
+    if (trimmedMessage.includes('🏃 Exercise & Lifestyle') || lowerMessage.includes('exercise') || lowerMessage.includes('lifestyle')) return 'preventive_tips';
+    
+    // Navigation commands  
+    if (trimmedMessage.includes('📋 Main Menu') || lowerMessage.includes('menu') || lowerMessage.includes('back') || lowerMessage.includes('main menu')) {
       return 'menu_request';
     }
 

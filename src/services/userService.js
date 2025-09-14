@@ -1,4 +1,5 @@
 const { supabase, supabaseAdmin } = require('../config/database');
+const { supabase, supabaseAdmin } = require('../config/database');
 const { v4: uuidv4 } = require('uuid');
 
 class UserService {
@@ -22,7 +23,7 @@ class UserService {
       const newUser = {
         id: uuidv4(),
         phone_number: phoneNumber,
-        preferred_language: 'en',
+        preferred_language: 'unknown', // Mark as incomplete onboarding
         script_preference: 'native',
         accessibility_mode: 'normal',
         consent_data_collection: true,

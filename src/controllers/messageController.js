@@ -380,8 +380,25 @@ class MessageController {
 
         await this.userService.updateUserSession(user.id, 'preventive_tips');
       } else {
-        // User selected category - generate tips
-        const category = message.replace('learn_', '').replace('_', ' ');
+        // User selected category - determine category from message
+        let category = 'general health';
+        
+        // Check for exact button IDs first
+        if (message === 'learn_diseases') {
+          category = 'disease prevention';
+        } else if (message === 'nutrition_hygiene') {
+          category = 'nutrition and hygiene';
+        } else if (message === 'exercise_lifestyle') {
+          category = 'exercise and lifestyle';
+        } 
+        // Check for text-based selections
+        else if (message.includes('🦠 Learn about Diseases') || message.toLowerCase().includes('learn about diseases')) {
+          category = 'disease prevention';
+        } else if (message.includes('🥗 Nutrition') || message.toLowerCase().includes('nutrition') || message.toLowerCase().includes('hygiene')) {
+          category = 'nutrition and hygiene';
+        } else if (message.includes('🏃 Exercise') || message.toLowerCase().includes('exercise') || message.toLowerCase().includes('lifestyle')) {
+          category = 'exercise and lifestyle';
+        }
         
         const userProfile = {
           preferred_language: user.preferred_language,

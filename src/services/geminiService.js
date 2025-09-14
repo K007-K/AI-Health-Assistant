@@ -111,13 +111,13 @@ Please respond appropriately:`;
 For the image provided along with symptoms: "${symptoms}"
 
 Provide:
-1. 📋 What I observe in the image
-2. 🤔 Follow-up questions for better diagnosis (ask 2-3 specific questions)
-3. ⚕️ Possible conditions and recommendations
-4. 🚨 When to seek immediate medical help
-5. 🏠 Self-care measures if appropriate
+1. 📋 *What I observe in the image*
+2. 🤔 *Follow-up questions for better diagnosis* (ask 2-3 specific questions)
+3. ⚕️ *Possible conditions and recommendations*
+4. 🚨 *When to seek immediate medical help*
+5. 🏠 *Self-care measures if appropriate*
 
-⚠️ IMPORTANT: This is not a medical diagnosis. Please consult a healthcare professional for proper evaluation.
+⚠️ *IMPORTANT*: This is not a medical diagnosis. Please consult a healthcare professional for proper evaluation.
 
 Keep response SHORT and practical (max 3-4 sentences per section).`;
       } else {
@@ -127,13 +127,13 @@ Keep response SHORT and practical (max 3-4 sentences per section).`;
 User profile: Age: ${userProfile.age || 'not specified'}, Gender: ${userProfile.gender || 'not specified'}
 
 Provide:
-1. 🤔 **Follow-up Questions** (Ask 2-3 specific questions to better understand the condition)
-2. ⚕️ **Possible Conditions** (List 2-3 most likely conditions)
-3. 🚨 **Urgency Level** (Low/Medium/High - when to seek help)
-4. 🏠 **Immediate Care** (What to do right now)
-5. 📅 **Next Steps** (When and where to seek professional help)
+1. 🤔 *Follow-up Questions* (Ask 2-3 specific questions to better understand the condition)
+2. ⚕️ *Possible Conditions* (List 2-3 most likely conditions)
+3. 🚨 *Urgency Level* (Low/Medium/High - when to seek help)
+4. 🏠 *Immediate Care* (What to do right now)
+5. 📅 *Next Steps* (When and where to seek professional help)
 
-⚠️ **Important**: This is not a medical diagnosis. Please consult a healthcare professional.
+⚠️ *Important*: This is not a medical diagnosis. Please consult a healthcare professional.
 
 Keep each section SHORT and practical (2-3 sentences max).`;
       }
@@ -159,27 +159,27 @@ Keep each section SHORT and practical (2-3 sentences max).`;
           // Specific disease information
           prompt = `Provide detailed information about "${specificTopic}" disease:
 
-📋 **Disease Overview**:
+📋 *Disease Overview*:
 - What is ${specificTopic}?
 - How common is it?
 
-🔍 **Causes & Risk Factors**:
+🔍 *Causes & Risk Factors*:
 - Main causes
 - Who is at risk?
 
-🚨 **Symptoms**:
+🚨 *Symptoms*:
 - Early warning signs
 - Progressive symptoms
 
-⏰ **Duration & Timeline**:
+⏰ *Duration & Timeline*:
 - How long does it last?
 - Recovery timeline
 
-💊 **Treatment & Cure**:
+💊 *Treatment & Cure*:
 - Available treatments
 - Management options
 
-🛡️ **Prevention Steps**:
+🛡️ *Prevention Steps*:
 - Specific preventive measures
 - Lifestyle changes
 - Vaccination (if applicable)
@@ -189,12 +189,12 @@ Keep each section SHORT and practical (2-3 sentences max).`;
           // General disease prevention
           prompt = `Provide information about preventing common diseases:
 
-🦠 **Top 3 Preventable Diseases** in India:
+🦠 *Top 3 Preventable Diseases* in India:
 1. Disease name - key prevention tip
 2. Disease name - key prevention tip  
 3. Disease name - key prevention tip
 
-🛡️ **Universal Prevention Strategies**:
+🛡️ *Universal Prevention Strategies*:
 - Vaccination schedule
 - Personal hygiene practices
 - Lifestyle modifications
@@ -205,17 +205,17 @@ Include specific, actionable advice. Keep it practical and SHORT.`;
       } else if (category === 'nutrition and hygiene' || category.includes('nutrition')) {
         prompt = `Provide comprehensive nutrition and hygiene guidance:
 
-🥗 **Best Nutrition Tips**:
+🥗 *Best Nutrition Tips*:
 - 3 essential nutrients and food sources
 - Daily meal planning advice
 - Foods to include and avoid
 
-🧼 **Essential Hygiene Practices**:
+🧼 *Essential Hygiene Practices*:
 - Personal hygiene routine
 - Food safety measures
 - Environmental cleanliness
 
-💡 **Practical Implementation**:
+💡 *Practical Implementation*:
 - Budget-friendly healthy foods
 - Simple hygiene habits
 - Daily routine suggestions
@@ -224,17 +224,17 @@ Provide SPECIFIC, actionable advice. Keep each tip SHORT and practical.`;
       } else if (category === 'exercise and lifestyle' || category.includes('exercise')) {
         prompt = `Provide comprehensive exercise and lifestyle guidance:
 
-🏃 **Best Exercise Tips**:
+🏃 *Best Exercise Tips*:
 - 3 types of essential exercises (cardio, strength, flexibility)
 - Home workout options without equipment
 - Weekly exercise schedule
 
-🌟 **Healthy Lifestyle Habits**:
+🌟 *Healthy Lifestyle Habits*:
 - Sleep hygiene tips
 - Stress management techniques
 - Work-life balance strategies
 
-⏰ **Daily Routine Integration**:
+⏰ *Daily Routine Integration*:
 - Morning routines
 - Workplace wellness tips
 - Evening wind-down practices
@@ -244,14 +244,14 @@ Provide SPECIFIC, actionable advice suitable for all fitness levels. Keep it pra
         // General health tips
         prompt = `Provide general preventive healthcare tips:
 
-🎯 **Top 5 Daily Health Habits**:
+🎯 *Top 5 Daily Health Habits*:
 1. Habit - why it matters
 2. Habit - why it matters
 3. Habit - why it matters
 4. Habit - why it matters
 5. Habit - why it matters
 
-🔄 **Weekly Health Routine**:
+🔄 *Weekly Health Routine*:
 - Health checkups schedule
 - Exercise planning
 - Meal prep strategies

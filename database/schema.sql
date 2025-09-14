@@ -128,12 +128,37 @@ CREATE INDEX idx_health_content_category ON health_content(category);
 CREATE INDEX idx_appointments_user_id ON appointments(user_id);
 CREATE INDEX idx_appointments_scheduled_date ON appointments(scheduled_date);
 
--- RLS (Row Level Security) policies
+-- RLS (Row Level Security) policies with proper access
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE feedback ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE appointments ENABLE ROW LEVEL SECURITY;
+
+-- Create RLS policies to allow service role access
+CREATE POLICY "Enable insert for service role" ON users
+    FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Enable select for service role" ON users
+    FOR SELECT USING (true);
+
+CREATE POLICY "Enable update for service role" ON users
+    FOR UPDATE USING (true);
+
+CREATE POLICY "Enable delete for service role" ON users
+    FOR DELETE USING (true);
+
+CREATE POLICY "Enable all for conversations" ON conversations
+    FOR ALL WITH CHECK (true);
+
+CREATE POLICY "Enable all for feedback" ON feedback
+    FOR ALL WITH CHECK (true);
+
+CREATE POLICY "Enable all for user_sessions" ON user_sessions
+    FOR ALL WITH CHECK (true);
+
+CREATE POLICY "Enable all for appointments" ON appointments
+    FOR ALL WITH CHECK (true);
 
 -- Enable real-time subscriptions for conversations
 ALTER PUBLICATION supabase_realtime ADD TABLE conversations;

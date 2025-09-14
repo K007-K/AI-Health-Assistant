@@ -1,4 +1,4 @@
-const { supabase } = require('../config/database');
+const { supabase, supabaseAdmin } = require('../config/database');
 const { v4: uuidv4 } = require('uuid');
 
 class UserService {
@@ -30,7 +30,7 @@ class UserService {
         updated_at: new Date().toISOString()
       };
 
-      const { data: createdUser, error: createError } = await supabase
+      const { data: createdUser, error: createError } = await supabaseAdmin
         .from('users')
         .insert([newUser])
         .select()
@@ -57,7 +57,7 @@ class UserService {
         updated_at: new Date().toISOString()
       };
 
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from('users')
         .update(updateData)
         .eq('id', userId)

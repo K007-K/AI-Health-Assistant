@@ -1,4 +1,4 @@
-const { supabase } = require('../config/database');
+const { supabase, supabaseAdmin } = require('../config/database');
 const { v4: uuidv4 } = require('uuid');
 const config = require('../config/environment');
 
@@ -28,7 +28,7 @@ class ConversationService {
         created_at: new Date().toISOString()
       };
 
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from('conversations')
         .insert([message])
         .select()
@@ -63,7 +63,7 @@ class ConversationService {
         created_at: new Date().toISOString()
       };
 
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from('conversations')
         .insert([message])
         .select()
@@ -207,7 +207,7 @@ class ConversationService {
     try {
       const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from('conversations')
         .select('intent, message_type, created_at')
         .eq('user_id', userId)
@@ -248,7 +248,7 @@ class ConversationService {
   // Search conversations by content
   async searchConversations(userId, searchTerm, limit = 10) {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from('conversations')
         .select('*')
         .eq('user_id', userId)
@@ -273,7 +273,7 @@ class ConversationService {
     try {
       const cutoffDate = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000).toISOString();
 
-      const { error } = await supabase
+      const { error } = await supabaseAdmin
         .from('conversations')
         .delete()
         .lt('created_at', cutoffDate);
@@ -293,16 +293,16 @@ class ConversationService {
   // Get conversation statistics for admin
   async getGlobalConversationStats() {
     try {
-      const { data: totalConversations, error: totalError } = await supabase
+      const { data: totalConversations, error: totalError } = await supabaseAdmin
         .from('conversations')
         .select('id', { count: 'exact' });
 
-      const { data: recentConversations, error: recentError } = await supabase
+      const { data: recentConversations, error: recentError } = await supabaseAdmin
         .from('conversations')
         .select('id', { count: 'exact' })
         .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()); // Last 24 hours
 
-      const { data: intentStats, error: intentError } = await supabase
+      const { data: intentStats, error: intentError } = await supabaseAdmin
         .from('conversations')
         .select('intent')
         .not('intent', 'is', null)
@@ -334,7 +334,7 @@ class ConversationService {
   // Update message metadata (for additional context)
   async updateMessageMetadata(messageId, newMetadata) {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from('conversations')
         .update({ metadata: newMetadata })
         .eq('id', messageId)

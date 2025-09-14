@@ -1,5 +1,4 @@
 const { supabase, supabaseAdmin } = require('../config/database');
-const { supabase, supabaseAdmin } = require('../config/database');
 const { v4: uuidv4 } = require('uuid');
 
 class UserService {

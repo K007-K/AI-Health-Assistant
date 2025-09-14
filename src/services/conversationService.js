@@ -155,6 +155,10 @@ class ConversationService {
     
     // More options menu selections and Change Language from main menu
     if (trimmedMessage.includes('🌐 Change Language') || trimmedMessage.includes('🌐 भाषा बदलें') || trimmedMessage.includes('🌐 భాష మార్చండి') || lowerMessage.includes('change language') || lowerMessage.includes('switch to different language')) return 'change_language';
+    if (message === 'change_language') return 'change_language';
+    
+    // Handle the exact text from main menu list selection
+    if (trimmedMessage.includes('Switch to different language')) return 'change_language';
     
     // Language selections
     if (trimmedMessage.includes('English') && (trimmedMessage.includes('🇺🇸') || lowerMessage.includes('english language'))) return 'language_selection';

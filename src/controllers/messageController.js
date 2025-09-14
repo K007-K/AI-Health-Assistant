@@ -25,6 +25,13 @@ class MessageController {
       const currentState = userSession?.session_state || 'main_menu';
       const intent = this.conversationService.detectIntent(content, currentState);
       console.log(`🎯 Intent Detection: "${content}" → ${intent} (state: ${currentState})`);
+      
+      // Special handling for language change requests
+      if (content.includes('Switch to different language') || content.includes('🌐 Change Language')) {
+        console.log('🌐 Language change detected via special handling');
+        await this.handleChangeLanguage(user);
+        return;
+      }
 
       // Save user message
       await this.conversationService.saveUserMessage(user.id, content, {
@@ -234,24 +241,28 @@ class MessageController {
     try {
       console.log('🌐 handleChangeLanguage called for user:', user.phone_number);
       
-      const changeLanguageText = '🌐 Please choose your language:';
+      // Send text message with language options and interactive buttons
+      const changeLanguageText = `🌐 Please choose your language:
+
+1️⃣ English
+2️⃣ हिंदी (Hindi)
+3️⃣ తెలుగు (Telugu)
+4️⃣ தமிழ் (Tamil)
+5️⃣ ଓଡ଼ିଆ (Odia)
+
+Choose an option.`;
+      
+      // Also send interactive buttons for first 3 languages
       const languageButtons = [
         { id: 'lang_en', title: '1️⃣ English' },
-        { id: 'lang_hi', title: '2️⃣ हिंदी (Hindi)' },
-        { id: 'lang_te', title: '3️⃣ తెలుగు (Telugu)' },
-        { id: 'lang_ta', title: '4️⃣ தமிழ் (Tamil)' },
-        { id: 'lang_or', title: '5️⃣ ଓଡ଼ିଆ (Odia)' }
+        { id: 'lang_hi', title: '2️⃣ Hindi' },
+        { id: 'lang_te', title: '3️⃣ Telugu' }
       ];
 
-      // Note: WhatsApp only allows 3 buttons max, so we'll use the first 3 and handle others via text
-      const firstThreeButtons = languageButtons.slice(0, 3);
-      
       await this.whatsappService.sendInteractiveButtons(
         user.phone_number,
-        changeLanguageText + '\n\n' + 
-        languageButtons.map(btn => btn.title).join('\n') + 
-        '\n\nChoose an option.',
-        firstThreeButtons
+        changeLanguageText,
+        languageButtons
       );
 
       await this.userService.updateUserSession(user.id, 'language_selection');
@@ -269,8 +280,9 @@ class MessageController {
       // Send fallback message
       await this.whatsappService.sendMessage(
         user.phone_number,
-        '🌐 Please choose your language:\n1️⃣ English\n2️⃣ हिंदी (Hindi)\n3️⃣ తెలుగు (Telugu)\n4️⃣ தமிழ் (Tamil)\n5️⃣ ଓଡ଼ିଆ (Odia)\n\nChoose an option.'
+        '🌐 Please choose your language:\n\n1️⃣ English\n2️⃣ हिंदी (Hindi)\n3️⃣ తెలుగు (Telugu)\n4️⃣ தமிழ் (Tamil)\n5️⃣ ଓଡ଼ିଆ (Odia)\n\nChoose an option.'
       );
+      await this.userService.updateUserSession(user.id, 'language_selection');
     }
   }
 

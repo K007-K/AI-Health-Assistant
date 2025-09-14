@@ -75,8 +75,10 @@ Remember to:
 4. Keep responses concise but informative (under 300 words)
 5. Include relevant health tips when appropriate
 6. If this is an emergency situation, prioritize immediate safety advice
+7. Use proper line breaks and spacing for better readability in WhatsApp
+8. Add blank lines between sections and main points
 
-Please respond appropriately:`;
+Please respond appropriately with proper formatting:`;
 
       const result = await this.model.generateContent(fullPrompt);
       const response = await result.response;
@@ -111,15 +113,20 @@ Please respond appropriately:`;
 For the image provided along with symptoms: "${symptoms}"
 
 Provide:
+
 1. 📋 *What I observe in the image*
+
 2. 🤔 *Follow-up questions for better diagnosis* (ask 2-3 specific questions)
+
 3. ⚕️ *Possible conditions and recommendations*
+
 4. 🚨 *When to seek immediate medical help*
+
 5. 🏠 *Self-care measures if appropriate*
 
 ⚠️ *IMPORTANT*: This is not a medical diagnosis. Please consult a healthcare professional for proper evaluation.
 
-Keep response SHORT and practical (max 3-4 sentences per section).`;
+Keep response SHORT and practical. Use line breaks between sections for better readability.`;
       } else {
         // Text-based symptom analysis
         analysisPrompt = `You are a medical triage assistant. For symptoms: "${symptoms}"
@@ -127,15 +134,25 @@ Keep response SHORT and practical (max 3-4 sentences per section).`;
 User profile: Age: ${userProfile.age || 'not specified'}, Gender: ${userProfile.gender || 'not specified'}
 
 Provide:
-1. 🤔 *Follow-up Questions* (Ask 2-3 specific questions to better understand the condition)
-2. ⚕️ *Possible Conditions* (List 2-3 most likely conditions)
-3. 🚨 *Urgency Level* (Low/Medium/High - when to seek help)
-4. 🏠 *Immediate Care* (What to do right now)
-5. 📅 *Next Steps* (When and where to seek professional help)
+
+1. 🤔 *Follow-up Questions*
+Ask 2-3 specific questions to better understand the condition
+
+2. ⚕️ *Possible Conditions*
+List 2-3 most likely conditions
+
+3. 🚨 *Urgency Level*
+Low/Medium/High - when to seek help
+
+4. 🏠 *Immediate Care*
+What to do right now
+
+5. 📅 *Next Steps*
+When and where to seek professional help
 
 ⚠️ *Important*: This is not a medical diagnosis. Please consult a healthcare professional.
 
-Keep each section SHORT and practical (2-3 sentences max).`;
+Use line breaks between sections and keep each section SHORT and practical.`;
       }
 
       const result = await this.generateResponse(analysisPrompt, language, scriptType);
@@ -159,104 +176,137 @@ Keep each section SHORT and practical (2-3 sentences max).`;
           // Specific disease information
           prompt = `Provide detailed information about "${specificTopic}" disease:
 
-📋 *Disease Overview*:
-- What is ${specificTopic}?
-- How common is it?
+📋 *Disease Overview*
+What is ${specificTopic}?
+How common is it?
 
-🔍 *Causes & Risk Factors*:
-- Main causes
-- Who is at risk?
+🔍 *Causes & Risk Factors*
+Main causes
+Who is at risk?
 
-🚨 *Symptoms*:
-- Early warning signs
-- Progressive symptoms
+🚨 *Symptoms*
+Early warning signs
+Progressive symptoms
 
-⏰ *Duration & Timeline*:
-- How long does it last?
-- Recovery timeline
+⏰ *Duration & Timeline*
+How long does it last?
+Recovery timeline
 
-💊 *Treatment & Cure*:
-- Available treatments
-- Management options
+💊 *Treatment & Cure*
+Available treatments
+Management options
 
-🛡️ *Prevention Steps*:
-- Specific preventive measures
-- Lifestyle changes
-- Vaccination (if applicable)
+🛡️ *Prevention Steps*
+Specific preventive measures
+Lifestyle changes
+Vaccination (if applicable)
 
-Keep each section SHORT and practical (2-3 sentences max).`;
+Use line breaks between sections and keep each section SHORT and practical.`;
         } else {
           // General disease prevention
           prompt = `Provide information about preventing common diseases:
 
-🦠 *Top 3 Preventable Diseases* in India:
+🦠 *Top 3 Preventable Diseases* in India
+
 1. Disease name - key prevention tip
-2. Disease name - key prevention tip  
+
+2. Disease name - key prevention tip
+
 3. Disease name - key prevention tip
 
-🛡️ *Universal Prevention Strategies*:
-- Vaccination schedule
-- Personal hygiene practices
-- Lifestyle modifications
-- Regular health checkups
+🛡️ *Universal Prevention Strategies*
 
-Include specific, actionable advice. Keep it practical and SHORT.`;
+Vaccination schedule
+
+Personal hygiene practices
+
+Lifestyle modifications
+
+Regular health checkups
+
+Include specific, actionable advice. Use line breaks for better readability.`;
         }
       } else if (category === 'nutrition and hygiene' || category.includes('nutrition')) {
         prompt = `Provide comprehensive nutrition and hygiene guidance:
 
-🥗 *Best Nutrition Tips*:
-- 3 essential nutrients and food sources
-- Daily meal planning advice
-- Foods to include and avoid
+🥗 *Best Nutrition Tips*
 
-🧼 *Essential Hygiene Practices*:
-- Personal hygiene routine
-- Food safety measures
-- Environmental cleanliness
+3 essential nutrients and food sources
 
-💡 *Practical Implementation*:
-- Budget-friendly healthy foods
-- Simple hygiene habits
-- Daily routine suggestions
+Daily meal planning advice
 
-Provide SPECIFIC, actionable advice. Keep each tip SHORT and practical.`;
+Foods to include and avoid
+
+🧼 *Essential Hygiene Practices*
+
+Personal hygiene routine
+
+Food safety measures
+
+Environmental cleanliness
+
+💡 *Practical Implementation*
+
+Budget-friendly healthy foods
+
+Simple hygiene habits
+
+Daily routine suggestions
+
+Provide SPECIFIC, actionable advice. Use line breaks between sections for better readability.`;
       } else if (category === 'exercise and lifestyle' || category.includes('exercise')) {
         prompt = `Provide comprehensive exercise and lifestyle guidance:
 
-🏃 *Best Exercise Tips*:
-- 3 types of essential exercises (cardio, strength, flexibility)
-- Home workout options without equipment
-- Weekly exercise schedule
+🏃 *Best Exercise Tips*
 
-🌟 *Healthy Lifestyle Habits*:
-- Sleep hygiene tips
-- Stress management techniques
-- Work-life balance strategies
+3 types of essential exercises (cardio, strength, flexibility)
 
-⏰ *Daily Routine Integration*:
-- Morning routines
-- Workplace wellness tips
-- Evening wind-down practices
+Home workout options without equipment
 
-Provide SPECIFIC, actionable advice suitable for all fitness levels. Keep it practical and achievable.`;
+Weekly exercise schedule
+
+🌟 *Healthy Lifestyle Habits*
+
+Sleep hygiene tips
+
+Stress management techniques
+
+Work-life balance strategies
+
+⏰ *Daily Routine Integration*
+
+Morning routines
+
+Workplace wellness tips
+
+Evening wind-down practices
+
+Provide SPECIFIC, actionable advice suitable for all fitness levels. Use line breaks for better readability.`;
       } else {
         // General health tips
         prompt = `Provide general preventive healthcare tips:
 
-🎯 *Top 5 Daily Health Habits*:
+🎯 *Top 5 Daily Health Habits*
+
 1. Habit - why it matters
+
 2. Habit - why it matters
+
 3. Habit - why it matters
+
 4. Habit - why it matters
+
 5. Habit - why it matters
 
-🔄 *Weekly Health Routine*:
-- Health checkups schedule
-- Exercise planning
-- Meal prep strategies
+🔄 *Weekly Health Routine*
 
-Provide SPECIFIC, actionable advice. Keep each tip SHORT and practical.`;
+Health checkups schedule
+
+Exercise planning
+
+Meal prep strategies
+
+Provide SPECIFIC, actionable advice. Use line breaks between sections for better readability.`;
       }
       
       const result = await this.generateResponse(prompt, language, scriptType);

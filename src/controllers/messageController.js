@@ -635,22 +635,62 @@ class MessageController {
   // Handle feedback
   async handleFeedback(user, message, currentState) {
     try {
+      const userSession = await this.userService.getUserSession(user.id);
+      const sessionData = userSession?.context_data || {};
+      
       if (currentState !== 'feedback') {
-        // Show feedback options
-        const feedbackButtons = [
-          { id: 'feedback_good', title: '👍 Helpful' },
-          { id: 'feedback_bad', title: '👎 Not Helpful' }
-        ];
+        // Show feedback prompt
+        const feedbackPrompt = `📊 *Feedback & Help*
 
-        await this.whatsappService.sendInteractiveButtons(
+Help us improve! Please share:
+
+• Suggestions for improvements
+• Report errors or bugs
+• Request help or support
+• General feedback about the bot
+
+Type your message below:`;
+
+        await this.whatsappService.sendMessage(
           user.phone_number,
-          'Was my last answer helpful?',
-          feedbackButtons
+          feedbackPrompt
         );
 
-        await this.userService.updateUserSession(user.id, 'feedback');
+        await this.userService.updateUserSession(user.id, 'feedback', { waitingForFeedback: true });
+      } else if (sessionData.waitingForFeedback) {
+        // User provided feedback - save it
+        const feedbackText = message.trim();
+        
+        // Save feedback to database (you can expand this to save to a feedback table)
+        await this.conversationService.saveBotMessage(
+          user.id,
+          `Feedback received: ${feedbackText}`,
+          'user_feedback',
+          user.preferred_language
+        );
+
+        // Send confirmation
+        const thankYouTexts = {
+          en: '✅ Thank you for your feedback! Your message has been sent to our team for review. We appreciate your input to help us improve the healthcare assistant.',
+          hi: '✅ आपके फीडबैक के लिए धन्यवाद! आपका संदेश समीक्षा के लिए हमारी टीम को भेज दिया गया है। स्वास्थ्य सहायक को बेहतर बनाने में आपके योगदान की हम सराहना करते हैं।',
+          te: '✅ మీ ఫీడ్‌బ్యాక్‌కు ధన్యవాదాలు! మీ సందేశం సమీక్ష కోసం మా బృందానికి పంపబడింది. ఆరోగ్య సహాయకుడిని మెరుగుపరచడంలో మీ సహాయాన్ని మేము అభినందిస్తున్నాము।'
+        };
+        
+        await this.whatsappService.sendMessage(
+          user.phone_number,
+          thankYouTexts[user.preferred_language] || thankYouTexts.en
+        );
+
+        // Clear feedback state
+        await this.userService.updateUserSession(user.id, 'feedback', { waitingForFeedback: false });
+        
+        // Show main menu after 2 seconds
+        setTimeout(async () => {
+          await this.showMainMenu(user);
+        }, 2000);
+        return;
       } else {
-        // Process feedback
+        // Fallback - treat as feedback
         await this.processFeedback(user, message);
       }
     } catch (error) {

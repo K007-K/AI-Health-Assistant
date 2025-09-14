@@ -77,8 +77,10 @@ Remember to:
 6. If this is an emergency situation, prioritize immediate safety advice
 7. Use proper line breaks and spacing for better readability in WhatsApp
 8. Add blank lines between sections and main points
+9. For bold text, use ONLY single asterisks (*text*) - never use double asterisks
+10. Avoid any ** formatting - WhatsApp uses single * for bold
 
-Please respond appropriately with proper formatting:`;
+Please respond appropriately with proper WhatsApp formatting:`;
 
       const result = await this.model.generateContent(fullPrompt);
       const response = await result.response;

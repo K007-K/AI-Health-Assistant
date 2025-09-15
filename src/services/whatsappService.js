@@ -84,6 +84,15 @@ class WhatsAppService {
   // Send list message (for menu options)
   async sendList(to, text, sections, buttonText = 'Choose Option') {
     try {
+      // Validate and truncate titles if needed (WhatsApp limit: 24 chars)
+      const validatedSections = sections.map(section => ({
+        ...section,
+        rows: section.rows.map(row => ({
+          ...row,
+          title: row.title.length > 24 ? row.title.substring(0, 21) + '...' : row.title
+        }))
+      }));
+
       const payload = {
         messaging_product: 'whatsapp',
         to: to,
@@ -93,7 +102,7 @@ class WhatsAppService {
           body: { text: text },
           action: {
             button: buttonText,
-            sections: sections
+            sections: validatedSections
           }
         }
       };
@@ -112,7 +121,17 @@ class WhatsAppService {
       return response.data;
     } catch (error) {
       console.error('Error sending list message:', error.response?.data || error.message);
-      throw error;
+      
+      // Fallback to simple text message if list fails
+      try {
+        console.log('📱 Fallback: Sending simple text message instead of list');
+        const optionsList = sections[0]?.rows?.map((row, index) => `${index + 1}. ${row.title}`).join('\n') || 'Please type "menu" for options';
+        const fallbackText = `${text}\n\nOptions:\n${optionsList}`;
+        return await this.sendMessage(to, fallbackText);
+      } catch (fallbackError) {
+        console.error('Fallback message also failed:', fallbackError);
+        throw error;
+      }
     }
   }
 
@@ -270,11 +289,11 @@ class WhatsAppService {
           title: "📋 முதன்மை மெனு",
           rows: [
             { id: 'chat_ai', title: '🤖 AI உடன் அரட்டை', description: 'சுகாதார கேள்விகள் கேட்டு வழிகாட்டுதல் பெறுங்கள்' },
-            { id: 'symptom_check', title: '🩺 அறிகுறிகளை சரிபார்க்கவும்', description: '�றிகுறிகளை பகுப்பாய்வு செய்து பரிந்துரைகளை பெறுங்கள்' },
+            { id: 'symptom_check', title: '🩺 அறிகுறி சரிபார்', description: 'அறிகுறிகளை பகுப்பாய்வு செய்து பரிந்துரைகளை பெறுங்கள்' },
             { id: 'preventive_tips', title: '🌱 ஆரோக்கிய குறிப்புகள்', description: 'நோய்கள், ஊட்டச்சத்து & வாழ்க்கை முறை பற்றி அறியுங்கள்' },
-            { id: 'change_language', title: '🌐 மொழி மாற்றவும்', description: 'வேறு மொழிக்கு மாற்றவும்' },
-            { id: 'appointments', title: '📅 எனது முன்பதிவுகள்', description: 'முன்பதிவுகளை திட்டமிடுங்கள் & கண்காணிக்கவும் (விரைவில் வரும்)' },
-            { id: 'feedback', title: '📊 கருத்து & துல்லியம்', description: 'பதில்களை மதிப்பிடுங்கள் & துல்லியத்தை மேம்படுத்த உதவுங்கள்' }
+            { id: 'change_language', title: '🌐 மொழி மாற்று', description: 'வேறு மொழிக்கு மாற்றவும்' },
+            { id: 'appointments', title: '📅 முன்பதிவுகள்', description: 'முன்பதிவுகளை திட்டமிடுங்கள் & கண்காணிக்கவும் (விரைவில் வரும்)' },
+            { id: 'feedback', title: '📊 கருத்து', description: 'பதில்களை மதிப்பிடுங்கள் & துல்லியத்தை மேம்படுத்த உதவுங்கள்' }
           ]
         }]
       },

@@ -37,7 +37,7 @@ const testConnection = async () => {
   try {
     const { data, error } = await supabase
       .from('users')
-      .select('count(*)')
+      .select('id')
       .limit(1);
     
     if (error) {

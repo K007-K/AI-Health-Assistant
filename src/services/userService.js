@@ -15,7 +15,9 @@ class UserService {
       if (existingUser && !fetchError) {
         // Update last active timestamp
         await this.updateUserActivity(existingUser.id);
-        return existingUser;
+        // Fetch the latest user data to ensure we have current preferences
+        const updatedUser = await this.getUserById(existingUser.id);
+        return updatedUser;
       }
 
       // Create new user if doesn't exist

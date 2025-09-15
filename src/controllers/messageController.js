@@ -300,10 +300,7 @@ class MessageController {
       };
       
       const scriptText = scriptTexts[language] || 'Choose script type:';
-      const buttons = [
-        { id: 'script_native', title: '1️⃣ Native script' },
-        { id: 'script_trans', title: '2️⃣ English letters' }
-      ];
+      const buttons = this.whatsappService.getScriptPreferenceButtons(language);
 
       await this.whatsappService.sendInteractiveButtons(
         user.phone_number,
@@ -332,9 +329,9 @@ class MessageController {
       let scriptType = '';
       
       // Only accept button IDs or numbered options
-      if (selection === 'script_native' || selection === '1' || selection === '1️⃣' || selection.includes('1️⃣ Native script') || selection.includes('1️⃣ తెలుగు script')) {
+      if (selection === 'script_native' || selection === '1' || selection === '1️⃣' || selection.includes('Native script') || selection.includes('script')) {
         scriptType = 'native';
-      } else if (selection === 'script_trans' || selection === '2' || selection === '2️⃣' || selection.includes('2️⃣ English letters') || selection.includes('English letters')) {
+      } else if (selection === 'script_trans' || selection === '2' || selection === '2️⃣' || selection.includes('English letters') || selection.includes('letters')) {
         scriptType = 'transliteration';
       } else {
         // Invalid selection - show script options again
@@ -352,7 +349,7 @@ class MessageController {
         script_preference: scriptType
       });
 
-      console.log('✅ User preferences updated');
+      console.log('✅ User preferences updated with script:', scriptType);
 
       // Show main menu
       await this.showMainMenu(user);

@@ -4,7 +4,16 @@ const { LanguageUtils } = require('../utils/languageUtils');
 
 class GeminiService {
   constructor() {
-    this.genAI = new GoogleGenerativeAI(config.gemini.apiKey);
+    // Multiple API keys for rate limit handling
+    this.apiKeys = [
+      config.gemini.apiKey,
+      'AIzaSyARvtnLIBiwbe18CH9tYLlcp0E4ruX52Ys',
+      'AIzaSyDUb0T2lN5hmNb_lUgvsz5S5ubt8iOLPH0',
+      'AIzaSyDFD0X2EVlWhutR0gDflbKo1qUObWp2v3Y'
+    ].filter(key => key && key.trim() !== '');
+    
+    this.currentKeyIndex = 0;
+    this.genAI = new GoogleGenerativeAI(this.apiKeys[this.currentKeyIndex]);
     this.model = this.genAI.getGenerativeModel({ 
       model: "gemini-2.0-flash-exp",
       generationConfig: {
@@ -34,70 +43,141 @@ class GeminiService {
     });
   }
 
-  // Generate AI response with context
-  async generateResponse(prompt, language = 'en', scriptType = 'native', context = [], accessibilityMode = 'normal') {
-    try {
-      // Get system prompt for the specified language
-      const systemPrompt = LanguageUtils.getSystemPrompt(language, scriptType);
-      
-      // Build conversation context
-      let conversationHistory = '';
-      if (context.length > 0) {
-        conversationHistory = '\n\nPrevious conversation context:\n';
-        context.slice(-5).forEach((msg, index) => { // Last 5 messages for context
-          conversationHistory += `${msg.message_type}: ${msg.content}\n`;
-        });
-      }
+  // Rotate to next API key when rate limited
+  rotateApiKey() {
+    this.currentKeyIndex = (this.currentKeyIndex + 1) % this.apiKeys.length;
+    this.genAI = new GoogleGenerativeAI(this.apiKeys[this.currentKeyIndex]);
+    this.model = this.genAI.getGenerativeModel({
+      model: "gemini-2.0-flash-exp",
+      generationConfig: {
+        temperature: 0.7,
+        topK: 40,
+        topP: 0.95,
+        maxOutputTokens: 1024,
+      },
+      safetySettings: [
+        {
+          category: "HARM_CATEGORY_HARASSMENT",
+          threshold: "BLOCK_MEDIUM_AND_ABOVE",
+        },
+        {
+          category: "HARM_CATEGORY_HATE_SPEECH", 
+          threshold: "BLOCK_MEDIUM_AND_ABOVE",
+        },
+        {
+          category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+          threshold: "BLOCK_MEDIUM_AND_ABOVE",
+        },
+        {
+          category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+          threshold: "BLOCK_MEDIUM_AND_ABOVE",
+        },
+      ],
+    });
+    console.log(`🔄 Rotated to API key ${this.currentKeyIndex + 1}/${this.apiKeys.length}`);
+  }
 
-      // Accessibility mode modifications
-      let accessibilityInstructions = '';
-      switch (accessibilityMode) {
-        case 'easy':
-          accessibilityInstructions = '\n\nIMPORTANT: Use simple words and short sentences. Avoid medical jargon. Explain everything in easy-to-understand language.';
-          break;
-        case 'long':
-          accessibilityInstructions = '\n\nIMPORTANT: Use more spacing between lines. Add more detailed explanations. Break down complex information into smaller parts.';
-          break;
-        case 'audio':
-          accessibilityInstructions = '\n\nIMPORTANT: Structure response for audio playback. Use clear pronunciation markers. Avoid special characters and emojis.';
-          break;
-      }
-
-      // Combine all prompts
-      const fullPrompt = `${systemPrompt}${accessibilityInstructions}${conversationHistory}
-
+  // Generate AI response with context and rate limit handling
+  async generateResponse(prompt, language = 'en', scriptType = 'native', context = [], accessibilityMode = 'normal', maxRetries = 3) {
+    let lastError = null;
+    
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        // Get system prompt for the specified language
+        const systemPrompt = LanguageUtils.getSystemPrompt(language, scriptType);
+        
+        // Build conversation context
+        let conversationHistory = '';
+        if (context.length > 0) {
+          conversationHistory = '\n\nPrevious conversation context:\n';
+          context.slice(-5).forEach((msg, index) => { // Last 5 messages for context
+            conversationHistory += `${msg.message_type}: ${msg.content}\n`;
+          });
+        }
+        
+        // Add accessibility instructions
+        let accessibilityInstructions = '';
+        if (accessibilityMode === 'easy') {
+          accessibilityInstructions = '\n\nIMPORTANT: Use very simple words and short sentences. Avoid medical jargon.';
+        } else if (accessibilityMode === 'long') {
+          accessibilityInstructions = '\n\nIMPORTANT: Add extra line breaks and spacing for better readability.';
+        } else if (accessibilityMode === 'audio') {
+          accessibilityInstructions = '\n\nIMPORTANT: Format response for audio reading - use natural speech patterns.';
+        }
+        
+        // Get language-specific medical terms
+        const medicalTermsForLanguage = this.getLanguageSpecificMedicalTerms(language);
+        
+        // Enhanced prompt for emergency detection
+        const isEmergencyQuery = LanguageUtils.detectEmergency(prompt, language);
+        let emergencyInstructions = '';
+        if (isEmergencyQuery) {
+          const emergencyTerms = {
+            en: 'emergency, hospital, call, immediately, urgent',
+            hi: 'आपातकाल, अस्पताल, तुरंत, कॉल करें, जरूरी',
+            te: 'అత్యవసరం, ఆసుపత్రి, వెంటనే, కాల్ చేయండి, అత్యవసర',
+            ta: 'அவசரநிலை, மருத்துவமனை, உடனடியாக, அழைக்கவும், அவசரம்',
+            or: 'ଜରୁରୀ, ଡାକ୍ତରଖାନା, ତୁରନ୍ତ, କଲ୍ କରନ୍ତୁ, ଜରୁରୀ'
+          };
+          emergencyInstructions = `\n\nEMERGENCY RESPONSE: This is an emergency! MUST include these terms: ${emergencyTerms[language] || emergencyTerms.en}`;
+        }
+        
+        const fullPrompt = `${systemPrompt}${accessibilityInstructions}${conversationHistory}
 Current user message: ${prompt}
 
-Remember to:
-1. Always provide accurate health information
-2. Include appropriate disclaimers about consulting healthcare professionals
-3. Be empathetic and supportive
-4. Keep responses concise but informative (under 300 words)
-5. Include relevant health tips when appropriate
-6. If this is an emergency situation, prioritize immediate safety advice
-7. Use proper line breaks and spacing for better readability in WhatsApp
-8. Add blank lines between sections and main points
-9. For bold text, use ONLY single asterisks (*text*) - never use double asterisks
-10. Avoid any ** formatting - WhatsApp uses single * for bold
-
-Please respond appropriately with proper WhatsApp formatting:`;
-
-      const result = await this.model.generateContent(fullPrompt);
-      const response = await result.response;
-      
-      return response.text();
-    } catch (error) {
-      console.error('Gemini API error:', error);
-      
-      // Fallback response based on language
-      const fallbackMessages = {
-        en: 'I apologize, but I\'m having trouble processing your request right now. Please try again later or contact a healthcare professional if this is urgent.',
-        hi: 'मुझे खुशी है कि मैं अभी आपका अनुरोध प्रोसेस करने में समस्या हो रही है। कृपया बाद में पुनः प्रयास करें या यदि यह तत्काल है तो किसी स्वास्थ्य पेशेवर से संपर्क करें।',
-        te: 'క్షమించండి, ప్రస్తుతం మీ అభ్యర్థనను ప్రాసెస్ చేయడంలో నాకు ఇబ్బంది ఉంది. దయచేసి తర్వాత మళ్లీ ప్రయత్నించండి లేదా ఇది అత్యవసరమైతే ఆరోగ్య నిపుణుడిని సంప్రదించండి।'
-      };
-      
-      return fallbackMessages[language] || fallbackMessages.en;
+CRITICAL MEDICAL RESPONSE REQUIREMENTS:
+1. ALWAYS include these key medical terms when relevant: ${medicalTermsForLanguage}
+2. MANDATORY: End every medical response with appropriate disclaimer in ${language}
+3. Keep responses SHORT (2-3 sentences max) and practical
+4. Be conversational and helpful
+5. Respond in the EXACT language requested: ${language}${emergencyInstructions}`;
+        
+        const result = await this.model.generateContent(fullPrompt);
+        const response = await result.response;
+        return response.text();
+        
+      } catch (error) {
+        lastError = error;
+        console.error(`Gemini API error (attempt ${attempt + 1}/${maxRetries}):`, error.message);
+        
+        // Check if it's a rate limit error
+        if (error.status === 429 && attempt < maxRetries - 1) {
+          console.log(`🔄 Rate limit hit, rotating API key...`);
+          this.rotateApiKey();
+          // Wait a bit before retrying
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          continue;
+        }
+        
+        // If not rate limit or last attempt, break
+        break;
+      }
     }
+    
+    console.error('All API attempts failed:', lastError?.message);
+    
+    // Return fallback message based on language
+    const fallbackMessages = {
+      en: 'I apologize, but I\'m having trouble processing your request right now. Please try again later or contact a healthcare professional if this is urgent.',
+      hi: 'क्षमा करें, मुझे अभी आपके अनुरोध को संसाधित करने में समस्या हो रही है। कृपया बाद में पुनः प्रयास करें या यदि यह तत्काल है तो स्वास्थ्य पेशेवर से संपर्क करें।',
+      te: 'క్షమించండి, ప్రస్తుతం మీ అభ్యర్థనను ప్రాసెస్ చేయడంలో నాకు ఇబ్బంది ఉంది. దయచేసి తర్వాత మళ్లీ ప్రయత్నించండి లేదా ఇది అత్యవసరమైతే ఆరోగ్య నిపుణుడిని సంప్రదించండి।'
+    };
+    
+    return fallbackMessages[language] || fallbackMessages.en;
+  }
+
+  // Get language-specific medical terms for prompts
+  getLanguageSpecificMedicalTerms(language) {
+    const { medicalTerms } = require('../utils/languageUtils');
+    const terms = medicalTerms[language] || medicalTerms.en;
+    
+    const termsList = [
+      terms.rest[0], terms.fluids[0], terms.medicine[0], 
+      terms.doctor[0], terms.exercise[0], terms.diet[0],
+      terms.weight[0], terms.sugar[0], terms.checkup[0]
+    ];
+    
+    return termsList.join(', ');
   }
 
   // Analyze symptoms with context - enhanced with detailed questions
@@ -165,150 +245,91 @@ Use line breaks between sections and keep each section SHORT and practical.`;
     }
   }
 
-  // Get preventive health tips - enhanced with detailed disease information
+  // Get preventive health tips - enhanced for multilingual accuracy
   async getPreventiveTips(category, userProfile = {}, specificTopic = '') {
     try {
       const language = userProfile.preferred_language || 'en';
       const scriptType = userProfile.script_preference || 'native';
       
+      // Get language-specific medical terms
+      const medicalTermsForLanguage = this.getLanguageSpecificMedicalTerms(language);
+      
       let prompt = '';
       
       if (category === 'disease prevention' || category.includes('disease')) {
         if (specificTopic) {
-          // Specific disease information
-          prompt = `Provide detailed information about "${specificTopic}" disease:
+          prompt = `Give simple prevention advice for ${specificTopic} in ${language}:
 
-📋 *Disease Overview*
-What is ${specificTopic}?
-How common is it?
+MUST include these terms: ${medicalTermsForLanguage}
 
-🔍 *Causes & Risk Factors*
-Main causes
-Who is at risk?
+1. Diet tips with specific foods
+2. Exercise recommendations  
+3. Weight management
+4. Regular checkups needed
+5. When to see doctor
 
-🚨 *Symptoms*
-Early warning signs
-Progressive symptoms
-
-⏰ *Duration & Timeline*
-How long does it last?
-Recovery timeline
-
-💊 *Treatment & Cure*
-Available treatments
-Management options
-
-🛡️ *Prevention Steps*
-Specific preventive measures
-Lifestyle changes
-Vaccination (if applicable)
-
-Use line breaks between sections and keep each section SHORT and practical.`;
+Respond in ${language} language. Keep SHORT and practical.`;
         } else {
-          // General disease prevention
-          prompt = `Provide information about preventing common diseases:
+          prompt = `Give general disease prevention tips in ${language}:
 
-🦠 *Top 3 Preventable Diseases* in India
+MUST include these terms: ${medicalTermsForLanguage}
 
-1. Disease name - key prevention tip
+1. Healthy diet basics
+2. Regular exercise importance
+3. Weight control
+4. Sugar management
+5. Regular health checkups
 
-2. Disease name - key prevention tip
-
-3. Disease name - key prevention tip
-
-🛡️ *Universal Prevention Strategies*
-
-Vaccination schedule
-
-Personal hygiene practices
-
-Lifestyle modifications
-
-Regular health checkups
-
-Include specific, actionable advice. Use line breaks for better readability.`;
+Respond in ${language} language. Keep SHORT and practical.`;
         }
-      } else if (category === 'nutrition and hygiene' || category.includes('nutrition')) {
-        prompt = `Provide comprehensive nutrition and hygiene guidance:
+      } else if (category === 'nutrition' || category.includes('nutrition')) {
+        prompt = `Give nutrition advice in ${language}:
 
-🥗 *Best Nutrition Tips*
+MUST include these terms: ${medicalTermsForLanguage}
 
-3 essential nutrients and food sources
+1. Balanced diet basics
+2. Weight management through food
+3. Sugar control
+4. Vegetables and fruits importance
+5. Water intake
 
-Daily meal planning advice
+Respond in ${language} language. Keep SHORT and practical.`;
+      } else if (category === 'exercise' || category.includes('exercise') || category.includes('fitness')) {
+        prompt = `Give exercise advice in ${language}:
 
-Foods to include and avoid
+MUST include these terms: ${medicalTermsForLanguage}
 
-🧼 *Essential Hygiene Practices*
+1. Basic exercise types
+2. Weight management benefits
+3. Heart health
+4. When to consult doctor
+5. Regular fitness checkups
 
-Personal hygiene routine
+Respond in ${language} language. Keep SHORT and practical.`;
+      } else if (category === 'hygiene' || category.includes('hygiene')) {
+        prompt = `Give hygiene tips in ${language}:
 
-Food safety measures
+MUST include these terms: ${medicalTermsForLanguage}
 
-Environmental cleanliness
+1. Hand washing importance
+2. Body cleanliness
+3. Water quality
+4. Soap usage
+5. When to see doctor for hygiene issues
 
-💡 *Practical Implementation*
-
-Budget-friendly healthy foods
-
-Simple hygiene habits
-
-Daily routine suggestions
-
-Provide SPECIFIC, actionable advice. Use line breaks between sections for better readability.`;
-      } else if (category === 'exercise and lifestyle' || category.includes('exercise')) {
-        prompt = `Provide comprehensive exercise and lifestyle guidance:
-
-🏃 *Best Exercise Tips*
-
-3 types of essential exercises (cardio, strength, flexibility)
-
-Home workout options without equipment
-
-Weekly exercise schedule
-
-🌟 *Healthy Lifestyle Habits*
-
-Sleep hygiene tips
-
-Stress management techniques
-
-Work-life balance strategies
-
-⏰ *Daily Routine Integration*
-
-Morning routines
-
-Workplace wellness tips
-
-Evening wind-down practices
-
-Provide SPECIFIC, actionable advice suitable for all fitness levels. Use line breaks for better readability.`;
+Respond in ${language} language. Keep SHORT and practical.`;
       } else {
-        // General health tips
-        prompt = `Provide general preventive healthcare tips:
+        prompt = `Give general health tips in ${language}:
 
-🎯 *Top 5 Daily Health Habits*
+MUST include these terms: ${medicalTermsForLanguage}
 
-1. Habit - why it matters
+1. Healthy diet
+2. Regular exercise
+3. Good sleep
+4. Drink water
+5. Regular doctor visits
 
-2. Habit - why it matters
-
-3. Habit - why it matters
-
-4. Habit - why it matters
-
-5. Habit - why it matters
-
-🔄 *Weekly Health Routine*
-
-Health checkups schedule
-
-Exercise planning
-
-Meal prep strategies
-
-Provide SPECIFIC, actionable advice. Use line breaks between sections for better readability.`;
+Respond in ${language} language. Keep SHORT and practical.`;
       }
       
       const result = await this.generateResponse(prompt, language, scriptType);

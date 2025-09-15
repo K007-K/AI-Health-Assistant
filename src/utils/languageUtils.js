@@ -79,11 +79,35 @@ You: "Arre sar dard hai? Paracetamol lo, paani zyada piyo, rest karo. Doctor se 
 
 Be helpful and SHORT.`,
 
-  // Native script prompts - SHORT and conversational
-  te: `You are a friendly Telugu healthcare assistant. Respond in Telugu script. Keep responses SHORT (2-3 sentences), conversational, and helpful. Give practical advice, not long explanations.`,
-  hi: `You are a friendly Hindi healthcare assistant. Respond in Hindi script. Keep responses SHORT (2-3 sentences), conversational, and helpful. Give practical advice, not long explanations.`,
-  ta: `You are a friendly Tamil healthcare assistant. Respond in Tamil script. Keep responses SHORT (2-3 sentences), conversational, and helpful. Give practical advice, not long explanations.`,
-  or: `You are a friendly Odia healthcare assistant. Respond in Odia script. Keep responses SHORT (2-3 sentences), conversational, and helpful. Give practical advice, not long explanations.`,
+  // Native script prompts - SHORT and conversational with mandatory medical terms
+  te: `You are a friendly Telugu healthcare assistant. Respond in Telugu script. Keep responses SHORT (2-3 sentences), conversational, and helpful. 
+
+MANDATORY: Include these Telugu medical terms when relevant: విశ్రాంతి (rest), నీరు (water), మందు (medicine), వైద్యుడు (doctor), వ్యాయామం (exercise), ఆహారం (diet), బరువు (weight), చక్కెర (sugar), పరీక్ష (checkup).
+
+For emergencies, MUST use: అత్యవసరం (emergency), ఆసుపత్రి (hospital), వెంటనే (immediately).
+
+ALWAYS end with: ⚠️ సరైన నిర్ధారణ మరియు చికిత్స కోసం వైద్య నిపుణుడిని సంప్రదించండి.`,
+  hi: `You are a friendly Hindi healthcare assistant. Respond in Hindi script. Keep responses SHORT (2-3 sentences), conversational, and helpful.
+
+MANDATORY: Include these Hindi medical terms when relevant: आराम (rest), पानी (water), दवा (medicine), डॉक्टर (doctor), व्यायाम (exercise), आहार (diet), वजन (weight), चीनी (sugar), जांच (checkup).
+
+For emergencies, MUST use: आपातकाल (emergency), अस्पताल (hospital), तुरंत (immediately).
+
+ALWAYS end with: ⚠️ उचित निदान और उपचार के लिए स्वास्थ्य पेशेवर से सलाह लें।`,
+  ta: `You are a friendly Tamil healthcare assistant. Respond in Tamil script. Keep responses SHORT (2-3 sentences), conversational, and helpful.
+
+MANDATORY: Include these Tamil medical terms when relevant: ஓய்வு (rest), தண்ணீர் (water), மருந்து (medicine), மருத்துவர் (doctor), உடற்பயிற்சி (exercise), உணவு (diet), எடை (weight), சர்க்கரை (sugar), பரிசோதனை (checkup).
+
+For emergencies, MUST use: அவசரநிலை (emergency), மருத்துவமனை (hospital), உடனடியாக (immediately).
+
+ALWAYS end with: ⚠️ சரியான நோயறிதல் மற்றும் சிகிச்சைக்கு சுகாதார நிபுணரை அணுகவும்.`,
+  or: `You are a friendly Odia healthcare assistant. Respond in Odia script. Keep responses SHORT (2-3 sentences), conversational, and helpful.
+
+MANDATORY: Include these Odia medical terms when relevant: ବିଶ୍ରାମ (rest), ପାଣି (water), ଔଷଧ (medicine), ଡାକ୍ତର (doctor), ବ୍ୟାୟାମ (exercise), ଖାଦ୍ୟ (diet), ଓଜନ (weight), ଚିନି (sugar), ପରୀକ୍ଷା (checkup), ନିଦ୍ରା (sleep), ଜଳ (water).
+
+For emergencies, MUST use: ଜରୁରୀ (emergency), ଡାକ୍ତରଖାନା (hospital), ତୁରନ୍ତ (immediately).
+
+ALWAYS end with: ⚠️ ସଠିକ ନିଦ୍ରଣ ଏବଂ ଚିକିତ୍ସା ପାଇଁ ସ୍ୱାସ୍ଥ୍ୟ ବିଶେଷଜ୍ଞଙ୍କ ପରାମର୍ଶ ନିଅନ୍ତୁ।`,
   
   // Default English - SHORT and conversational
   en: `You are a friendly healthcare assistant. Provide SHORT, practical medical advice (2-3 sentences max). Be conversational and helpful. Include brief safety disclaimers when needed.`
@@ -165,7 +189,7 @@ Choose an option or go back.`,
 ఒక ఎంపిక ఎంచుకోండి లేదా తిరిగి వెళ్ళండి।`,
     ta: `⚙️ மேலும் விருப்பங்கள் — கூடுதல் சேவைகள்:
 
-1️⃣ உடல்நலக் குறிप்புகள்
+1️⃣ உடல்நலக் குறிப்புகள்
 2️⃣ முன்பதிவுகள் (விரைவில் வரும்)
 3️⃣ கருத்து மற்றும் பரிந்துரைகள்
 
@@ -233,11 +257,77 @@ Select your preferred language:`,
 
 // Emergency keywords in different languages
 const emergencyKeywords = {
-  en: ['emergency', 'severe pain', 'chest pain', 'can\'t breathe', 'heavy bleeding', 'unconscious', 'heart attack', 'stroke', 'difficulty breathing'],
-  hi: ['emergency', 'गंभीर दर्द', 'सीने में दर्द', 'सांस नहीं आ रही', 'खून बह रहा', 'बेहोश', 'दिल का दौरा', 'stroke'],
-  te: ['emergency', 'తీవ్రమైన నొప్పి', 'ఛాతీ నొప్పి', 'ఊపిరి రాలేదు', 'రక్తస్రావం', 'అపస్మారక', 'గుండెపోటు'],
-  ta: ['emergency', 'கடுமையான வலி', 'மார்பு வலி', 'மூச்சு விடமுடியவில்லை', 'அதிக இரத்தப்போக்கு', 'மயக்கம்'],
-  or: ['emergency', 'ତୀବ୍ର ଯନ୍ତ୍ରଣା', 'ଛାତି ଯନ୍ତ୍ରଣା', 'ନିଶ୍ୱାସ ନେଇପାରୁନାହିଁ', 'ରକ୍ତସ୍ରାବ', 'ଚେତନାହୀନ']
+  en: ['emergency', 'severe pain', 'chest pain', 'can\'t breathe', 'heavy bleeding', 'unconscious', 'heart attack', 'stroke', 'difficulty breathing', 'help me', 'urgent', 'critical', 'dying', 'collapse'],
+  hi: ['emergency', 'आपातकाल', 'गंभीर दर्द', 'सीने में दर्द', 'सांस नहीं आ रही', 'खून बह रहा', 'बेहोश', 'दिल का दौरा', 'stroke', 'मदद चाहिए', 'तुरंत मदद', 'गंभीर स्थिति', 'मरने वाला हूं'],
+  te: ['emergency', 'అత్యవసర పరిస్థితి', 'తీవ్రమైన నొప్పి', 'ఛాతీ నొప్పి', 'ఊపిరి రాలేదు', 'రక్తస్రావం', 'అపస్మారక', 'గుండెపోటు', 'సహాయం కావాలి', 'తక్షణ సహాయం', 'తీవ్రమైన పరిస్థితి'],
+  ta: ['emergency', 'அவசரநிலை', 'கடுமையான வலி', 'மார்பு வலி', 'மூச்சு விடமுடியவில்லை', 'அதிக இரத்தப்போக்கு', 'மயக்கம', 'உதவி வேண்டும்', 'உடனடி உதவி'],
+  or: ['emergency', 'ଜରୁରୀ ଅବସ୍ଥା', 'ତୀବ୍ର ଯନ୍ତ୍ରଣା', 'ଛାତି ଯନ୍ତ୍ରଣା', 'ନିଶ୍ୱାସ ନେଇପାରୁନାହିଁ', 'ରକ୍ତସ୍ରାବ', 'ଚେତନାହୀନ', 'ସାହାଯ୍ୟ ଦରକାର']
+};
+
+// Medical terminology mappings for accuracy testing
+const medicalTerms = {
+  en: {
+    rest: ['rest', 'sleep', 'relax'],
+    fluids: ['fluids', 'water', 'liquids', 'drink'],
+    medicine: ['medicine', 'paracetamol', 'medication', 'drugs'],
+    doctor: ['doctor', 'physician', 'healthcare professional'],
+    temperature: ['temperature', 'fever', 'heat'],
+    exercise: ['exercise', 'workout', 'physical activity'],
+    diet: ['diet', 'food', 'nutrition', 'eating'],
+    weight: ['weight', 'body weight', 'obesity'],
+    sugar: ['sugar', 'glucose', 'blood sugar'],
+    checkup: ['checkup', 'examination', 'screening', 'test']
+  },
+  hi: {
+    rest: ['आराम', 'विश्राम', 'सोना'],
+    fluids: ['पानी', 'तरल पदार्थ', 'द्रव'],
+    medicine: ['दवा', 'दवाई', 'पैरासिटामोल', 'औषधि'],
+    doctor: ['डॉक्टर', 'चिकित्सक', 'वैद्य'],
+    temperature: ['तापमान', 'बुखार', 'ज्वर'],
+    exercise: ['व्यायाम', 'कसरत', 'शारीरिक गतिविधि'],
+    diet: ['आहार', 'खाना', 'भोजन', 'पोषण'],
+    weight: ['वजन', 'भार', 'मोटापा'],
+    sugar: ['चीनी', 'शुगर', 'ग्लूकोज', 'मधुमेह'],
+    checkup: ['जांच', 'परीक्षा', 'चेकअप', 'स्क्रीनिंग']
+  },
+  te: {
+    rest: ['విశ్రాంతి', 'నిద్ర', 'రెస్ట్'],
+    fluids: ['నీరు', 'ద్రవాలు', 'పానీయాలు'],
+    medicine: ['మందు', 'ఔషధం', 'పారాసిటమాల్', 'పారాసెటమాల్'],
+    doctor: ['వైద్యుడు', 'డాక్టర్', 'వైద్య నిపుణుడు'],
+    temperature: ['వేడిమి', 'జ్వరం', 'ఫీవర్'],
+    exercise: ['వ్యాయామం', 'కసరత్తు', 'శారీరక కార్యకలాపాలు'],
+    diet: ['ఆహారం', 'భోజనం', 'పోషణ'],
+    weight: ['బరువు', 'వెయిట్', 'ఊబకాయం'],
+    sugar: ['చక్కెర', 'గ్లూకోజ్', 'మధుమేహం'],
+    checkup: ['పరీక్ష', 'చెకప్', 'స్క్రీనింగ్']
+  },
+  ta: {
+    rest: ['ஓய்வு', 'தூக்கம', 'ரெஸ்ட்'],
+    fluids: ['தண்ணீర்', 'திரவங்கள்', 'பானங்கள்'],
+    medicine: ['மருந்து', 'மருத்துவம்', 'பாராசிட்டமால்'],
+    doctor: ['மருத்துவர்', 'டாக்டர்', 'வைத்தியர்'],
+    temperature: ['வெப்பநிலை', 'காய்ச்சல்', 'ஃபீவர்'],
+    exercise: ['உடற்பயிற்சி', 'வர்க்அவுட்', 'உடல் செயல்பாடு'],
+    diet: ['உணவு', 'டயட்', 'ஊட்டச்சத்து'],
+    weight: ['எடை', 'வெயிட்', 'உடல்பருமன்'],
+    sugar: ['சர்க்கரை', 'குளுக்கோஸ்', 'நீரிழிவு'],
+    checkup: ['பரிசோதனை', 'செக்அப்', 'ஸ்கிரீனிங்']
+  },
+  or: {
+    rest: ['ବିଶ୍ରାମ', 'ନିଦ୍ରା', 'ରେଷ୍ଟ'],
+    fluids: ['ପାଣି', 'ତରଳ ପଦାର୍ଥ', 'ପାନୀୟ'],
+    medicine: ['ଔଷଧ', 'ଦବା', 'ପାରାସିଟାମୋଲ'],
+    doctor: ['ଡାକ୍ତର', 'ଚିକିତ୍ସକ', 'ବୈଦ୍ୟ'],
+    temperature: ['ତାପମାତ୍ରା', 'ଜ୍ୱର', 'ଫିଭର'],
+    exercise: ['ବ୍ୟାୟାମ', 'କସରତ', 'ଶାରୀରିକ କାର୍ଯ୍ୟକଳାପ'],
+    diet: ['ଖାଦ୍ୟ', 'ଆହାର', 'ପୋଷଣ'],
+    weight: ['ଓଜନ', 'ଭାର', 'ମୋଟାପଣ'],
+    sugar: ['ଚିନି', 'ଗ୍ଲୁକୋଜ', 'ମଧୁମେହ'],
+    checkup: ['ପରୀକ୍ଷା', 'ଚେକଅପ', 'ସ୍କ୍ରୀନିଂ'],
+    sleep: ['ନିଦ୍ରା', 'ଶୋଇବା', 'ଶୟନ'],
+    water: ['ପାଣି', 'ଜଳ', 'ପାନୀୟ']
+  }
 };
 
 // Utility functions
@@ -312,6 +402,27 @@ class LanguageUtils {
       '/reset': 'Reset all preferences'
     };
   }
+
+  static getMedicalTerms(language = 'en') {
+    return medicalTerms[language] || medicalTerms.en;
+  }
+
+  static checkMedicalTermsInText(text, language = 'en', requiredTerms = []) {
+    const terms = this.getMedicalTerms(language);
+    const lowerText = text.toLowerCase();
+    const results = {};
+    
+    requiredTerms.forEach(termKey => {
+      if (terms[termKey]) {
+        const found = terms[termKey].some(term => 
+          lowerText.includes(term.toLowerCase())
+        );
+        results[termKey] = found;
+      }
+    });
+    
+    return results;
+  }
 }
 
 module.exports = {
@@ -319,5 +430,6 @@ module.exports = {
   languages,
   systemPrompts,
   textTemplates,
-  emergencyKeywords
+  emergencyKeywords,
+  medicalTerms
 };

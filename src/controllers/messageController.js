@@ -552,7 +552,18 @@ class MessageController {
         };
 
         console.log('🦠 Generating disease information for:', diseaseName);
-        const diseaseInfo = await this.geminiService.getPreventiveTips('disease prevention', userProfile, diseaseName);
+        
+        // Use disease_awareness conversation mode for proper disease detection
+        const context = await this.conversationService.getConversationHistory(user.id, 3);
+        const diseaseInfo = await this.geminiService.generateResponse(
+          diseaseName,
+          user.preferred_language,
+          user.script_preference,
+          context,
+          user.accessibility_mode,
+          3,
+          'disease_awareness'
+        );
         
         await this.whatsappService.sendMessage(user.phone_number, diseaseInfo);
         

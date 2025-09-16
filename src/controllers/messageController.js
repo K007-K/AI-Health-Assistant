@@ -446,7 +446,9 @@ class MessageController {
           user.preferred_language,
           user.script_preference,
           context,
-          user.accessibility_mode
+          user.accessibility_mode,
+          3,
+          'general'
         );
       }
 
@@ -488,7 +490,19 @@ class MessageController {
         };
 
         console.log('🩺 Analyzing symptoms:', message, mediaData ? 'with image' : 'text only');
-        const analysis = await this.geminiService.analyzeSymptoms(message, userProfile, mediaData);
+        
+        // Use symptom_check conversation mode for better analysis
+        const analysis = mediaData 
+          ? await this.geminiService.analyzeSymptoms(message, userProfile, mediaData)
+          : await this.geminiService.generateResponse(
+              message,
+              user.preferred_language,
+              user.script_preference,
+              [],
+              user.accessibility_mode,
+              3,
+              'symptom_check'
+            );
         
         await this.whatsappService.sendMessage(user.phone_number, analysis);
         

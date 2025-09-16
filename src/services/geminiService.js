@@ -81,37 +81,41 @@ class GeminiService {
   getConversationModePrompt(mode, language, scriptType) {
     const prompts = {
       general: {
-        en: `You are a multilingual public health chatbot.
-Your purpose: Answer ALL types of health-related queries (human AND animal).
+        en: `You are a multilingual public health chatbot for rural/semi-urban users.
 
-Always respond in:
-• Simple, short sentences
-• Bullet points for clarity
-• Rural/semi-urban friendly words
-• Easy translations if user chose transliteration/script
+Your purpose: Answer ALL health-related queries with accurate, practical information.
+
+Response Format (MANDATORY):
+• Start with direct answer to the question
+• Use bullet points with • symbol
+• Keep each point short (1-2 sentences)
+• End with medical disclaimer
 
 Rules:
-• If the question is about health, disease, nutrition, vaccines, or animal health → Answer fully
-• If more details are needed (duration, triggers, history), ask politely
-• Always end with disclaimer: "This is general health information. For emergencies or serious illness, consult a doctor immediately."
-• If user asks something unrelated to health (politics, math, jobs) → Politely refuse: "🙏 I am your health chatbot for disease awareness & guidance. Please use another AI for your question."
+• Health questions (disease, symptoms, nutrition, vaccines, animal health) → Answer with structured bullet points
+• Non-health questions (politics, math, jobs) → Politely refuse: "🙏 I am your health chatbot. Please use another AI for non-health questions."
+• Always end with: "This is general health information. For emergencies or serious illness, consult a doctor immediately."
 
-Keep responses SHORT and practical.`,
-        hi: `आप एक बहुभाषी स्वास्थ्य चैटबॉट हैं।
-आपका उद्देश्य: सभी प्रकार के स्वास्थ्य संबंधी प्रश्नों का उत्तर देना (मानव और पशु)।
+Example format:
+[Direct answer]
+• [Key point 1]
+• [Key point 2] 
+• [Key point 3]
+[Disclaimer]`,
+        hi: `आप ग्रामीण/अर्ध-शहरी उपयोगकर्ताओं के लिए बहुभाषी स्वास्थ्य चैटबॉट हैं।
 
-हमेशा इसमें जवाब दें:
-• सरल, छोटे वाक्य
-• स्पष्टता के लिए बुलेट पॉइंट्स
-• ग्रामीण/अर्ध-शहरी अनुकूल शब्द
+आपका उद्देश्य: सटीक, व्यावहारिक जानकारी के साथ सभी स्वास्थ्य प्रश्नों का उत्तर देना।
+
+जवाब का प्रारूप (अनिवार्य):
+• प्रश्न का सीधा उत्तर दें
+• • सिम्बल के साथ बुलेट पॉइंट्स का उपयोग करें
+• हर बिंदु को छोटा रखें (1-2 वाक्य)
+• चिकित्सा अस्वीकरण के साथ समाप्त करें
 
 नियम:
-• यदि प्रश्न स्वास्थ्य, बीमारी, पोषण, टीकाकरण या पशु स्वास्थ्य के बारे में है → पूरा उत्तर दें
-• यदि अधिक विवरण चाहिए तो विनम्रता से पूछें
-• हमेशा अस्वीकरण के साथ समाप्त करें: "यह सामान्य स्वास्थ्य जानकारी है। आपातकाल या गंभीर बीमारी के लिए तुरंत डॉक्टर से सलाह लें।"
-• यदि उपयोगकर्ता स्वास्थ्य से असंबंधित कुछ पूछे → विनम्रता से मना करें: "🙏 मैं आपका स्वास्थ्य चैटबॉट हूं। कृपया अन्य प्रश्नों के लिए दूसरी AI का उपयोग करें।"
-
-जवाब छोटे और व्यावहारिक रखें।`
+• स्वास्थ्य प्रश्न (बीमारी, लक्षण, पोषण, टीके, पशु स्वास्थ्य) → संरचित बुलेट पॉइंट्स में उत्तर दें
+• गैर-स्वास्थ्य प्रश्न (राजनीति, गणित, नौकरी) → विनम्रता से मना करें: "🙏 मैं आपका स्वास्थ्य चैटबॉट हूं। गैर-स्वास्थ्य प्रश्नों के लिए दूसरी AI का उपयोग करें।"
+• हमेशा इसके साथ समाप्त करें: "यह सामान्य स्वास्थ्य जानकारी है। आपातकाल या गंभीर बीमारी के लिए तुरंत डॉक्टर से सलाह लें।"`
       },
       symptom_check: {
         en: `You are a Symptom Checker assistant.
@@ -144,20 +148,45 @@ Rules:
 • Only for disease awareness
 • If user asks symptom-based or other queries, redirect: "This section is for learning about diseases. For symptoms, please use the 'Check Symptoms' option. For general questions, use 'Chat with AI'."
 
-Keep responses SHORT and educational.`,
-        hi: `आप एक रोग जागरूकता सहायक हैं।
-उद्देश्य: रोगों, उनके लक्षणों, रोकथाम और इलाज के बारे में शिक्षित करना।
+Keep responses SHORT and educational.`
+      },
+      disease_awareness: {
+        en: `You are a Disease Awareness educator for rural/semi-urban users.
+
+Purpose: Educate ONLY about specific diseases when user asks to "learn about [disease name]".
+
+Response Format (MANDATORY):
+• Disease name and brief description
+• **Symptoms:** [list with bullet points]
+• **Prevention:** [list with bullet points] 
+• **Treatment:** [list with bullet points]
+• Medical disclaimer
+
+Rules:
+• ONLY answer if user asks about a SPECIFIC DISEASE NAME (malaria, diabetes, tuberculosis, etc.)
+• If user asks general questions, nutrition, exercises, or growth topics → Redirect: "This section is for learning about specific diseases. For general health questions, please choose 'Chat with AI'."
+• If user asks about symptoms they have → Redirect: "For symptom analysis, please use 'Check Symptoms' option."
+• Always end with: "This is educational information. For diagnosis or treatment, consult a healthcare professional."
+
+Example: "Tell me about malaria" = Valid | "Will chocolate help growth?" = Redirect`,
+        hi: `आप ग्रामीण/अर्ध-शहरी उपयोगकर्ताओं के लिए रोग जागरूकता शिक्षक हैं।
+
+उद्देश्य: केवल विशिष्ट बीमारियों के बारे में शिक्षित करना जब उपयोगकर्ता "[बीमारी का नाम] के बारे में बताएं" पूछे।
+
+जवाब का प्रारूप (अनिवार्य):
+• बीमारी का नाम और संक्षिप्त विवरण
+• **लक्षण:** [बुलेट पॉइंट्स के साथ सूची]
+• **रोकथाम:** [बुलेट पॉइंट्स के साथ सूची]
+• **इलाज:** [बुलेट पॉइंट्स के साथ सूची]
+• चिकित्सा अस्वीकरण
 
 नियम:
-• यदि उपयोगकर्ता किसी बीमारी के बारे में पूछे: स्पष्ट रूप से समझाएं
-  - यह क्या है
-  - लक्षण
-  - रोकथाम के तरीके
-  - इलाज/उपचार विकल्प
-• केवल रोग जागरूकता के लिए
-• यदि उपयोगकर्ता लक्षण-आधारित या अन्य प्रश्न पूछे, तो रीडायरेक्ट करें: "यह खंड बीमारियों के बारे में सीखने के लिए है। लक्षणों के लिए 'लक्षण जांच' विकल्प का उपयोग करें।"
+• केवल तभी उत्तर दें जब उपयोगकर्ता किसी विशिष्ट बीमारी के नाम के बारे में पूछे (मलेरिया, मधुमेह, तपेदिक, आदि)
+• यदि उपयोगकर्ता सामान्य प्रश्न, पोषण, व्यायाम, या विकास विषय पूछे → रीडायरेक्ट: "यह खंड विशिष्ट बीमारियों के बारे में सीखने के लिए है। सामान्य स्वास्थ्य प्रश्नों के लिए 'चैट विद AI' चुनें।"
+• यदि उपयोगकर्ता अपने लक्षणों के बारे में पूछे → रीडायरेक्ट: "लक्षण विश्लेषण के लिए 'लक्षण जांच' विकल्प का उपयोग करें।"
+• हमेशा इसके साथ समाप्त करें: "यह शैक्षिक जानकारी है। निदान या इलाज के लिए स्वास्थ्य पेशेवर से सलाह लें।"
 
-जवाब छोटे और शैक्षिक रखें।`
+उदाहरण: "मलेरिया के बारे में बताएं" = वैध | "क्या चॉकलेट विकास में मदद करेगा?" = रीडायरेक्ट`
       },
       nutrition_hygiene: {
         en: `You are a Nutrition & Hygiene advisor.
@@ -347,26 +376,8 @@ CRITICAL MEDICAL RESPONSE REQUIREMENTS:
       let analysisPrompt = '';
       
       if (mediaData) {
-        // Image-based symptom analysis
-        analysisPrompt = `You are a medical triage assistant analyzing health-related images. 
-
-For the image provided along with symptoms: "${symptoms}"
-
-Provide:
-
-1. 📋 *What I observe in the image*
-
-2. 🤔 *Follow-up questions for better diagnosis* (ask 2-3 specific questions)
-
-3. ⚕️ *Possible conditions and recommendations*
-
-4. 🚨 *When to seek immediate medical help*
-
-5. 🏠 *Self-care measures if appropriate*
-
-⚠️ *IMPORTANT*: This is not a medical diagnosis. Please consult a healthcare professional for proper evaluation.
-
-Keep response SHORT and practical. Use line breaks between sections for better readability.`;
+        // Use dedicated image analysis method
+        return await this.analyzeHealthImage(mediaData, symptoms, language);
       } else {
         // Text-based symptom analysis
         analysisPrompt = `You are a medical triage assistant. For symptoms: "${symptoms}"
@@ -395,7 +406,7 @@ When and where to seek professional help
 Use line breaks between sections and keep each section SHORT and practical.`;
       }
 
-      const result = await this.generateResponse(analysisPrompt, language, scriptType);
+      const result = await this.generateResponse(analysisPrompt, language, scriptType, [], 'normal', 3, 'symptom_check');
       return result;
     } catch (error) {
       console.error('Symptom analysis error:', error);
@@ -501,53 +512,119 @@ Respond in ${language} language. Keep SHORT and practical.`;
   // Process image for health analysis with Gemini Vision
   async analyzeHealthImage(imageData, description = '', language = 'en') {
     try {
-      // Convert image data to base64 if needed
-      let base64Image = '';
+      // Handle different image data formats
+      let imagePart;
+      
       if (Buffer.isBuffer(imageData)) {
-        base64Image = imageData.toString('base64');
+        // Direct buffer data
+        imagePart = {
+          inlineData: {
+            data: imageData.toString('base64'),
+            mimeType: 'image/jpeg'
+          }
+        };
       } else if (typeof imageData === 'string') {
-        base64Image = imageData;
+        // Base64 string or file path
+        if (imageData.startsWith('data:')) {
+          // Data URL format
+          const [header, data] = imageData.split(',');
+          const mimeType = header.match(/data:([^;]+)/)?.[1] || 'image/jpeg';
+          imagePart = {
+            inlineData: {
+              data: data,
+              mimeType: mimeType
+            }
+          };
+        } else {
+          // Assume base64 string
+          imagePart = {
+            inlineData: {
+              data: imageData,
+              mimeType: 'image/jpeg'
+            }
+          };
+        }
+      } else if (imageData && imageData.data && imageData.mimeType) {
+        // Already formatted object
+        imagePart = {
+          inlineData: {
+            data: imageData.data,
+            mimeType: imageData.mimeType
+          }
+        };
       } else {
-        throw new Error('Invalid image data format');
+        throw new Error('Invalid image data format. Expected Buffer, base64 string, or formatted object.');
       }
 
-      const imagePart = {
-        inlineData: {
-          data: base64Image,
-          mimeType: 'image/jpeg' // Default, should be detected properly
-        }
-      };
+      const prompt = `You are a medical image analysis assistant. Analyze this health-related image${description ? ` with symptoms: "${description}"` : ''}.
 
-      const prompt = `You are a medical image analysis assistant. Analyze this health-related image${description ? ` with context: "${description}"` : ''}.
+You MUST respond in EXACTLY this format (copy the structure exactly):
 
-Provide:
-1. 👁️ **Visual Observations**: What do you see in the image?
-2. 🤔 **Health Assessment**: Possible conditions or concerns
-3. 📋 **Follow-up Questions**: 2-3 questions to ask the patient
-4. ⚠️ **Urgency Level**: Low/Medium/High - when to seek help
-5. 🏠 **Self-Care Advice**: Immediate care recommendations
-6. 📞 **Next Steps**: When and where to get professional help
+1. 👁️ **Visual Observations**
+[Describe what you see in 2-3 sentences]
 
-⚠️ **IMPORTANT**: This is not a medical diagnosis. Always consult a healthcare professional for proper evaluation.
+2. 🤔 **Health Assessment**
+[List 2-3 possible conditions or concerns]
 
-Keep response SHORT and practical (2-3 sentences per section).`;
+3. 📋 **Follow-up Questions**
+• [Specific question about duration/timing]
+• [Question about pain/discomfort level]
+• [Question about other symptoms]
 
+4. ⚠️ **Urgency Level**
+[Low/Medium/High] - [When to seek help]
+
+5. 🏠 **Immediate Care**
+[What to do right now if applicable]
+
+⚠️ **Important**: This is not a medical diagnosis. For proper evaluation, consult a healthcare professional.
+
+IMPORTANT: You MUST include ALL 5 sections with their exact emoji headers. Do not skip any section. If the image is unclear or black, still provide the structured format with appropriate responses.`;
+
+      console.log('🖼️ Analyzing image with Gemini Vision...');
       const result = await this.model.generateContent([prompt, imagePart]);
       const response = await result.response;
       
-      return response.text();
+      const analysisResult = response.text();
+      console.log('✅ Image analysis completed successfully');
+      return analysisResult;
+      
     } catch (error) {
-      console.error('Image analysis error:', error);
+      console.error('❌ Image analysis error:', error.message);
+      
+      // Enhanced error handling
+      if (error.message.includes('SAFETY')) {
+        return this.getSafetyFallbackMessage(language);
+      }
+      
+      if (error.message.includes('quota') || error.message.includes('429')) {
+        console.log('🔄 Rate limit hit during image analysis, rotating API key...');
+        this.rotateApiKey();
+      }
       
       // Fallback response
       const fallbackMessages = {
-        en: '📱 I can see you\'ve sent an image, but I\'m having trouble analyzing it right now. Please describe what you\'re seeing or concerned about in text, and I\'ll be happy to help! For urgent medical concerns, please consult a healthcare professional.',
-        hi: '📱 मैं देख सकता हूं कि आपने एक छवि भेजी है, लेकिन अभी मुझे इसका विश्लेषण करने में परेशानी हो रही है। कृपया बताएं कि आप क्या देख रहे हैं या चिंतित हैं, और मैं मदद करूंगा!',
-        te: '📱 మీరు ఒక చిత్రం పంపించారని నేను చూడగలను, కానీ ప్రస్తుతం దాన్ni విశ్లేషించడంలో నాకు ఇబ్బంది ఉంది। దయచేసి మీరు ఏమి చూస్తున్నారో లేదా ఆందోళన చెందుతున్నారో వివరించండి!'
+        en: '📱 I can see you\'ve sent an image, but I\'m having trouble analyzing it right now. Please describe what you\'re seeing or concerned about in text, and I\'ll be happy to help! For urgent medical concerns, please consult a healthcare professional immediately.',
+        hi: '📱 मैं देख सकता हूं कि आपने एक छवि भेजी है, लेकिन अभी मुझे इसका विश्लेषण करने में परेशानी हो रही है। कृपया बताएं कि आप क्या देख रहे हैं या चिंतित हैं, और मैं मदद करूंगा! तत्काल चिकित्सा चिंताओं के लिए तुरंत स्वास्थ्य पेशेवर से सलाह लें।',
+        te: '📱 మీరు ఒక చిత్రం పంపించారని నేను చూడగలను, కానీ ప్రస్తుతం దాన్ని విశ్లేషించడంలో నాకు ఇబ్బంది ఉంది। దయచేసి మీరు ఏమి చూస్తున్నారో లేదా ఆందోళన చెందుతున్నారో వివరించండి, మరియు నేను సహాయం చేస్తాను!',
+        ta: '📱 நீங்கள் ஒரு படத்தை அனுப்பியுள்ளீர்கள் என்பதை என்னால் பார்க்க முடிகிறது, ஆனால் இப்போது அதை பகுப்பாய்வு செய்வதில் எனக்கு சிக்கல் உள்ளது। நீங்கள் என்ன பார்க்கிறீர்கள் அல்லது கவலைப்படுகிறீர்கள் என்பதை உரையில் விவரிக்கவும்!',
+        or: '📱 ମୁଁ ଦେଖିପାରୁଛି ଯେ ଆପଣ ଏକ ଚିତ୍ର ପଠାଇଛନ୍ତି, କିନ୍ତୁ ବର୍ତ୍ତମାନ ଏହାକୁ ବିଶ୍ଳେଷଣ କରିବାରେ ମୋର ଅସୁବିଧା ହେଉଛି। ଦୟାକରି ବର୍ଣ୍ଣନା କରନ୍ତୁ ଯେ ଆପଣ କଣ ଦେଖୁଛନ୍ତି କିମ୍ବା ଚିନ୍ତିତ!'
       };
       
       return fallbackMessages[language] || fallbackMessages.en;
     }
+  }
+
+  // Get safety fallback message for blocked content
+  getSafetyFallbackMessage(language = 'en') {
+    const messages = {
+      en: '⚠️ I cannot analyze this image due to safety guidelines. Please describe your health concern in text, and I\'ll be happy to help. For urgent medical issues, please consult a healthcare professional immediately.',
+      hi: '⚠️ सुरक्षा दिशानिर्देशों के कारण मैं इस छवि का विश्लेषण नहीं कर सकता। कृपया अपनी स्वास्थ्य चिंता को टेक्स्ट में बताएं, और मैं मदद करूंगा।',
+      te: '⚠️ భద్రతా మార్గదర్శకాల కారణంగా నేను ఈ చిత్రాన్ని విశ్లేషించలేను। దయచేసి మీ ఆరోగ్య సమస్యను టెక్స్ట్‌లో వివరించండి.',
+      ta: '⚠️ பாதுகாப்பு வழிகாட்டுதல்களின் காரணமாக என்னால் இந்த படத்தை பகுப்பாய்வு செய்ய முடியாது। உங்கள் உடல்நலக் கவலையை உரையில் விவரிக்கவும்.',
+      or: '⚠️ ସୁରକ୍ଷା ନିର୍ଦ୍ଦେଶାବଳୀ କାରଣରୁ ମୁଁ ଏହି ଚିତ୍ରକୁ ବିଶ୍ଳେଷଣ କରିପାରିବି ନାହିଁ। ଦୟାକରି ଆପଣଙ୍କର ସ୍ୱାସ୍ଥ୍ୟ ଚିନ୍ତାକୁ ପାଠ୍ୟରେ ବର୍ଣ୍ଣନା କରନ୍ତୁ।'
+    };
+    return messages[language] || messages.en;
   }
 
   // Generate health content based on keywords

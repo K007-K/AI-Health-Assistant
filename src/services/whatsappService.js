@@ -252,8 +252,8 @@ class WhatsAppService {
             { id: 'chat_ai', title: '🤖 Chat with AI', description: 'Ask health questions & get guidance' },
             { id: 'symptom_check', title: '🩺 Check Symptoms', description: 'Analyze symptoms & get recommendations' },
             { id: 'preventive_tips', title: '🌱 Health Tips', description: 'Learn about diseases, nutrition & lifestyle' },
+            { id: 'disease_alerts', title: '🦠 Disease Outbreak Alerts', description: 'View active diseases & manage alerts' },
             { id: 'change_language', title: '🌐 Change Language', description: 'Switch to different language' },
-            { id: 'appointments', title: '📅 My Appointments', description: 'Schedule & track appointments (Coming Soon)' },
             { id: 'feedback', title: '📊 Feedback & Accuracy', description: 'Rate responses & help improve accuracy' }
           ]
         }]
@@ -265,8 +265,8 @@ class WhatsAppService {
             { id: 'chat_ai', title: '🤖 AI से बात करें', description: 'स्वास्थ्य प्रश्न पूछें और मार्गदर्शन पाएं' },
             { id: 'symptom_check', title: '🩺 लक्षण जांचें', description: 'लक्षणों का विश्लेषण करें और सिफारिशें पाएं' },
             { id: 'preventive_tips', title: '🌱 स्वास्थ्य सुझाव', description: 'बीमारियों, पोषण और जीवनशैली के बारे में जानें' },
+            { id: 'disease_alerts', title: '🦠 रोग प्रकोप अलर्ट', description: 'सक्रिय रोग देखें और अलर्ट प्रबंधित करें' },
             { id: 'change_language', title: '🌐 भाषा बदलें', description: 'अलग भाषा में बदलें' },
-            { id: 'appointments', title: '📅 मेरी अपॉइंटमेंट्स', description: 'अपॉइंटमेंट शेड्यूल करें (जल्द आ रहा है)' },
             { id: 'feedback', title: '📊 फीडबैक और सटीकता', description: 'प्रतिक्रियाओं को रेट करें और सटीकता सुधारने में मदद करें' }
           ]
         }]

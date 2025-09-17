@@ -5,10 +5,12 @@ const compression = require('compression');
 const config = require('./config/environment');
 const { testConnection } = require('./config/database');
 const WebhookController = require('./controllers/webhookController');
+const DiseaseMonitoringJobs = require('./jobs/diseaseMonitoringJobs');
 
 // Initialize Express app
 const app = express();
 const webhookController = new WebhookController();
+const diseaseMonitoringJobs = new DiseaseMonitoringJobs();
 
 // Security middleware
 app.use(helmet());
@@ -120,20 +122,27 @@ async function startServer() {
   try {
     // Test database connection on startup
     const dbConnected = await testConnection();
-    if (!dbConnected) {
-      console.log('⚠️  Database connection failed. Please check your Supabase configuration.');
-    }
+    const dbStatus = dbConnected ? '✅ Connected' : '❌ Disconnected';
 
-    app.listen(PORT, () => {
+    app.listen(PORT, async () => {
       console.log(`
-🚀 WhatsApp Healthcare Bot Server Started!
-
-📱 Server running on: http://localhost:${PORT}
+====================================
+🚀 WhatsApp Healthcare Bot Server
+====================================
+✅ Server running on port ${PORT}
 🌍 Environment: ${config.nodeEnv}
-💾 Database: ${dbConnected ? '✅ Connected' : '❌ Disconnected'}
-🤖 AI Model: Gemini 2.0 Flash ${config.gemini.apiKey ? '✅' : '❌'}
-📞 WhatsApp: ${config.whatsapp.accessToken ? '✅ Configured' : '❌ Missing Token'}
+📊 Database: ${dbStatus}
+🤖 AI Service: ${config.gemini.apiKey ? 'Connected' : 'Not configured'}
+💬 WhatsApp: ${config.whatsapp.accessToken ? 'Connected' : 'Not configured'}
+====================================`);
 
+      // Start disease monitoring background jobs
+      console.log('\n🦠 Starting disease monitoring system...');
+      diseaseMonitoringJobs.startJobs();
+      console.log('✅ Disease monitoring system started');
+
+      console.log(`
+====================================
 📋 Available Endpoints:
    GET  /                Health check & bot info
    GET  /health          System health status
@@ -160,11 +169,15 @@ async function startServer() {
 // Graceful shutdown
 process.on('SIGINT', () => {
   console.log('\n🛑 Shutting down server gracefully...');
+  diseaseMonitoringJobs.stopJobs();
+  console.log('✅ Disease monitoring jobs stopped');
   process.exit(0);
 });
 
 process.on('SIGTERM', () => {
   console.log('\n🛑 Shutting down server gracefully...');
+  diseaseMonitoringJobs.stopJobs();
+  console.log('✅ Disease monitoring jobs stopped');
   process.exit(0);
 });
 

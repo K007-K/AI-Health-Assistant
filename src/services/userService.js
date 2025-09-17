@@ -24,7 +24,7 @@ class UserService {
       const newUser = {
         id: uuidv4(),
         phone_number: phoneNumber,
-        preferred_language: 'unknown', // Mark as incomplete onboarding
+        preferred_language: 'en', // Default to English, will be updated during onboarding
         script_preference: 'native',
         accessibility_mode: 'normal',
         consent_data_collection: true,
@@ -216,7 +216,7 @@ class UserService {
   async hasCompletedOnboarding(userId) {
     try {
       const user = await this.getUserById(userId);
-      return user && user.preferred_language && user.preferred_language !== 'unknown';
+      return user && user.onboarding_completed === true;
     } catch (error) {
       console.error('Error checking onboarding status:', error);
       return false;

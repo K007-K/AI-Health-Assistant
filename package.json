@@ -7,7 +7,10 @@
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
     "test": "jest",
-    "test-bot": "node scripts/test-bot.js",
+    "test:watch": "jest --watch",
+    "test:workflow": "node scripts/test-complete-workflow.js",
+    "test:disease-outbreak": "node scripts/test-disease-outbreak-system.js",
+    "setup:db": "node scripts/setup-disease-outbreak-db.js",
     "setup-db": "node database/setup.js",
     "install-deps": "bash scripts/package-install.sh",
     "health": "curl http://localhost:3000/health || echo 'Server not running'"
@@ -28,7 +31,9 @@
     "winston": "^3.11.0",
     "joi": "^17.11.0",
     "moment": "^2.29.4",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "node-cron": "^3.0.3",
+    "xml2js": "^0.6.2"
   },
   "devDependencies": {
     "nodemon": "^3.0.1",

@@ -1,15 +1,24 @@
 const WhatsAppService = require('../services/whatsappService');
+const MockWhatsAppService = require('../services/mockWhatsappService');
 const UserService = require('../services/userService');
 const ConversationService = require('../services/conversationService');
 const GeminiService = require('../services/geminiService');
+const UserFeedbackService = require('../services/feedbackService');
 const { LanguageUtils } = require('../utils/languageUtils');
+const DiseaseAlertService = require('../services/diseaseAlertService');
+const AIDiseaseMonitorService = require('../services/aiDiseaseMonitorService');
 
 class MessageController {
   constructor() {
-    this.whatsappService = new WhatsAppService();
+    // Use mock service in test environment
+    const isTestMode = process.env.NODE_ENV === 'test' || process.env.MOCK_WHATSAPP === 'true';
+    this.whatsappService = isTestMode ? new MockWhatsAppService() : new WhatsAppService();
     this.userService = new UserService();
     this.conversationService = new ConversationService();
     this.geminiService = new GeminiService();
+    this.userFeedbackService = new UserFeedbackService();
+    this.diseaseAlertService = new DiseaseAlertService();
+    this.aiDiseaseMonitorService = new AIDiseaseMonitorService();
   }
 
   // Main message handler - routes messages to appropriate handlers
@@ -52,6 +61,25 @@ class MessageController {
       // Handle accessibility commands
       if (intent === 'accessibility_command') {
         await this.handleAccessibilityCommand(user, content);
+        return;
+      }
+
+      // Handle special commands
+      const lowerContent = content.toLowerCase();
+      if (lowerContent === 'menu' || lowerContent === 'help' || lowerContent === 'start') {
+        await this.showMainMenu(user);
+        return;
+      }
+
+      // Handle STOP ALERTS command
+      if (lowerContent === 'stop alerts' || lowerContent === 'unsubscribe') {
+        await this.handleTurnOffAlerts(user);
+        return;
+      }
+
+      // Handle waiting for alert location
+      if (currentState === 'waiting_for_alert_location') {
+        await this.handleAlertLocationInput(user, content);
         return;
       }
 
@@ -106,8 +134,30 @@ class MessageController {
           break;
 
         case 'feedback':
-        case 'feedback_input':
-          await this.handleFeedback(user, content, currentState);
+        case 'feedback_button':
+        case 'accuracy_report':
+        case 'data_accuracy':
+          await this.handleFeedback(user, content, messageId);
+          break;
+
+        case 'disease_alerts':
+          await this.handleDiseaseAlerts(user);
+          break;
+
+        case 'view_active_diseases':
+          await this.handleViewActiveDiseases(user);
+          break;
+
+        case 'turn_on_alerts':
+          await this.handleTurnOnAlerts(user);
+          break;
+
+        case 'turn_off_alerts':
+          await this.handleTurnOffAlerts(user);
+          break;
+
+        case 'confirm_turn_off_alerts':
+          await this.handleConfirmTurnOffAlerts(user);
           break;
 
         case 'menu_request':
@@ -943,6 +993,253 @@ Type your message below:`;
     } catch (error) {
       console.error('Error in showPreventiveTipsFollowUpOptions:', error);
       // Fail silently
+    }
+  }
+
+  // Handle Disease Outbreak Alerts
+  async handleDiseaseAlerts(user) {
+    try {
+      console.log('🦠 Handling disease outbreak alerts for user:', user.phone_number);
+      
+      // Show disease alerts submenu
+      const menuTexts = {
+        en: '🦠 *Disease Outbreak Alerts*\n\nStay informed about disease outbreaks in your area:',
+        hi: '🦠 *रोग प्रकोप अलर्ट*\n\nअपने क्षेत्र में रोग प्रकोप के बारे में सूचित रहें:'
+      };
+
+      const menuButtons = [
+        { id: 'view_active_diseases', title: '📊 View Active Diseases' },
+        { id: 'turn_on_alerts', title: '🔔 Turn ON Alerts' },
+        { id: 'turn_off_alerts', title: '🔕 Turn OFF Alerts' },
+        { id: 'back_to_menu', title: '↩️ Back to Menu' }
+      ];
+
+      await this.whatsappService.sendInteractiveButtons(
+        user.phone_number,
+        menuTexts[user.preferred_language] || menuTexts.en,
+        menuButtons
+      );
+
+      await this.userService.updateUserSession(user.id, 'disease_alerts');
+      
+    } catch (error) {
+      console.error('Error in handleDiseaseAlerts:', error);
+      await this.handleError(user.phone_number, error);
+    }
+  }
+
+  // Handle viewing active diseases
+  async handleViewActiveDiseases(user, specificDisease = null) {
+    try {
+      console.log('📊 Showing active diseases to user:', user.phone_number);
+      
+      // Get user location from preferences if registered for alerts
+      const { data: alertPrefs } = await this.diseaseAlertService.supabase
+        .from('user_alert_preferences')
+        .select('state, district, pincode')
+        .eq('phone_number', user.phone_number)
+        .single();
+
+      const userLocation = alertPrefs || null;
+      
+      // Get active disease information
+      const diseases = await this.diseaseAlertService.getActiveDiseaseInfo(specificDisease);
+      
+      if (diseases.length === 0) {
+        await this.whatsappService.sendMessage(
+          user.phone_number,
+          '✅ Good news! No major disease outbreaks reported currently.\n\nStay healthy and maintain good hygiene practices!'
+        );
+        return;
+      }
+
+      // Format and send disease information
+      for (const disease of diseases.slice(0, 3)) { // Show top 3 diseases
+        const message = this.diseaseAlertService.formatDiseaseInfo(disease, userLocation);
+        await this.whatsappService.sendMessage(user.phone_number, message);
+        
+        // Add delay between messages
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+
+      // Show follow-up options
+      const followUpButtons = [
+        { id: 'turn_on_alerts', title: '🔔 Get Alerts' },
+        { id: 'disease_alerts', title: '↩️ Back' },
+        { id: 'back_to_menu', title: '🏠 Main Menu' }
+      ];
+
+      await this.whatsappService.sendInteractiveButtons(
+        user.phone_number,
+        'Would you like to receive alerts for disease outbreaks in your area?',
+        followUpButtons
+      );
+      
+    } catch (error) {
+      console.error('Error showing active diseases:', error);
+      await this.handleError(user.phone_number, error);
+    }
+  }
+
+  // Handle turning on alerts
+  async handleTurnOnAlerts(user) {
+    try {
+      console.log('🔔 User requesting to turn on alerts:', user.phone_number);
+      
+      // Check if already registered
+      const isRegistered = await this.diseaseAlertService.isUserRegistered(user.phone_number);
+      
+      if (isRegistered) {
+        await this.whatsappService.sendMessage(
+          user.phone_number,
+          '✅ You are already registered for disease outbreak alerts!\n\nYou will receive notifications about disease outbreaks in your area.\n\nReply "STOP ALERTS" anytime to unsubscribe.'
+        );
+        return;
+      }
+
+      // Ask for location details
+      const locationPrompts = {
+        en: '📍 *Location Required for Alerts*\n\nTo send you relevant disease outbreak alerts, please provide your location:\n\n*Format:* State, District, Pincode\n*Example:* Maharashtra, Mumbai, 400001\n\nPlease enter your location:',
+        hi: '📍 *अलर्ट के लिए स्थान आवश्यक*\n\nआपको प्रासंगिक रोग प्रकोप अलर्ट भेजने के लिए, कृपया अपना स्थान प्रदान करें:\n\n*प्रारूप:* राज्य, जिला, पिनकोड\n*उदाहरण:* महाराष्ट्र, मुंबई, 400001\n\nकृपया अपना स्थान दर्ज करें:'
+      };
+
+      await this.whatsappService.sendMessage(
+        user.phone_number,
+        locationPrompts[user.preferred_language] || locationPrompts.en
+      );
+
+      // Update session to wait for location
+      await this.userService.updateUserSession(user.id, 'waiting_for_alert_location');
+      
+    } catch (error) {
+      console.error('Error in handleTurnOnAlerts:', error);
+      await this.handleError(user.phone_number, error);
+    }
+  }
+
+  // Handle location input for alerts
+  async handleAlertLocationInput(user, location) {
+    try {
+      console.log('📍 Processing location for alerts:', location);
+      
+      // Parse location (expecting format: State, District, Pincode)
+      const parts = location.split(',').map(p => p.trim());
+      
+      if (parts.length < 3) {
+        await this.whatsappService.sendMessage(
+          user.phone_number,
+          '❌ Invalid format. Please provide location as:\nState, District, Pincode\n\nExample: Maharashtra, Mumbai, 400001'
+        );
+        return;
+      }
+
+      const [state, district, pincode] = parts;
+      
+      // Register user for alerts
+      const result = await this.diseaseAlertService.registerUserForAlerts(
+        user.phone_number,
+        user.id,
+        { state, district, pincode }
+      );
+
+      if (result.success) {
+        await this.whatsappService.sendMessage(
+          user.phone_number,
+          `✅ *Alert Registration Successful!*\n\n📍 *Location:* ${district}, ${state} - ${pincode}\n\n🔔 You will now receive real-time disease outbreak alerts for your area.\n\n*Alert Settings:*\n• Severity: Medium and above\n• Frequency: Immediate for critical alerts\n• Time: 8 AM - 8 PM\n\nReply "STOP ALERTS" anytime to unsubscribe.`
+        );
+        
+        // Return to main menu
+        setTimeout(async () => {
+          await this.showMainMenu(user);
+        }, 2000);
+      } else {
+        await this.whatsappService.sendMessage(
+          user.phone_number,
+          '❌ Failed to register for alerts. Please try again later.'
+        );
+      }
+      
+      // Clear waiting state
+      await this.userService.updateUserSession(user.id, 'main_menu');
+      
+    } catch (error) {
+      console.error('Error processing alert location:', error);
+      await this.handleError(user.phone_number, error);
+    }
+  }
+
+  // Handle turning off alerts
+  async handleTurnOffAlerts(user) {
+    try {
+      console.log('🔕 User requesting to turn off alerts:', user.phone_number);
+      
+      // Check if registered
+      const isRegistered = await this.diseaseAlertService.isUserRegistered(user.phone_number);
+      
+      if (!isRegistered) {
+        await this.whatsappService.sendMessage(
+          user.phone_number,
+          '❌ You are not registered for disease alerts.\n\nWould you like to register to receive disease outbreak alerts in your area?'
+        );
+        
+        const buttons = [
+          { id: 'turn_on_alerts', title: '🔔 Register for Alerts' },
+          { id: 'back_to_menu', title: '↩️ Back to Menu' }
+        ];
+        
+        await this.whatsappService.sendInteractiveButtons(
+          user.phone_number,
+          'Choose an option:',
+          buttons
+        );
+        return;
+      }
+
+      // Ask for confirmation
+      const confirmButtons = [
+        { id: 'confirm_turn_off_alerts', title: '✅ Yes, Turn Off' },
+        { id: 'disease_alerts', title: '❌ Cancel' }
+      ];
+
+      await this.whatsappService.sendInteractiveButtons(
+        user.phone_number,
+        '⚠️ *Confirm Turn Off Alerts*\n\nAre you sure you want to stop receiving disease outbreak alerts?\n\nYou will no longer be notified about disease outbreaks in your area.',
+        confirmButtons
+      );
+      
+    } catch (error) {
+      console.error('Error in handleTurnOffAlerts:', error);
+      await this.handleError(user.phone_number, error);
+    }
+  }
+
+  // Handle confirmation to turn off alerts
+  async handleConfirmTurnOffAlerts(user) {
+    try {
+      console.log('✅ Confirming turn off alerts for:', user.phone_number);
+      
+      const result = await this.diseaseAlertService.unregisterUserFromAlerts(user.phone_number);
+      
+      if (result.success) {
+        await this.whatsappService.sendMessage(
+          user.phone_number,
+          '✅ *Alerts Turned Off Successfully*\n\nYou have been unregistered from disease outbreak alerts.\n\nYou can turn them back on anytime from the Disease Alerts menu.\n\nStay healthy! 🌟'
+        );
+      } else {
+        await this.whatsappService.sendMessage(
+          user.phone_number,
+          '❌ Failed to turn off alerts. Please try again later.'
+        );
+      }
+      
+      // Return to main menu
+      setTimeout(async () => {
+        await this.showMainMenu(user);
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Error confirming turn off alerts:', error);
+      await this.handleError(user.phone_number, error);
     }
   }
 

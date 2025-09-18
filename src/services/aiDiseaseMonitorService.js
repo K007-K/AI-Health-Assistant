@@ -51,30 +51,35 @@ class AIDiseaseMonitorService {
     }
   }
 
-  // Fetch current disease status using Gemini AI
+  // Fetch current disease status using Gemini AI with Google Search grounding
   async fetchCurrentDiseaseStatus() {
-    console.log('🤖 Querying Gemini for current disease outbreaks in India...');
+    console.log('🤖 Querying Gemini with Google Search for current disease outbreaks in India...');
     
     const prompt = `
-    Analyze current disease outbreaks and health alerts in India. 
-    Provide information in JSON format for active diseases including:
+    Search for the latest news and health department reports about current disease outbreaks and health alerts in India from the past 30 days. 
+    Provide real-time, up-to-date information in JSON format for active diseases including:
     1. Disease name
-    2. Affected states and districts
-    3. Approximate number of cases (if available)
-    4. Symptoms
-    5. Safety measures
-    6. Prevention methods
-    7. Risk level (low/medium/high/critical)
+    2. Affected states and districts (based on latest news reports)
+    3. Approximate number of cases (if available from official sources)
+    4. Recent symptoms reported
+    5. Safety measures recommended by health authorities
+    6. Prevention methods advised by health departments
+    7. Risk level based on current trends (low/medium/high/critical)
+    8. Latest news sources and dates
     
-    Focus on diseases currently active in India like:
-    - Dengue
-    - Malaria
-    - Chikungunya
-    - COVID-19 variants
-    - Seasonal flu
-    - Typhoid
-    - Hepatitis
-    - Any other current outbreaks
+    Search specifically for current outbreaks in India including:
+    - Dengue outbreaks 2024-2025
+    - Malaria cases in India recent
+    - Chikungunya outbreaks current
+    - COVID-19 variants India latest
+    - Seasonal flu outbreaks India
+    - Typhoid cases India recent
+    - Hepatitis outbreaks India
+    - Brain fever / Encephalitis cases
+    - H1N1 influenza India
+    - Any other disease outbreaks India recent news
+    
+    Use Google Search to find the most recent and credible health department reports, news articles, and official health alerts from Indian states.
     
     Return ONLY valid JSON in this exact format:
     {
@@ -110,14 +115,10 @@ class AIDiseaseMonitorService {
     `;
 
     try {
-      const response = await this.geminiService.generateResponse(
+      const response = await this.geminiService.generateResponseWithGrounding(
         prompt,
         'en',
-        'native',
-        [],
-        'normal',
-        3,
-        'general'
+        3
       );
 
       // Extract JSON from response

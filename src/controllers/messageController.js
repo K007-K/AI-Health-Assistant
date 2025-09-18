@@ -414,10 +414,12 @@ class MessageController {
         script_preference: scriptType
       });
       
-      // Update the user object with new preferences
-      user.script_preference = scriptType;
-
+      // Update the user object with new preferences from the database response
+      user.script_preference = updatedUser.script_preference;
+      
       console.log('✅ User preferences updated with script:', scriptType);
+      console.log('🔍 User object script_preference:', user.script_preference);
+      console.log('🔍 Updated user from DB script_preference:', updatedUser.script_preference);
 
       // Show main menu
       await this.showMainMenu(user);

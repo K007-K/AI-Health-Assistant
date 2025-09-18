@@ -412,7 +412,61 @@ CRITICAL MEDICAL RESPONSE REQUIREMENTS:
     return termsList;
   }
 
-// ... (rest of the code remains the same)
+  // Generate response with Google Search grounding for disease monitoring
+  async generateResponseWithGrounding(prompt, language = 'en', maxRetries = 3) {
+    let lastError = null;
+    
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        // Create a model with Google Search grounding
+        const modelWithGrounding = this.genAI.getGenerativeModel({
+          model: "gemini-2.0-flash-exp",
+          tools: [{
+            googleSearch: {} // Enable Google Search grounding
+          }],
+          generationConfig: {
+            temperature: 0.3, // Lower temperature for factual information
+            topK: 20,
+            topP: 0.8,
+            maxOutputTokens: 2048,
+          },
+        });
+        
+        const result = await modelWithGrounding.generateContent(prompt);
+        const response = await result.response;
+        return response.text();
+        
+      } catch (error) {
+        lastError = error;
+        console.error(`Gemini Grounding API error (attempt ${attempt + 1}/${maxRetries}):`, error.message);
+        
+        // Check if it's a rate limit error
+        if (error.status === 429 && attempt < maxRetries - 1) {
+          console.log(`🔄 Rate limit hit, rotating API key...`);
+          this.rotateApiKey();
+          // Wait a bit before retrying
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          continue;
+        }
+        
+        // If not rate limit or last attempt, break
+        break;
+      }
+    }
+    
+    console.error('All Grounding API attempts failed:', lastError?.message);
+    
+    // Fall back to regular generation without grounding
+    try {
+      const result = await this.model.generateContent(prompt);
+      const response = await result.response;
+      return response.text();
+    } catch (fallbackError) {
+      console.error('Fallback generation also failed:', fallbackError.message);
+      throw lastError || fallbackError;
+    }
+  }
+
   // Analyze symptoms with context - enhanced with detailed questions
   async analyzeSymptoms(symptoms, userProfile = {}, mediaData = null) {
     try {

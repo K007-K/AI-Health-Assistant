@@ -1033,27 +1033,27 @@ Type your message below:`;
       // Use interactive buttons (WhatsApp limit: max 3 buttons)
       const buttonTexts = {
         en: [
-          { id: 'view_active_diseases', title: '📊 View Diseases' },
+          { id: 'view_active_diseases', title: '🦠 Disease Outbreak' },
           { id: 'turn_on_alerts', title: '🔔 Turn ON Alerts' },
           { id: 'turn_off_alerts', title: '🔕 Turn OFF Alerts' }
         ],
         hi: [
-          { id: 'view_active_diseases', title: '📊 रोग देखें' },
+          { id: 'view_active_diseases', title: '🦠 रोग प्रकोप' },
           { id: 'turn_on_alerts', title: '🔔 अलर्ट चालू करें' },
           { id: 'turn_off_alerts', title: '🔕 अलर्ट बंद करें' }
         ],
         te: [
-          { id: 'view_active_diseases', title: '📊 వ్యాధులు చూడండి' },
-          { id: 'turn_on_alerts', title: '🔔 అలర్ट్ ఆన్ చేయండి' },
-          { id: 'turn_off_alerts', title: '🔕 అలర్ट్ ఆఫ్ చేయండి' }
+          { id: 'view_active_diseases', title: '🦠 వ్యాధి వ్యాప్తి' },
+          { id: 'turn_on_alerts', title: '🔔 అలర్ట్ ఆన్ చేయండి' },
+          { id: 'turn_off_alerts', title: '🔕 అలర్ట్ ఆఫ్ చేయండి' }
         ],
         ta: [
-          { id: 'view_active_diseases', title: '📊 நோய்கள் பார்க்கவும்' },
+          { id: 'view_active_diseases', title: '🦠 நோய் விரிவு' },
           { id: 'turn_on_alerts', title: '🔔 எச்சரிக்கை ஆன்' },
           { id: 'turn_off_alerts', title: '🔕 எச்சரிக்கை ஆஃப்' }
         ],
         or: [
-          { id: 'view_active_diseases', title: '📊 ରୋଗ ଦେଖନ୍ତୁ' },
+          { id: 'view_active_diseases', title: '🦠 ରୋଗ ପ୍ରସାର' },
           { id: 'turn_on_alerts', title: '🔔 ସଚେତନା ଚାଲୁ କରନ୍ତୁ' },
           { id: 'turn_off_alerts', title: '🔕 ସଚେତନା ବନ୍ଦ କରନ୍ତୁ' }
         ]
@@ -1153,10 +1153,16 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
     }
   }
 
-  // Handle viewing active diseases
+  // Handle viewing current disease outbreaks with real-time data
   async handleViewActiveDiseases(user, specificDisease = null) {
     try {
-      console.log('📊 Showing active diseases to user:', user.phone_number);
+      console.log('🦠 Showing current disease outbreaks to user:', user.phone_number);
+      
+      // Send loading message
+      await this.whatsappService.sendMessage(
+        user.phone_number,
+        '🔄 Getting latest disease outbreak information for India...'
+      );
       
       // Get user location from preferences if registered for alerts
       const { data: alertPrefs } = await this.diseaseAlertService.supabase
@@ -1167,24 +1173,85 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
 
       const userLocation = alertPrefs || null;
       
-      // Get active disease information
-      const diseases = await this.diseaseAlertService.getActiveDiseaseInfo(specificDisease);
+      // Get real-time disease outbreak data using AI with Google Search
+      let searchQuery = 'current disease outbreaks India latest news health department reports';
+      if (userLocation) {
+        searchQuery += ` ${userLocation.state} ${userLocation.district}`;
+      }
       
-      if (diseases.length === 0) {
+      const aiDiseaseMonitor = require('../services/aiDiseaseMonitorService');
+      const aiMonitor = new aiDiseaseMonitor();
+      
+      try {
+        // Get real-time disease data
+        const diseaseData = await aiMonitor.fetchCurrentDiseaseStatus();
+        
+        if (!diseaseData || !diseaseData.diseases || diseaseData.diseases.length === 0) {
+          await this.whatsappService.sendMessage(
+            user.phone_number,
+            '✅ Good news! No major disease outbreaks reported currently in India.\n\nStay healthy and maintain good hygiene practices!'
+          );
+          return;
+        }
+
+        // Filter diseases relevant to user location if available
+        let relevantDiseases = diseaseData.diseases;
+        if (userLocation && userLocation.state) {
+          const locationSpecific = diseaseData.diseases.filter(disease => 
+            disease.affected_locations?.some(loc => 
+              loc.state?.toLowerCase().includes(userLocation.state.toLowerCase())
+            )
+          );
+          if (locationSpecific.length > 0) {
+            relevantDiseases = [...locationSpecific, ...diseaseData.diseases.filter(d => !locationSpecific.includes(d))];
+          }
+        }
+
+        // Send outbreak summary header
+        const locationText = userLocation ? ` in ${userLocation.state}${userLocation.district ? ', ' + userLocation.district : ''}` : ' in India';
+        const headerText = `🦠 *Current Disease Outbreaks${locationText}*\n\nLatest information as of ${new Date().toLocaleDateString()}:`;
+        
+        await this.whatsappService.sendMessage(user.phone_number, headerText);
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Format and send top 3 disease outbreaks
+        for (const disease of relevantDiseases.slice(0, 3)) {
+          const message = this.formatRealTimeDiseaseInfo(disease, userLocation);
+          await this.whatsappService.sendMessage(user.phone_number, message);
+          
+          // Add delay between messages
+          await new Promise(resolve => setTimeout(resolve, 800));
+        }
+
+        // Send prevention summary
+        const preventionText = `\n🛡️ *General Prevention:*\n• Maintain good hygiene\n• Drink clean water\n• Use mosquito protection\n• Seek medical help if symptoms appear\n\n📍 *Want location-specific alerts?* Register below:`;
+        
+        await this.whatsappService.sendMessage(user.phone_number, preventionText);
+        
+      } catch (aiError) {
+        console.error('AI disease monitoring failed:', aiError);
+        
+        // Fall back to database diseases if AI fails
+        const diseases = await this.diseaseAlertService.getActiveDiseaseInfo(specificDisease);
+        
+        if (diseases.length === 0) {
+          await this.whatsappService.sendMessage(
+            user.phone_number,
+            '✅ No major disease outbreaks found in our database.\n\nNote: Real-time data temporarily unavailable.'
+          );
+          return;
+        }
+
         await this.whatsappService.sendMessage(
           user.phone_number,
-          '✅ Good news! No major disease outbreaks reported currently.\n\nStay healthy and maintain good hygiene practices!'
+          `🦠 *Disease Outbreaks* (Database):${userLocation ? ` in ${userLocation.state}` : ''}`
         );
-        return;
-      }
-
-      // Format and send disease information
-      for (const disease of diseases.slice(0, 3)) { // Show top 3 diseases
-        const message = this.diseaseAlertService.formatDiseaseInfo(disease, userLocation);
-        await this.whatsappService.sendMessage(user.phone_number, message);
         
-        // Add delay between messages
-        await new Promise(resolve => setTimeout(resolve, 500));
+        for (const disease of diseases.slice(0, 3)) {
+          const message = this.diseaseAlertService.formatDiseaseInfo(disease, userLocation);
+          await this.whatsappService.sendMessage(user.phone_number, message);
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
       }
 
       // Show follow-up options
@@ -1196,13 +1263,16 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
 
       await this.whatsappService.sendInteractiveButtons(
         user.phone_number,
-        'Would you like to receive alerts for disease outbreaks in your area?',
+        '📱 Want alerts for disease outbreaks in your area?',
         followUpButtons
       );
       
     } catch (error) {
-      console.error('Error showing active diseases:', error);
-      await this.handleError(user.phone_number, error);
+      console.error('Error showing disease outbreaks:', error);
+      await this.whatsappService.sendMessage(
+        user.phone_number,
+        '❌ Sorry, unable to get disease outbreak information right now. Please try again later.'
+      );
     }
   }
 
@@ -1389,6 +1459,62 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
     };
 
     return texts[key]?.[language] || texts[key]?.en || `Text not found: ${key}`;
+  }
+
+  // Format real-time disease information from AI with Google Search
+  formatRealTimeDiseaseInfo(disease, userLocation = null) {
+    const isLocationRelevant = userLocation && disease.affected_locations?.some(loc => 
+      loc.state?.toLowerCase().includes(userLocation.state?.toLowerCase() || '')
+    );
+    
+    let message = `🦠 *${disease.name}*\n`;
+    
+    // Risk level with emoji
+    const riskEmoji = {
+      'critical': '🔴',
+      'high': '🟠', 
+      'medium': '🟡',
+      'low': '🟢'
+    };
+    
+    message += `${riskEmoji[disease.risk_level] || '🔵'} Risk: ${disease.risk_level?.toUpperCase() || 'UNKNOWN'}\n\n`;
+    
+    // Location-specific information
+    if (isLocationRelevant && userLocation) {
+      const userStateData = disease.affected_locations?.find(loc => 
+        loc.state?.toLowerCase().includes(userLocation.state?.toLowerCase())
+      );
+      
+      if (userStateData) {
+        message += `📍 *In ${userLocation.state}:*\n`;
+        message += `• Cases: ${userStateData.estimated_cases || 'Not specified'}\n`;
+        message += `• Trend: ${userStateData.trend || 'Unknown'}\n\n`;
+      }
+    }
+    
+    // National statistics
+    if (disease.national_stats) {
+      message += `🇮🇳 *National Status:*\n`;
+      message += `• Total Cases: ${disease.national_stats.total_cases || 'Not specified'}\n`;
+      message += `• States Affected: ${disease.national_stats.states_affected || 'Multiple'}\n\n`;
+    }
+    
+    // Symptoms
+    if (disease.symptoms && disease.symptoms.length > 0) {
+      message += `🤧 *Symptoms:* ${disease.symptoms.slice(0, 3).join(', ')}\n\n`;
+    }
+    
+    // Key safety measures
+    if (disease.safety_measures && disease.safety_measures.length > 0) {
+      message += `🛡️ *Safety:* ${disease.safety_measures.slice(0, 2).join(', ')}\n\n`;
+    }
+    
+    // Source information if available
+    if (disease.sources && disease.sources.length > 0) {
+      message += `📰 *Source:* ${disease.sources[0]}\n`;
+    }
+    
+    return message.trim();
   }
 }
 

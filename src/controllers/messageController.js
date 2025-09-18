@@ -1175,10 +1175,10 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
       await new Promise(resolve => setTimeout(resolve, 500));
 
       try {
-        // Get real-time disease data from AI with Google Search
-        const diseaseData = await aiMonitor.fetchCurrentDiseaseStatus();
+        // Get cached or fresh disease data from AI with Google Search
+        const diseaseData = await aiMonitor.getDailyDiseaseOutbreaks();
         
-        if (!diseaseData || !diseaseData.diseases || diseaseData.diseases.length === 0) {
+        if (!diseaseData || diseaseData.length === 0) {
           await this.whatsappService.sendMessage(
             user.phone_number,
             '✅ Good news! No major disease outbreaks reported currently in India.\n\nStay healthy and maintain good hygiene practices!'
@@ -1187,21 +1187,19 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
         }
 
         // Filter diseases relevant to user location if available
-        let relevantDiseases = diseaseData.diseases;
+        let relevantDiseases = diseaseData;
         if (userLocation && userLocation.state) {
-          const locationSpecific = diseaseData.diseases.filter(disease => 
-            disease.affected_locations?.some(loc => 
-              loc.state?.toLowerCase().includes(userLocation.state.toLowerCase())
-            )
+          const locationSpecific = diseaseData.filter(disease => 
+            disease.location?.toLowerCase().includes(userLocation.state.toLowerCase())
           );
           if (locationSpecific.length > 0) {
-            relevantDiseases = [...locationSpecific, ...diseaseData.diseases.filter(d => !locationSpecific.includes(d))];
+            relevantDiseases = [...locationSpecific, ...diseaseData.filter(d => !locationSpecific.includes(d))];
           }
         }
 
         // Format and send top 3 disease outbreaks
         for (const disease of relevantDiseases.slice(0, 3)) {
-          const message = this.formatRealTimeDiseaseNews(disease, userLocation);
+          const message = this.formatSimpleDiseaseNews(disease, userLocation);
           await this.whatsappService.sendMessage(user.phone_number, message);
           
           // Add delay between messages
@@ -1211,13 +1209,11 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
       } catch (aiError) {
         console.error('AI disease monitoring failed:', aiError);
         
-        // Fall back to hardcoded diseases if AI fails
-        const fallbackDiseases = this.getCurrentDiseaseOutbreaks(userLocation);
-        
-        for (const disease of fallbackDiseases) {
-          await this.whatsappService.sendMessage(user.phone_number, disease.message);
-          await new Promise(resolve => setTimeout(resolve, 600));
-        }
+        // Fall back to simple message if everything fails
+        await this.whatsappService.sendMessage(
+          user.phone_number,
+          '🦠 *Current Disease Outbreaks in India*\n\n• Seasonal flu cases reported in multiple states\n• Dengue cases increasing in urban areas\n• Maintain hygiene and seek medical help if needed\n\n🛡️ Stay safe and healthy!'
+        );
       }
 
       // Send prevention summary
@@ -1597,6 +1593,48 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
     }
     
     return message.trim();
+  }
+
+  // Format simple disease news from cached data
+  formatSimpleDiseaseNews(disease, userLocation = null) {
+    const emoji = this.getDiseaseEmoji(disease.name);
+    let headline = `${emoji} *${disease.name}`;
+    
+    if (disease.location) {
+      headline += ` in ${disease.location}`;
+    } else {
+      headline += ` Across India`;
+    }
+    headline += '*';
+    
+    let message = headline + '\n\n';
+    
+    // Add bullet points
+    if (disease.cases) {
+      message += `• ${disease.cases}\n`;
+    }
+    
+    if (disease.symptoms) {
+      message += `• Symptoms: ${disease.symptoms}\n`;
+    }
+    
+    if (disease.prevention) {
+      message += `• Prevention: ${disease.prevention}\n`;
+    }
+    
+    return message.trim();
+  }
+
+  // Get appropriate emoji for disease
+  getDiseaseEmoji(diseaseName) {
+    const name = diseaseName.toLowerCase();
+    if (name.includes('nipah')) return '⚠️';
+    if (name.includes('dengue')) return '🦠';
+    if (name.includes('flu') || name.includes('influenza')) return '🤒';
+    if (name.includes('fever')) return '🌡️';
+    if (name.includes('malaria')) return '🦟';
+    if (name.includes('covid')) return '😷';
+    return '🦠'; // Default
   }
 }
 

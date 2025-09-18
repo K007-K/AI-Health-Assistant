@@ -3,11 +3,10 @@ const GeminiService = require('./geminiService');
 
 class AIDiseaseMonitorService {
   constructor() {
-    this.supabase = createClient(
-      process.env.SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY
-    );
     this.geminiService = new GeminiService();
+    this.supabase = supabase;
+    this.dailyCache = null;
+    this.cacheDate = null;
   }
 
   // Main method to scan for disease outbreaks using AI
@@ -55,64 +54,29 @@ class AIDiseaseMonitorService {
   async fetchCurrentDiseaseStatus() {
     console.log('🤖 Querying Gemini with Google Search for current disease outbreaks in India...');
     
-    const prompt = `
-    Search for the latest news and health department reports about current disease outbreaks and health alerts in India from the past 30 days. 
-    Provide real-time, up-to-date information in JSON format for active diseases including:
-    1. Disease name
-    2. Affected states and districts (based on latest news reports)
-    3. Approximate number of cases (if available from official sources)
-    4. Recent symptoms reported
-    5. Safety measures recommended by health authorities
-    6. Prevention methods advised by health departments
-    7. Risk level based on current trends (low/medium/high/critical)
-    8. Latest news sources and dates
+    const prompt = `Search for current disease outbreaks in India from recent news and health reports. 
     
-    Search specifically for current outbreaks in India including:
-    - Dengue outbreaks 2024-2025
-    - Malaria cases in India recent
-    - Chikungunya outbreaks current
-    - COVID-19 variants India latest
-    - Seasonal flu outbreaks India
-    - Typhoid cases India recent
-    - Hepatitis outbreaks India
-    - Brain fever / Encephalitis cases
-    - H1N1 influenza India
-    - Any other disease outbreaks India recent news
+    Provide information about 3 most significant current disease outbreaks in India in this EXACT format:
     
-    Use Google Search to find the most recent and credible health department reports, news articles, and official health alerts from Indian states.
+    DISEASE 1: [Disease Name]
+    LOCATION: [States/regions affected]
+    CASES: [Number if available, or "Multiple cases reported"]
+    SYMPTOMS: [Main symptoms]
+    PREVENTION: [Key prevention measure]
     
-    Return ONLY valid JSON in this exact format:
-    {
-      "diseases": [
-        {
-          "name": "Disease Name",
-          "type": "viral/bacterial/parasitic",
-          "risk_level": "low/medium/high/critical",
-          "symptoms": ["symptom1", "symptom2"],
-          "safety_measures": ["measure1", "measure2"],
-          "prevention": ["prevention1", "prevention2"],
-          "transmission": "mode of transmission",
-          "affected_locations": [
-            {
-              "state": "State Name",
-              "districts": ["District1", "District2"],
-              "estimated_cases": 1000,
-              "trend": "increasing/decreasing/stable"
-            }
-          ],
-          "national_stats": {
-            "total_cases": 10000,
-            "active_cases": 5000,
-            "states_affected": 10
-          }
-        }
-      ],
-      "data_date": "2024-01-15",
-      "sources": ["WHO", "NCDC", "State Health Departments"]
-    }
+    DISEASE 2: [Disease Name]
+    LOCATION: [States/regions affected] 
+    CASES: [Number if available, or "Multiple cases reported"]
+    SYMPTOMS: [Main symptoms]
+    PREVENTION: [Key prevention measure]
     
-    Base your response on current real-world data and recent news about disease outbreaks in India.
-    `;
+    DISEASE 3: [Disease Name]
+    LOCATION: [States/regions affected]
+    CASES: [Number if available, or "Multiple cases reported"]
+    SYMPTOMS: [Main symptoms]
+    PREVENTION: [Key prevention measure]
+    
+    Focus on recent outbreaks like Nipah virus, H1N1, Dengue, Chikungunya, viral fever, or any other current health alerts in India. Use Google Search to find the most recent information.`;
 
     try {
       const response = await this.geminiService.generateResponseWithGrounding(
@@ -121,16 +85,15 @@ class AIDiseaseMonitorService {
         3
       );
 
-      // Extract JSON from response
-      const jsonMatch = response.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        throw new Error('No valid JSON found in AI response');
-      }
-
-      const diseaseData = JSON.parse(jsonMatch[0]);
-      console.log(`📊 Found ${diseaseData.diseases?.length || 0} diseases from AI scan`);
+      // Parse the structured text response
+      const diseases = this.parseTextResponse(response);
+      console.log(`📊 Found ${diseases.length} diseases from AI scan`);
       
-      return diseaseData;
+      return {
+        diseases: diseases,
+        data_date: new Date().toISOString().split('T')[0],
+        sources: ['Google Search', 'Health Department Reports']
+      };
       
     } catch (error) {
       console.error('Error fetching disease data from AI:', error);
@@ -138,6 +101,197 @@ class AIDiseaseMonitorService {
       // Fallback to manual monitoring for known diseases
       return this.getFallbackDiseaseData();
     }
+  }
+
+  // Parse structured text response from AI
+  parseTextResponse(response) {
+    const diseases = [];
+    
+    // Split response into disease blocks
+    const diseaseBlocks = response.split(/DISEASE \d+:/).slice(1);
+    
+    for (const block of diseaseBlocks) {
+      try {
+        const lines = block.trim().split('\n');
+        const disease = {
+          name: '',
+          affected_locations: [],
+          symptoms: [],
+          safety_measures: [],
+          national_stats: {}
+        };
+        
+        // Extract disease name from first line
+        if (lines[0]) {
+          disease.name = lines[0].trim();
+        }
+        
+        // Parse each field
+        for (const line of lines) {
+          const trimmedLine = line.trim();
+          
+          if (trimmedLine.startsWith('LOCATION:')) {
+            const location = trimmedLine.replace('LOCATION:', '').trim();
+            disease.affected_locations.push({
+              state: location,
+              estimated_cases: 'Multiple cases reported',
+              trend: 'monitoring'
+            });
+          }
+          
+          if (trimmedLine.startsWith('CASES:')) {
+            const cases = trimmedLine.replace('CASES:', '').trim();
+            disease.national_stats.total_cases = cases;
+          }
+          
+          if (trimmedLine.startsWith('SYMPTOMS:')) {
+            const symptoms = trimmedLine.replace('SYMPTOMS:', '').trim();
+            disease.symptoms = symptoms.split(',').map(s => s.trim());
+          }
+          
+          if (trimmedLine.startsWith('PREVENTION:')) {
+            const prevention = trimmedLine.replace('PREVENTION:', '').trim();
+            disease.safety_measures = [prevention];
+          }
+        }
+        
+        // Only add if we have a name
+        if (disease.name) {
+          diseases.push(disease);
+        }
+        
+      } catch (error) {
+        console.error('Error parsing disease block:', error);
+        continue;
+      }
+    }
+    
+    return diseases;
+  }
+
+  // Get daily disease outbreaks with caching
+  async getDailyDiseaseOutbreaks() {
+    const today = new Date().toDateString();
+    
+    // Return cached data if available for today
+    if (this.dailyCache && this.cacheDate === today) {
+      console.log('💾 Using cached disease outbreak data for today');
+      return this.dailyCache;
+    }
+    
+    console.log('🔄 Fetching fresh disease outbreak data for today...');
+    
+    try {
+      // Fetch fresh data using the simplified text approach
+      const response = await this.geminiService.generateResponseWithGrounding(
+        `Search for the 3 most significant current disease outbreaks in India from recent news and health reports. 
+        
+        Provide information in this EXACT format:
+        
+        DISEASE 1: [Disease Name]
+        LOCATION: [States/regions affected]
+        CASES: [Number if available, or "Multiple cases reported"]
+        SYMPTOMS: [Main symptoms]
+        PREVENTION: [Key prevention measure]
+        
+        DISEASE 2: [Disease Name]
+        LOCATION: [States/regions affected] 
+        CASES: [Number if available, or "Multiple cases reported"]
+        SYMPTOMS: [Main symptoms]
+        PREVENTION: [Key prevention measure]
+        
+        DISEASE 3: [Disease Name]
+        LOCATION: [States/regions affected]
+        CASES: [Number if available, or "Multiple cases reported"]
+        SYMPTOMS: [Main symptoms]
+        PREVENTION: [Key prevention measure]
+        
+        Focus on recent outbreaks like Nipah virus, H1N1, Dengue, Chikungunya, viral fever, or any other current health alerts in India.`,
+        'en',
+        3
+      );
+      
+      // Parse the response into simple objects
+      const diseases = this.parseSimpleTextResponse(response);
+      
+      // Cache the results for today
+      this.dailyCache = diseases;
+      this.cacheDate = today;
+      
+      console.log(`📊 Cached ${diseases.length} disease outbreaks for today`);
+      return diseases;
+      
+    } catch (error) {
+      console.error('Error fetching daily disease outbreaks:', error);
+      
+      // Return fallback data if everything fails
+      return [
+        {
+          name: 'Seasonal Flu Outbreak',
+          location: 'Multiple states',
+          cases: 'Cases reported across India',
+          symptoms: 'fever, cough, body aches',
+          prevention: 'wear masks, maintain hygiene'
+        },
+        {
+          name: 'Dengue Cases',
+          location: 'Urban areas',
+          cases: 'Increasing cases in cities',
+          symptoms: 'high fever, headache, joint pain',
+          prevention: 'eliminate stagnant water, use repellents'
+        }
+      ];
+    }
+  }
+  
+  // Parse simple text response into disease objects
+  parseSimpleTextResponse(response) {
+    const diseases = [];
+    const diseaseBlocks = response.split(/DISEASE \d+:/).slice(1);
+    
+    for (const block of diseaseBlocks) {
+      try {
+        const lines = block.trim().split('\n');
+        const disease = {};
+        
+        // Extract disease name from first line
+        if (lines[0]) {
+          disease.name = lines[0].trim();
+        }
+        
+        // Parse each field
+        for (const line of lines) {
+          const trimmedLine = line.trim();
+          
+          if (trimmedLine.startsWith('LOCATION:')) {
+            disease.location = trimmedLine.replace('LOCATION:', '').trim();
+          }
+          
+          if (trimmedLine.startsWith('CASES:')) {
+            disease.cases = trimmedLine.replace('CASES:', '').trim();
+          }
+          
+          if (trimmedLine.startsWith('SYMPTOMS:')) {
+            disease.symptoms = trimmedLine.replace('SYMPTOMS:', '').trim();
+          }
+          
+          if (trimmedLine.startsWith('PREVENTION:')) {
+            disease.prevention = trimmedLine.replace('PREVENTION:', '').trim();
+          }
+        }
+        
+        // Only add if we have a name
+        if (disease.name) {
+          diseases.push(disease);
+        }
+        
+      } catch (error) {
+        console.error('Error parsing disease block:', error);
+        continue;
+      }
+    }
+    
+    return diseases;
   }
 
   // Process and store disease data in database

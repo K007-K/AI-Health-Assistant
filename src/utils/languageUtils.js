@@ -226,6 +226,20 @@ Aaji mun aapanku kipari sahaayya kariparibi? Eka bikalpa baachantu:`
     or_trans: '🔄 Pare bhaasha badalaibaa paain, ye konasi samayare "/language" type karantu.'
   },
 
+  feedback_thanks: {
+    en: '✅ Thank you for your feedback! Your message has been sent to our team for review. We appreciate your input to help us improve the healthcare assistant.',
+    hi: '✅ आपके फीडबैक के लिए धन्यवाद! आपका संदेश समीक्षा के लिए हमारी टीम को भेज दिया गया है। स्वास्थ्य सहायक को बेहतर बनाने में आपके योगदान की हम सराहना करते हैं।',
+    te: '✅ మీ ఫీడ్‌బ్యాక్‌కు ధన్యవాదాలు! మీ సందేశం సమీక్ష కోసం మా బృందానికి పంపబడింది। ఆరోగ్య సహాయకుడిని మెరుగుపరచడంలో మీ సహాయాన్ని మేము అభినందిస్తున్నాము।',
+    ta: '✅ உங்கள் கருத்துக்கு நன்றி! உங்கள் சந்தேசம் அவர்கள் குழுவுக்கு அனுப்பப்பட்டது. ஆரோக்கிய உதவியாளரை மேம்படுத்த உங்கள் உதவியை நாங்கள் பரிசீலிக்கிறோம்.',
+    or: '✅ ଆପଣଙ୍କ ଫିଡବ୍ଯାକ ପାଇଁ ଧନ୍ଯବାଦ! ଆପଣଙ୍କ ସନ୍ଦେଶ ସମୀକ୍ଷା ପାଇଁ ଆମ ଟିମକୁ ପଠାଇ ଦେଇଛି। ସ୍ୱାସ୍ଥ୍ୟ ସହାୟକକୁ ଉନ୍ନତ କରିବାରେ ଆପଣଙ୍କ ସାହାଯ୍ୟକୁ ଆମେ ପ୍ରଶଂସା କରୁଛୁ।',
+    
+    // Transliterated versions
+    hi_trans: '✅ Aapke feedback ke liye dhanyawad! Aapka sandesh sameeksha ke liye hamari team ko bhej diya gaya hai. Swasthya sahayak ko behtar banane mein aapke yogdan ki ham sarahna karte hain.',
+    te_trans: '✅ Mee feedback ku dhanyawadaalu! Mee sandesh sameeksha kosam maa brundaaniki pampabadindi. Aarogya sahayakudini meruguparachadamlo mee sahaayaanni maemu abhinandistunnaamu.',
+    ta_trans: '✅ Ungal karutthukku nanri! Ungal santesam avargal kuzhuvukku anuppappattathu. Aarokkiya uthaviyaarai memppaduttha ungal uthaviyai naangal pariseelikkirom.',
+    or_trans: '✅ Aapankar feedback paain dhanyabaad! Aapankar sandesh sameekshaa paain aam team ku pathaayi deichihi. Swaasthya sahayak ku unnata karibaaare aapankar sahaayya ku aame prashansaa karuchi.'
+  },
+
   more_options_menu: {
     en: `⚙️ More Options — Additional services:
 

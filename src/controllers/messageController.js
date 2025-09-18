@@ -381,11 +381,11 @@ class MessageController {
       console.log('📋 Script selection received:', selection);
       let scriptType = '';
       
-      // Only accept button IDs or numbered options
-      if (selection === 'script_native' || selection === '1' || selection === '1️⃣' || selection.includes('Native script') || selection.includes('script')) {
-        scriptType = 'native';
-      } else if (selection === 'script_trans' || selection === '2' || selection === '2️⃣' || selection.includes('English letters') || selection.includes('letters')) {
+      // Only accept button IDs or numbered options - CHECK TRANSLITERATION FIRST!
+      if (selection === 'script_trans' || selection === '2' || selection === '2️⃣' || selection.includes('English letters') || selection.includes('letters')) {
         scriptType = 'transliteration';
+      } else if (selection === 'script_native' || selection === '1' || selection === '1️⃣' || selection.includes('Native script') || selection.includes('script')) {
+        scriptType = 'native';
       } else {
         // Invalid selection - show script options again
         await this.whatsappService.sendMessage(
@@ -797,16 +797,12 @@ Type your message below:`;
           user.preferred_language
         );
 
-        // Send confirmation
-        const thankYouTexts = {
-          en: '✅ Thank you for your feedback! Your message has been sent to our team for review. We appreciate your input to help us improve the healthcare assistant.',
-          hi: '✅ आपके फीडबैक के लिए धन्यवाद! आपका संदेश समीक्षा के लिए हमारी टीम को भेज दिया गया है। स्वास्थ्य सहायक को बेहतर बनाने में आपके योगदान की हम सराहना करते हैं।',
-          te: '✅ మీ ఫీడ్‌బ్యాక్‌కు ధన్యవాదాలు! మీ సందేశం సమీక్ష కోసం మా బృందానికి పంపబడింది. ఆరోగ్య సహాయకుడిని మెరుగుపరచడంలో మీ సహాయాన్ని మేము అభినందిస్తున్నాము।'
-        };
+        // Send confirmation using getText with script preference
+        const thankYouText = LanguageUtils.getText('feedback_thanks', user.preferred_language, 'en', user.script_preference);
         
         await this.whatsappService.sendMessage(
           user.phone_number,
-          thankYouTexts[user.preferred_language] || thankYouTexts.en
+          thankYouText
         );
 
         // Clear feedback state
@@ -1167,8 +1163,9 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
 
       const userLocation = alertPrefs || null;
       
-      // Create formatted disease data that matches the desired format exactly
-      const currentDiseases = this.getCurrentDiseaseOutbreaks(userLocation);
+      // Get real-time disease outbreak data using AI with Google Search
+      const aiDiseaseMonitor = require('../services/aiDiseaseMonitorService');
+      const aiMonitor = new aiDiseaseMonitor();
       
       // Send main header
       const locationText = userLocation ? ` in ${userLocation.state}${userLocation.district ? ', ' + userLocation.district : ''}` : ' in India';
@@ -1177,10 +1174,50 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
       await this.whatsappService.sendMessage(user.phone_number, headerText);
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      // Send each disease as separate message
-      for (const disease of currentDiseases) {
-        await this.whatsappService.sendMessage(user.phone_number, disease.message);
-        await new Promise(resolve => setTimeout(resolve, 600));
+      try {
+        // Get real-time disease data from AI with Google Search
+        const diseaseData = await aiMonitor.fetchCurrentDiseaseStatus();
+        
+        if (!diseaseData || !diseaseData.diseases || diseaseData.diseases.length === 0) {
+          await this.whatsappService.sendMessage(
+            user.phone_number,
+            '✅ Good news! No major disease outbreaks reported currently in India.\n\nStay healthy and maintain good hygiene practices!'
+          );
+          return;
+        }
+
+        // Filter diseases relevant to user location if available
+        let relevantDiseases = diseaseData.diseases;
+        if (userLocation && userLocation.state) {
+          const locationSpecific = diseaseData.diseases.filter(disease => 
+            disease.affected_locations?.some(loc => 
+              loc.state?.toLowerCase().includes(userLocation.state.toLowerCase())
+            )
+          );
+          if (locationSpecific.length > 0) {
+            relevantDiseases = [...locationSpecific, ...diseaseData.diseases.filter(d => !locationSpecific.includes(d))];
+          }
+        }
+
+        // Format and send top 3 disease outbreaks
+        for (const disease of relevantDiseases.slice(0, 3)) {
+          const message = this.formatRealTimeDiseaseNews(disease, userLocation);
+          await this.whatsappService.sendMessage(user.phone_number, message);
+          
+          // Add delay between messages
+          await new Promise(resolve => setTimeout(resolve, 800));
+        }
+        
+      } catch (aiError) {
+        console.error('AI disease monitoring failed:', aiError);
+        
+        // Fall back to hardcoded diseases if AI fails
+        const fallbackDiseases = this.getCurrentDiseaseOutbreaks(userLocation);
+        
+        for (const disease of fallbackDiseases) {
+          await this.whatsappService.sendMessage(user.phone_number, disease.message);
+          await new Promise(resolve => setTimeout(resolve, 600));
+        }
       }
 
       // Send prevention summary
@@ -1490,6 +1527,76 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
     }
     
     return diseases.slice(0, 3); // Return top 3
+  }
+
+  // Format real-time disease information as news reports
+  formatRealTimeDiseaseNews(disease, userLocation = null) {
+    const isLocationRelevant = userLocation && disease.affected_locations?.some(loc => 
+      loc.state?.toLowerCase().includes(userLocation.state?.toLowerCase() || '')
+    );
+    
+    // Create news headline based on disease name and location
+    let headline = `🦠 *${disease.name} Outbreak`;
+    if (isLocationRelevant && userLocation) {
+      headline += ` in ${userLocation.state}`;
+    } else {
+      headline += ` Across India`;
+    }
+    headline += '*';
+    
+    let message = headline + '\n\n';
+    
+    // Add key information as bullet points
+    const bulletPoints = [];
+    
+    // Add location-specific case information if available
+    if (isLocationRelevant && userLocation) {
+      const userStateData = disease.affected_locations?.find(loc => 
+        loc.state?.toLowerCase().includes(userLocation.state?.toLowerCase())
+      );
+      
+      if (userStateData && userStateData.estimated_cases) {
+        bulletPoints.push(`Local health authorities report ${userStateData.estimated_cases} cases in ${userLocation.state}`);
+      }
+    } else if (disease.national_stats?.total_cases) {
+      bulletPoints.push(`Health authorities report ${disease.national_stats.total_cases} cases nationwide`);
+    }
+    
+    // Add symptoms
+    if (disease.symptoms && disease.symptoms.length > 0) {
+      const symptomText = disease.symptoms.slice(0, 3).join(', ');
+      bulletPoints.push(`Symptoms include ${symptomText.toLowerCase()}`);
+    }
+    
+    // Add safety measures
+    if (disease.safety_measures && disease.safety_measures.length > 0) {
+      bulletPoints.push(disease.safety_measures[0]);
+      if (disease.safety_measures[1]) {
+        bulletPoints.push(disease.safety_measures[1]);
+      }
+    }
+    
+    // Add prevention if available
+    if (disease.prevention && disease.prevention.length > 0) {
+      bulletPoints.push(disease.prevention[0]);
+    }
+    
+    // Add trend information if available
+    if (isLocationRelevant && userLocation) {
+      const userStateData = disease.affected_locations?.find(loc => 
+        loc.state?.toLowerCase().includes(userLocation.state?.toLowerCase())
+      );
+      if (userStateData?.trend) {
+        bulletPoints.push(`Cases are ${userStateData.trend} in the region`);
+      }
+    }
+    
+    // Format bullet points
+    for (const point of bulletPoints.slice(0, 5)) { // Max 5 points
+      message += `• ${point}\n`;
+    }
+    
+    return message.trim();
   }
 }
 

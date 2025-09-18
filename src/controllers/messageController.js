@@ -1451,22 +1451,22 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
     return message.trim();
   }
 
-  // Get current disease outbreaks with proper formatting
+  // Get current disease outbreaks formatted as news reports
   getCurrentDiseaseOutbreaks(userLocation = null) {
     const diseases = [];
     
-    // Dengue - High Risk
+    // Dengue Outbreak - News Format
     diseases.push({
       name: 'Dengue',
       risk: 'HIGH',
-      message: `🦠 *Dengue*\n🔴 Risk: HIGH\n\n🤧 *Symptoms:* High fever, Severe headache, Joint pain\n\n🛡️ *Safety:* Use mosquito repellents, Wear full-sleeve clothes`
+      message: `🦠 *Dengue Outbreak Spreads Across India*\n\n• Health authorities report surge in dengue cases nationwide\n• Symptoms include high fever, severe headache, and joint pain\n• Mosquito breeding sites increase during monsoon season\n• Hospitals advise using repellents and wearing full-sleeve clothes\n• Cases rising in urban areas with stagnant water`
     });
     
-    // Seasonal Flu - Medium Risk  
+    // Seasonal Flu - News Format
     diseases.push({
       name: 'Seasonal Flu',
       risk: 'MEDIUM', 
-      message: `🦠 *Seasonal Flu*\n🟠 Risk: MEDIUM\n\n🤧 *Symptoms:* Fever, Cough, Body aches\n\n🛡️ *Safety:* Wear masks, Maintain hygiene`
+      message: `🤒 *Seasonal Flu Cases Rise with Weather Change*\n\n• Doctors report increased flu cases across multiple states\n• Common symptoms: fever, cough, and body aches\n• Elderly and children most vulnerable to complications\n• Health experts recommend wearing masks in crowded places\n• Vaccination available at government health centers`
     });
     
     // Add location-specific diseases if user location is available
@@ -1476,7 +1476,7 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
         diseases.push({
           name: 'Viral Fever',
           risk: 'MEDIUM',
-          message: `🦠 *Viral Fever*\n🟡 Risk: MEDIUM\n\n🤧 *Symptoms:* Fever, Fatigue, Headache\n\n🛡️ *Safety:* Stay hydrated, Rest adequately`
+          message: `🌡️ *Viral Fever Cases Reported in ${userLocation.state}*\n\n• Local hospitals see increase in viral fever patients\n• Symptoms include high fever, fatigue, and headache\n• Health department attributes rise to seasonal changes\n• Doctors advise staying hydrated and taking adequate rest\n• Most cases recover within 3-5 days with proper care`
         });
       }
       
@@ -1484,7 +1484,7 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
         diseases.push({
           name: 'Nipah Virus', 
           risk: 'HIGH',
-          message: `🦠 *Nipah Virus*\n🔴 Risk: HIGH\n\n🤧 *Symptoms:* Fever, Headache, Respiratory issues\n\n🛡️ *Safety:* Avoid contact with bats, Maintain hygiene`
+          message: `⚠️ *Kerala on High Alert for Nipah Virus*\n\n• State health department issues Nipah virus warning\n• Symptoms include fever, headache, and breathing difficulties\n• Authorities investigating suspected cases in Kozhikode district\n• Public advised to avoid contact with bats and sick animals\n• Isolation wards prepared in major hospitals as precaution`
         });
       }
     }

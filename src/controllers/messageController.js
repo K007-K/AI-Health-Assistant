@@ -1001,48 +1001,66 @@ Type your message below:`;
     try {
       console.log('🦠 Handling disease outbreak alerts for user:', user.phone_number);
       
-      // Show disease alerts submenu
+      // Show disease alerts submenu with interactive buttons (max 3) + follow-up
       const menuTexts = {
         en: '🦠 *Disease Outbreak Alerts*\n\nStay informed about disease outbreaks in your area:',
         hi: '🦠 *रोग प्रकोप अलर्ट*\n\nअपने क्षेत्र में रोग प्रकोप के बारे में सूचित रहें:'
       };
 
+      // Use interactive buttons (WhatsApp limit: max 3 buttons)
       const menuButtons = [
-        { id: 'view_active_diseases', title: '📊 View Active Diseases' },
+        { id: 'view_active_diseases', title: '📊 View Diseases' },
         { id: 'turn_on_alerts', title: '🔔 Turn ON Alerts' },
-        { id: 'turn_off_alerts', title: '🔕 Turn OFF Alerts' },
-        { id: 'back_to_menu', title: '↩️ Back to Menu' }
+        { id: 'turn_off_alerts', title: '🔕 Turn OFF Alerts' }
       ];
 
       try {
-        // Try to send interactive buttons first
+        // Send interactive buttons
         await this.whatsappService.sendInteractiveButtons(
           user.phone_number,
           menuTexts[user.preferred_language] || menuTexts.en,
           menuButtons
         );
-        console.log('✅ Disease alerts submenu sent successfully');
+        
+        // Send follow-up message with additional options
+        setTimeout(async () => {
+          try {
+            const followUpButtons = [
+              { id: 'back_to_menu', title: '↩️ Back to Menu' }
+            ];
+            
+            await this.whatsappService.sendInteractiveButtons(
+              user.phone_number,
+              'Additional options:',
+              followUpButtons
+            );
+          } catch (followUpError) {
+            console.error('Follow-up buttons failed:', followUpError);
+          }
+        }, 1000);
+        
+        console.log('✅ Disease alerts submenu sent as interactive buttons');
+        
       } catch (buttonError) {
-        console.error('❌ Failed to send interactive buttons, trying fallback list:', buttonError);
+        console.error('❌ Interactive buttons failed, using simple text menu:', buttonError);
         
-        // Fallback to list format if buttons fail
-        const listSections = [{
-          title: "🦠 Disease Outbreak Options",
-          rows: [
-            { id: 'view_active_diseases', title: '📊 View Active Diseases', description: 'See current disease outbreaks in your area' },
-            { id: 'turn_on_alerts', title: '🔔 Turn ON Alerts', description: 'Get notified about outbreaks near you' },
-            { id: 'turn_off_alerts', title: '🔕 Turn OFF Alerts', description: 'Stop receiving outbreak notifications' },
-            { id: 'back_to_menu', title: '↩️ Back to Menu', description: 'Return to main menu' }
-          ]
-        }];
+        // Enhanced fallback with clear instructions
+        const textMenu = `${menuTexts[user.preferred_language] || menuTexts.en}
+
+` +
+          `📊 *Type: diseases* - View Active Diseases
+` +
+          `🔔 *Type: alerts on* - Turn ON Alerts
+` +
+          `🔕 *Type: alerts off* - Turn OFF Alerts
+` +
+          `↩️ *Type: menu* - Back to Menu
+
+` +
+          `Just type any of the commands above to continue.`;
         
-        await this.whatsappService.sendList(
-          user.phone_number,
-          menuTexts[user.preferred_language] || menuTexts.en,
-          listSections,
-          'Choose Option'
-        );
-        console.log('✅ Disease alerts submenu sent as list (fallback)');
+        await this.whatsappService.sendMessage(user.phone_number, textMenu);
+        console.log('✅ Disease alerts submenu sent as text (fallback)');
       }
 
       await this.userService.updateUserSession(user.id, 'disease_alerts');

@@ -424,8 +424,13 @@ class MessageController {
   // Show main menu using list (supports 6 options)
   async showMainMenu(user) {
     try {
+      console.log('🔍 DEBUG showMainMenu - User script_preference:', user.script_preference);
+      console.log('🔍 DEBUG showMainMenu - User preferred_language:', user.preferred_language);
+      
       const menuText = LanguageUtils.getText('main_menu', user.preferred_language, 'en', user.script_preference);
       const menuList = this.whatsappService.getMainMenuList(user.preferred_language);
+      
+      console.log('🔍 DEBUG showMainMenu - Generated menu text preview:', menuText.substring(0, 50) + '...');
 
       await this.whatsappService.sendList(
         user.phone_number,
@@ -499,6 +504,9 @@ class MessageController {
         );
       } else {
         // Generate AI response with better prompts
+        console.log('🔍 DEBUG handleAIChat - User script_preference:', user.script_preference);
+        console.log('🔍 DEBUG handleAIChat - User preferred_language:', user.preferred_language);
+        
         aiResponse = await this.geminiService.generateResponse(
           message,
           user.preferred_language,
@@ -508,6 +516,8 @@ class MessageController {
           3,
           'general'
         );
+        
+        console.log('🔍 DEBUG handleAIChat - AI response preview:', aiResponse.substring(0, 50) + '...');
       }
 
       // Send response without menu options (continuous chat)

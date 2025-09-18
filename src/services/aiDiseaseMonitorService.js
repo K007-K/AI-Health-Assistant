@@ -1,17 +1,15 @@
-const { createClient } = require('@supabase/supabase-js');
 const GeminiService = require('./geminiService');
 
 class AIDiseaseMonitorService {
   constructor() {
     this.geminiService = new GeminiService();
-    this.supabase = supabase;
     this.dailyCache = null;
     this.cacheDate = null;
   }
 
-  // Main method to scan for disease outbreaks using AI
+  // Main method to scan for disease outbreaks using AI (now just updates cache)
   async scanForDiseaseOutbreaks() {
-    console.log('🔍 Starting AI-powered disease outbreak scan for India...');
+    console.log('🔍 Starting daily disease outbreak cache update...');
     
     const results = {
       timestamp: new Date(),
@@ -22,25 +20,13 @@ class AIDiseaseMonitorService {
     };
 
     try {
-      // Step 1: Get current disease status from AI
-      const diseaseData = await this.fetchCurrentDiseaseStatus();
+      // Update the daily cache
+      const diseases = await this.getDailyDiseaseOutbreaks();
       
-      // Step 2: Process and store disease information
-      const processed = await this.processDiseaseData(diseaseData);
-      results.outbreaksFound = processed.total;
-      results.updatesPerformed = processed.updated;
-      results.newDiseases = processed.new;
+      results.outbreaksFound = diseases.length;
+      results.updatesPerformed = diseases.length;
       
-      // Step 3: Update location-specific case counts
-      await this.updateLocationCaseCounts(diseaseData);
-      
-      // Step 4: Update national statistics
-      await this.updateNationalStatistics();
-      
-      // Step 5: Log the collection
-      await this.logDataCollection(diseaseData, results);
-      
-      console.log('✅ Disease outbreak scan completed:', results);
+      console.log(`✅ Disease outbreak scan completed:`, results);
       return results;
       
     } catch (error) {
@@ -294,76 +280,17 @@ class AIDiseaseMonitorService {
     return diseases;
   }
 
-  // Process and store disease data in database
+  // Legacy method - no longer needed with caching approach
   async processDiseaseData(diseaseData) {
-    const results = { total: 0, updated: 0, new: [] };
-    
-    if (!diseaseData.diseases || !Array.isArray(diseaseData.diseases)) {
-      return results;
-    }
-
-    for (const disease of diseaseData.diseases) {
-      try {
-        // Check if disease already exists
-        const { data: existing } = await this.supabase
-          .from('active_diseases')
-          .select('id')
-          .eq('disease_name', disease.name)
-          .single();
-
-        if (existing) {
-          // Update existing disease
-          await this.updateDisease(existing.id, disease);
-          results.updated++;
-        } else {
-          // Create new disease entry
-          const newDisease = await this.createDisease(disease);
-          results.new.push(disease.name);
-        }
-        
-        results.total++;
-        
-      } catch (error) {
-        console.error(`Error processing disease ${disease.name}:`, error);
-      }
-    }
-    
-    return results;
+    // This method is kept for compatibility but does nothing
+    // since we now use daily caching instead of database storage
+    return { total: 0, updated: 0, new: [] };
   }
 
-  // Create new disease entry
+  // Legacy method - no longer needed with caching approach
   async createDisease(diseaseInfo) {
-    const { data, error } = await this.supabase
-      .from('active_diseases')
-      .insert({
-        disease_name: diseaseInfo.name,
-        disease_type: diseaseInfo.type || 'unknown',
-        symptoms: diseaseInfo.symptoms || [],
-        safety_measures: diseaseInfo.safety_measures || [],
-        prevention_methods: diseaseInfo.prevention || [],
-        transmission_mode: diseaseInfo.transmission || 'unknown',
-        risk_level: diseaseInfo.risk_level || 'medium',
-        is_active: true,
-        first_reported: new Date()
-      })
-      .select()
-      .single();
-
-    if (error) throw error;
-    
-    console.log(`✅ Added new disease to tracking: ${diseaseInfo.name}`);
-    
-    // Also create location entries for this disease
-    if (diseaseInfo.affected_locations) {
-      await this.createLocationEntries(data.id, diseaseInfo.affected_locations);
-    }
-    
-    // Create national stats entry
-    if (diseaseInfo.national_stats) {
-      await this.createNationalStats(data.id, diseaseInfo.national_stats);
-    }
-    
-    return data;
+    // This method is kept for compatibility but does nothing
+    return null;
   }
 
   // Update existing disease

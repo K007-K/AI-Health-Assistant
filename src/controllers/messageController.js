@@ -262,31 +262,19 @@ class MessageController {
       
       // Update the user object with new preferences
       user.preferred_language = language;
-      const confirmationTexts = {
-        en: '✅ Language changed to English successfully!',
-        hi: '✅ भाषा सफलतापूर्वक हिंदी में बदल गई!',
-        te: '✅ భాష విజయవంతంగా తెలుగులో మారింది!',
-        ta: '✅ மெழி வெற்றிகரமாக தமிழ் இல் மாற்றப்பட்டது!',
-        or: '✅ ଭାଷା ସଫଳତାରେ ଓଡ଼ିଆରେ ବଦଳାଇଲା!'
-      };
+      const confirmationText = LanguageUtils.getText('language_success', language);
       
       await this.whatsappService.sendMessage(
         user.phone_number,
-        confirmationTexts[language] || confirmationTexts.en
+        confirmationText
       );
       
-      // Send language change instruction message
-      const languageChangeInstructions = {
-        en: '🔄 To change language later, just type "/language" at any time.',
-        hi: '🔄 बाद में भाषा बदलने के लिए, कभी भी "/language" टाइप करें।',
-        te: '🔄 తరువాత భాష మార్చాలి అనుకుంటే, ఏ సమయంలోనైనా "/language" టైప్ చేయండి.',
-        ta: '🔄 பின்னர் மொழி மாற்ற வேண்டுமென்றால், ஏதைய நேரத்திலும் "/language" டைப் செய்யவும்.',
-        or: '🔄 ପରେ ଭାଷା ବଦଳାଇବା ପାଇଁ, ଯେ କୋଣସି ସମୟରେ "/language" ଟାଇପ୍ କରନ୍ତୁ।'
-      };
+      // Send language change instruction message (always in native script for language confirmation)
+      const instructionText = LanguageUtils.getText('language_change_instruction', language);
       
       await this.whatsappService.sendMessage(
         user.phone_number,
-        languageChangeInstructions[language] || languageChangeInstructions.en
+        instructionText
       );
 
       // Check if language has script options (for Indian languages)

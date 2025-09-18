@@ -198,6 +198,34 @@ Indru naan ungalukku eppadiyum uthava mudiyum? Oru viruppathai therndhedulkavum:
 Aaji mun aapanku kipari sahaayya kariparibi? Eka bikalpa baachantu:`
   },
 
+  language_success: {
+    en: '✅ Language changed to English successfully!',
+    hi: '✅ भाषा सफलतापूर्वक हिंदी में बदल गई!',
+    te: '✅ భాష విజయవంతంగా తెలుగులో మారింది!',
+    ta: '✅ மொழி வெற்றிகரமாக தமிழ் இல் மாற்றப்பட்டது!',
+    or: '✅ ଭାଷା ସଫଳତାରେ ଓଡ଼ିଆରେ ବଦଳାଇଲା!',
+    
+    // Transliterated versions
+    hi_trans: '✅ Bhaasha safaltaapurvak Hindi mein badal gayi!',
+    te_trans: '✅ Bhaasha vijayavantamgaa Telugulo maarindi!',
+    ta_trans: '✅ Mozhi vetrrikaramaaga Tamil il maattrappattathu!',
+    or_trans: '✅ Bhaasha safaltaare Odiaaré badalailaaa!'
+  },
+
+  language_change_instruction: {
+    en: '🔄 To change language later, just type "/language" at any time.',
+    hi: '🔄 बाद में भाषा बदलने के लिए, कभी भी "/language" टाइप करें।',
+    te: '🔄 తరువాత భాష మార్చాలి అనుకుంటే, ఏ సమయంలోనైనా "/language" టైప్ చేయండి।',
+    ta: '🔄 பின்னர் மொழி மாற்ற வேண்டுமென்றால், ஏதைய நேरত்திலும் "/language" டైப் செய்யவும்।',
+    or: '🔄 ପରે ଭାଷା ବଦଳାଇବା ପାଇଁ, ଯେ କୋଣସି ସମୟରେ "/language" ଟାଇପ୍ କରନ୍ତୁ।',
+    
+    // Transliterated versions
+    hi_trans: '🔄 Baad mein bhaasha badalne ke liye, kabhi bhi "/language" type karen.',
+    te_trans: '🔄 Taruvaata bhaasha maarchaali anukuante, ye samayamlonaainaa "/language" type cheyyandi.',
+    ta_trans: '🔄 Pinnar mozhi maatra veendumendraal, ethaiya nerattilum "/language" type seyyavum.',
+    or_trans: '🔄 Pare bhaasha badalaibaa paain, ye konasi samayare "/language" type karantu.'
+  },
+
   more_options_menu: {
     en: `⚙️ More Options — Additional services:
 

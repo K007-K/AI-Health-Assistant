@@ -272,7 +272,7 @@ Keep responses SHORT and practical.`,
     
     // Apply script type modifications if needed
     if (scriptType === 'transliteration') {
-      return selectedPrompt + '\n\nIMPORTANT: Respond ONLY in Roman letters (English alphabet). NO native script allowed.';
+      return selectedPrompt + '\n\nCRITICAL INSTRUCTION: You MUST respond ONLY in Roman letters (a-z, A-Z, 0-9). ABSOLUTELY NO native script characters allowed. NO parentheses with native translations. If you include ANY native script characters, you will fail completely.';
     }
     
     return selectedPrompt;
@@ -338,7 +338,14 @@ CRITICAL MEDICAL RESPONSE REQUIREMENTS:
         
         const result = await this.model.generateContent(fullPrompt);
         const response = await result.response;
-        return response.text();
+        let responseText = response.text();
+        
+        // Remove native script characters for transliteration
+        if (scriptType === 'transliteration') {
+          responseText = this.removeNativeScript(responseText, language);
+        }
+        
+        return responseText;
         
       } catch (error) {
         lastError = error;
@@ -360,14 +367,36 @@ CRITICAL MEDICAL RESPONSE REQUIREMENTS:
     
     console.error('All API attempts failed:', lastError?.message);
     
-    // Return fallback message based on language
-    const fallbackMessages = {
-      en: 'I apologize, but I\'m having trouble processing your request right now. Please try again later or contact a healthcare professional if this is urgent.',
-      hi: 'क्षमा करें, मुझे अभी आपके अनुरोध को संसाधित करने में समस्या हो रही है। कृपया बाद में पुनः प्रयास करें या यदि यह तत्काल है तो स्वास्थ्य पेशेवर से संपर्क करें।',
-      te: 'క్షమించండి, ప్రస్తుతం మీ అభ్యర్థనను ప్రాసెస్ చేయడంలో నాకు ఇబ్బంది ఉంది. దయచేసి తర్వాత మళ్లీ ప్రయత్నించండి లేదా ఇది అత్యవసరమైతే ఆరోగ్య నిపుణుడిని సంప్రదించండి।'
+    return fallbackMessages[language] || fallbackMessages.en;
+  }
+
+  // Remove native script characters for transliteration
+  removeNativeScript(text, language) {
+    let cleanText = text;
+    
+    // Define Unicode ranges for each language's script
+    const scriptRanges = {
+      hi: /[\u0900-\u097F]/g, // Devanagari (Hindi)
+      te: /[\u0C00-\u0C7F]/g, // Telugu
+      ta: /[\u0B80-\u0BFF]/g, // Tamil
+      or: /[\u0B00-\u0B7F]/g  // Odia
     };
     
-    return fallbackMessages[language] || fallbackMessages.en;
+    const range = scriptRanges[language];
+    if (range) {
+      // Remove native script characters
+      cleanText = cleanText.replace(range, '');
+      
+      // Clean up any remaining parentheses that might be empty
+      cleanText = cleanText.replace(/\(\s*\)/g, '');
+      
+      // Clean up extra spaces
+      cleanText = cleanText.replace(/\s+/g, ' ').trim();
+      
+      console.log(`🔄 Removed native script characters for ${language} transliteration`);
+    }
+    
+    return cleanText;
   }
 
   // Get language-specific medical terms for prompts
@@ -377,13 +406,13 @@ CRITICAL MEDICAL RESPONSE REQUIREMENTS:
     
     const termsList = [
       terms.rest[0], terms.fluids[0], terms.medicine[0], 
-      terms.doctor[0], terms.exercise[0], terms.diet[0],
-      terms.weight[0], terms.sugar[0], terms.checkup[0]
-    ];
+      terms.doctor[0], terms.exercise[0]
+    ].join(', ');
     
-    return termsList.join(', ');
+    return termsList;
   }
 
+// ... (rest of the code remains the same)
   // Analyze symptoms with context - enhanced with detailed questions
   async analyzeSymptoms(symptoms, userProfile = {}, mediaData = null) {
     try {

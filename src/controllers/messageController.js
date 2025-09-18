@@ -1004,15 +1004,42 @@ Type your message below:`;
       // Show disease alerts submenu with interactive buttons (max 3) + follow-up
       const menuTexts = {
         en: '🦠 *Disease Outbreak Alerts*\n\nStay informed about disease outbreaks in your area:',
-        hi: '🦠 *रोग प्रकोप अलर्ट*\n\nअपने क्षेत्र में रोग प्रकोप के बारे में सूचित रहें:'
+        hi: '🦠 *रोग प्रकोप अलर्ट*\n\nअपने क्षेत्र में रोग प्रकोप के बारे में सूचित रहें:',
+        te: '🦠 *వ్యాధి వ్యాప్తి హెచ్చరికలు*\n\nమీ ప్రాంతంలో వ్యాధి వ్యాప్తి గురించి సూచనలు పొందండి:',
+        ta: '🦠 *நோய் விரிவு எச்சரிக்கைகள்*\n\nஉங்கள் பரிசரத்தில் நோய் விரிவு குறித்து தகவல் பெறுங்கள்:',
+        or: '🦠 *ରୋଗ ପ୍ରସାର ସଚେତନା*\n\nଆପଣଙ୍କ ଅଞ୍ଚଳରେ ରୋଗ ପ୍ରସାର ବିଷୟରେ ସୂଚିତ ରହନ୍ତୁ:'
       };
 
       // Use interactive buttons (WhatsApp limit: max 3 buttons)
-      const menuButtons = [
-        { id: 'view_active_diseases', title: '📊 View Diseases' },
-        { id: 'turn_on_alerts', title: '🔔 Turn ON Alerts' },
-        { id: 'turn_off_alerts', title: '🔕 Turn OFF Alerts' }
-      ];
+      const buttonTexts = {
+        en: [
+          { id: 'view_active_diseases', title: '📊 View Diseases' },
+          { id: 'turn_on_alerts', title: '🔔 Turn ON Alerts' },
+          { id: 'turn_off_alerts', title: '🔕 Turn OFF Alerts' }
+        ],
+        hi: [
+          { id: 'view_active_diseases', title: '📊 रोग देखें' },
+          { id: 'turn_on_alerts', title: '🔔 अलर्ट चालू करें' },
+          { id: 'turn_off_alerts', title: '🔕 अलर्ट बंद करें' }
+        ],
+        te: [
+          { id: 'view_active_diseases', title: '📊 వ్యాధులు చూడండి' },
+          { id: 'turn_on_alerts', title: '🔔 అలర్ट్ ఆన్ చేయండి' },
+          { id: 'turn_off_alerts', title: '🔕 అలర్ट్ ఆఫ్ చేయండి' }
+        ],
+        ta: [
+          { id: 'view_active_diseases', title: '📊 நோய்கள் பார்க்கவும்' },
+          { id: 'turn_on_alerts', title: '🔔 எச்சரிக்கை ஆன்' },
+          { id: 'turn_off_alerts', title: '🔕 எச்சரிக்கை ஆஃப்' }
+        ],
+        or: [
+          { id: 'view_active_diseases', title: '📊 ରୋଗ ଦେଖନ୍ତୁ' },
+          { id: 'turn_on_alerts', title: '🔔 ସଚେତନା ଚାଲୁ କରନ୍ତୁ' },
+          { id: 'turn_off_alerts', title: '🔕 ସଚେତନା ବନ୍ଦ କରନ୍ତୁ' }
+        ]
+      };
+      
+      const menuButtons = buttonTexts[user.preferred_language] || buttonTexts.en;
 
       try {
         // Send interactive buttons
@@ -1025,14 +1052,26 @@ Type your message below:`;
         // Send follow-up message with additional options
         setTimeout(async () => {
           try {
-            const followUpButtons = [
-              { id: 'back_to_menu', title: '↩️ Back to Menu' }
-            ];
+            const followUpTexts = {
+              en: 'Additional options:',
+              hi: 'अतिरिक्त विकल्प:',
+              te: 'అతిరిక్త వिకల్पాలు:',
+              ta: 'கூடுதல் வिகல்पங்கள்:',
+              or: 'ଅତिରिକ୍ତ ବिକଲ்प:'
+            };
+            
+            const followUpButtons = {
+              en: [{ id: 'back_to_menu', title: '↩️ Back to Menu' }],
+              hi: [{ id: 'back_to_menu', title: '↩️ मेनू में वापस' }],
+              te: [{ id: 'back_to_menu', title: '↩️ मेनూకు తिరिగि వెళ్ళండि' }],
+              ta: [{ id: 'back_to_menu', title: '↩️ मெனுவिல் தिருम்पவுम்' }],
+              or: [{ id: 'back_to_menu', title: '↩️ मେନୁକୁ ଫिରिଯिବा' }]
+            };
             
             await this.whatsappService.sendInteractiveButtons(
               user.phone_number,
-              'Additional options:',
-              followUpButtons
+              followUpTexts[user.preferred_language] || followUpTexts.en,
+              followUpButtons[user.preferred_language] || followUpButtons.en
             );
           } catch (followUpError) {
             console.error('Follow-up buttons failed:', followUpError);
@@ -1045,19 +1084,42 @@ Type your message below:`;
         console.error('❌ Interactive buttons failed, using simple text menu:', buttonError);
         
         // Enhanced fallback with clear instructions
+        const fallbackTexts = {
+          en: `📊 *Type: diseases* - View Active Diseases
+🔔 *Type: alerts on* - Turn ON Alerts
+🔕 *Type: alerts off* - Turn OFF Alerts
+↩️ *Type: menu* - Back to Menu
+
+Just type any of the commands above to continue.`,
+          hi: `📊 *लिखें: diseases* - सक्रिय रोग देखें
+🔔 *लिखें: alerts on* - अलर्ट चालू करें
+🔕 *लिखें: alerts off* - अलर्ट बंद करें
+↩️ *लिखें: menu* - मेनू में वापस
+
+आगे बढ़ने के लिए उपरोक्त कमांड में से कोई भी टाइप करें।`,
+          te: `📊 *టाఇप్ చేयండि: diseases* - సక्రिय వ्యाధులు చూడండि
+🔔 *టाఇप్ చేयండि: alerts on* - అలర्ट్ ఆన్ చేयండि
+🔕 *టाఇप్ చేयండि: alerts off* - అలర्ट్ ఆफ్ చేयండि
+↩️ *టाఇप్ చేयండि: menu* - मెనూకు తिరिగि వెళ्ళండि
+
+ముందుకు వెళ्ళడाనिకि మీద కमाండ्లలो ఏదైనा టाఇप్ చేयండि।`,
+          ta: `📊 *டाயिप் செय्यவுम்: diseases* - தற्பोதைय நोय्களை பाர्க्கவுम்
+🔔 *டाயिप் செय्यவுम்: alerts on* - எச्சரिக्கை ஆன்
+🔕 *டाயिप் செय्यவுम்: alerts off* - எச्சரिக्கை ஆफ்
+↩️ *டाயिप் செय्यவுम்: menu* - मெனுவिல் தिருम्पவுम்
+
+தॊடர मேலே உள्ள கमाண्டுகளिல் ஏதைयுम் டाயिप் செय्यவுम்।`,
+          or: `📊 *ଲिଖନ्ତୁ: diseases* - ସକ्ରिय ରोଗ ଦେଖନ्ତୁ
+🔔 *ଲिଖନ्ତୁ: alerts on* - ସଚେତନा ଚाଲୁ କରନ्ତୁ
+🔕 *ଲिଖନ्ତୁ: alerts off* - ସଚେତନा ବନ्ଦ କରନ्ତୁ
+↩️ *ଲिଖନ्ତୁ: menu* - मେନୁକୁ ଫिରियिବा
+
+ଆଗକୁ बଢ़िबा ପाଇଁ ଉपରोକ्ତ କमाଣ्ଡ मଧ्यରୁ ଯେକोଣସि ଲिଖନ्ତୁ।`
+        };
+        
         const textMenu = `${menuTexts[user.preferred_language] || menuTexts.en}
 
-` +
-          `📊 *Type: diseases* - View Active Diseases
-` +
-          `🔔 *Type: alerts on* - Turn ON Alerts
-` +
-          `🔕 *Type: alerts off* - Turn OFF Alerts
-` +
-          `↩️ *Type: menu* - Back to Menu
-
-` +
-          `Just type any of the commands above to continue.`;
+${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
         
         await this.whatsappService.sendMessage(user.phone_number, textMenu);
         console.log('✅ Disease alerts submenu sent as text (fallback)');

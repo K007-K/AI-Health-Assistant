@@ -181,7 +181,21 @@ How can I help you today? Choose an option:`,
 இன்று நான் உங்களுக்கு எப்படி உதவ முடியும்? ஒரு விருப்பத்தைத் தேர்ந்தெடுக்கவும்:`,
     or: `👋 ନମସ୍କାର! ମୁଁ ଆପଣଙ୍କର ସ୍ୱାସ୍ଥ୍ୟ ସହାୟକ।
 
-ଆଜି ମୁଁ ଆପଣଙ୍କୁ କିପରି ସାହାଯ୍ୟ କରିପାରିବି? ଏକ ବିକଳ୍ପ ବାଛନ୍ତୁ:`
+ଆଜି ମୁଁ ଆପଣଙ୍କୁ କିପରି ସାହାଯ୍ୟ କରିପାରିବି? ଏକ ବିକଳ୍ପ ବାଛନ୍ତୁ:`,
+    
+    // Transliterated versions
+    hi_trans: `👋 Namaste! Main aapka swasthya sahayak hun.
+
+Aaj main aapki kaise madad kar sakta hun? Ek vikalp chuniye:`,
+    te_trans: `👋 Hello! Nenu mee aarogya sahayakudini.
+
+Eeroju nenu meeku ela sahayam cheyagalanu? Oka empik enchukondi:`,
+    ta_trans: `👋 Vanakkam! Naan ungal sugaathaara uthaviyaalar.
+
+Indru naan ungalukku eppadiyum uthava mudiyum? Oru viruppathai therndhedulkavum:`,
+    or_trans: `👋 Namaskar! Mun aapankar swaasthya sahayak.
+
+Aaji mun aapanku kipari sahaayya kariparibi? Eka bikalpa baachantu:`
   },
 
   more_options_menu: {
@@ -360,7 +374,16 @@ class LanguageUtils {
     return systemPrompts[key] || systemPrompts.en;
   }
 
-  static getText(key, language = 'en', fallback = 'en') {
+  static getText(key, language = 'en', fallback = 'en', scriptType = 'native') {
+    // Try transliterated version first if requested
+    if (scriptType === 'transliteration' && language !== 'en') {
+      const transKey = `${language}_trans`;
+      if (textTemplates[key] && textTemplates[key][transKey]) {
+        return textTemplates[key][transKey];
+      }
+    }
+    
+    // Fall back to native script version
     if (textTemplates[key] && textTemplates[key][language]) {
       return textTemplates[key][language];
     }

@@ -434,7 +434,7 @@ class MessageController {
   // Show main menu using list (supports 6 options)
   async showMainMenu(user) {
     try {
-      const menuText = LanguageUtils.getText('main_menu', user.preferred_language);
+      const menuText = LanguageUtils.getText('main_menu', user.preferred_language, 'en', user.script_preference);
       const menuList = this.whatsappService.getMainMenuList(user.preferred_language);
 
       await this.whatsappService.sendList(

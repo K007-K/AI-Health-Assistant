@@ -160,6 +160,9 @@ class ConversationService {
     if (trimmedMessage.includes('🔕 Turn OFF Alerts') || lowerMessage.includes('turn off alerts') || lowerMessage === 'alerts off') return 'turn_off_alerts';
     if (trimmedMessage.includes('📊 Feedback') || lowerMessage.includes('feedback & accuracy')) return 'feedback';
     
+    // Language change commands
+    if (message === '/language' || lowerMessage === '/language') return 'change_language';
+    
     // More options menu selections and Change Language from main menu
     if (trimmedMessage.includes('🌐 Change Language') || trimmedMessage.includes('🌐 भाषा बदलें') || trimmedMessage.includes('🌐 భాష మార్చండి') || lowerMessage.includes('change language') || lowerMessage.includes('switch to different language')) return 'change_language';
     if (message === 'change_language') return 'change_language';

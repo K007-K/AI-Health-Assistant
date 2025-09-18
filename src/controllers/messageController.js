@@ -262,8 +262,6 @@ class MessageController {
       
       // Update the user object with new preferences
       user.preferred_language = language;
-
-      // Send confirmation message in selected language
       const confirmationTexts = {
         en: '✅ Language changed to English successfully!',
         hi: '✅ भाषा सफलतापूर्वक हिंदी में बदल गई!',
@@ -275,6 +273,20 @@ class MessageController {
       await this.whatsappService.sendMessage(
         user.phone_number,
         confirmationTexts[language] || confirmationTexts.en
+      );
+      
+      // Send language change instruction message
+      const languageChangeInstructions = {
+        en: '🔄 To change language later, just type "/language" at any time.',
+        hi: '🔄 बाद में भाषा बदलने के लिए, कभी भी "/language" टाइप करें।',
+        te: '🔄 తరువాత భాష మార్చాలి అనుకుంటే, ఏ సమయంలోనైనా "/language" టైప్ చేయండి.',
+        ta: '🔄 பின்னர் மொழி மாற்ற வேண்டுமென்றால், ஏதைய நேரத்திலும் "/language" டைப் செய்யவும்.',
+        or: '🔄 ପରେ ଭାଷା ବଦଳାଇବା ପାଇଁ, ଯେ କୋଣସି ସମୟରେ "/language" ଟାଇପ୍ କରନ୍ତୁ।'
+      };
+      
+      await this.whatsappService.sendMessage(
+        user.phone_number,
+        languageChangeInstructions[language] || languageChangeInstructions.en
       );
 
       // Check if language has script options (for Indian languages)

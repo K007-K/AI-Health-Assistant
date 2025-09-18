@@ -141,7 +141,11 @@ class ConversationService {
     if (message === 'appointments') return 'appointments';
     if (message === 'preventive_tips') return 'preventive_tips';
     if (message === 'symptom_check') return 'symptom_check';
-    if (message === 'outbreak_alerts') return 'outbreak_alerts';
+    if (message === 'disease_alerts') return 'disease_alerts';
+    if (message === 'view_active_diseases') return 'view_active_diseases';
+    if (message === 'turn_on_alerts') return 'turn_on_alerts';
+    if (message === 'turn_off_alerts') return 'turn_off_alerts';
+    if (message === 'back_to_menu') return 'menu_request';
     if (message === 'feedback') return 'feedback';
     
     // Handle text-based selections (when users type the display text)
@@ -150,7 +154,10 @@ class ConversationService {
     if (trimmedMessage.includes('📅 My Appointments') || lowerMessage.includes('my appointments') || lowerMessage.includes('appointments')) return 'appointments';
     if (trimmedMessage.includes('🌱 Health Tips') || trimmedMessage.includes('🌱 Preventive Healthcare Tips') || lowerMessage.includes('health tips') || lowerMessage.includes('preventive tips')) return 'preventive_tips';
     if (trimmedMessage.includes('🩺 Check Symptoms') || lowerMessage.includes('check symptoms') || lowerMessage.includes('symptom check')) return 'symptom_check';
-    if (trimmedMessage.includes('🚨 Outbreak Alerts') || lowerMessage.includes('outbreak alerts')) return 'outbreak_alerts';
+    if (trimmedMessage.includes('🦠 Disease Outbreak Alerts') || lowerMessage.includes('disease outbreak alerts') || lowerMessage.includes('outbreak alerts')) return 'disease_alerts';
+    if (trimmedMessage.includes('📊 View Active Diseases') || lowerMessage.includes('view active diseases')) return 'view_active_diseases';
+    if (trimmedMessage.includes('🔔 Turn ON Alerts') || lowerMessage.includes('turn on alerts')) return 'turn_on_alerts';
+    if (trimmedMessage.includes('🔕 Turn OFF Alerts') || lowerMessage.includes('turn off alerts')) return 'turn_off_alerts';
     if (trimmedMessage.includes('📊 Feedback') || lowerMessage.includes('feedback & accuracy')) return 'feedback';
     
     // More options menu selections and Change Language from main menu

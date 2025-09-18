@@ -1014,11 +1014,36 @@ Type your message below:`;
         { id: 'back_to_menu', title: '↩️ Back to Menu' }
       ];
 
-      await this.whatsappService.sendInteractiveButtons(
-        user.phone_number,
-        menuTexts[user.preferred_language] || menuTexts.en,
-        menuButtons
-      );
+      try {
+        // Try to send interactive buttons first
+        await this.whatsappService.sendInteractiveButtons(
+          user.phone_number,
+          menuTexts[user.preferred_language] || menuTexts.en,
+          menuButtons
+        );
+        console.log('✅ Disease alerts submenu sent successfully');
+      } catch (buttonError) {
+        console.error('❌ Failed to send interactive buttons, trying fallback list:', buttonError);
+        
+        // Fallback to list format if buttons fail
+        const listSections = [{
+          title: "🦠 Disease Outbreak Options",
+          rows: [
+            { id: 'view_active_diseases', title: '📊 View Active Diseases', description: 'See current disease outbreaks in your area' },
+            { id: 'turn_on_alerts', title: '🔔 Turn ON Alerts', description: 'Get notified about outbreaks near you' },
+            { id: 'turn_off_alerts', title: '🔕 Turn OFF Alerts', description: 'Stop receiving outbreak notifications' },
+            { id: 'back_to_menu', title: '↩️ Back to Menu', description: 'Return to main menu' }
+          ]
+        }];
+        
+        await this.whatsappService.sendList(
+          user.phone_number,
+          menuTexts[user.preferred_language] || menuTexts.en,
+          listSections,
+          'Choose Option'
+        );
+        console.log('✅ Disease alerts submenu sent as list (fallback)');
+      }
 
       await this.userService.updateUserSession(user.id, 'disease_alerts');
       

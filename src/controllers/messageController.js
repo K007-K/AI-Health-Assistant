@@ -256,9 +256,12 @@ class MessageController {
       }
 
       // Update user language preference
-      await this.userService.updateUserPreferences(user.id, {
+      const updatedUser = await this.userService.updateUserPreferences(user.id, {
         preferred_language: language
       });
+      
+      // Update the user object with new preferences
+      user.preferred_language = language;
 
       // Send confirmation message in selected language
       const confirmationTexts = {
@@ -395,9 +398,12 @@ class MessageController {
       console.log('✅ Script type selected:', scriptType);
 
       // Update user script preference
-      await this.userService.updateUserPreferences(user.id, {
+      const updatedUser = await this.userService.updateUserPreferences(user.id, {
         script_preference: scriptType
       });
+      
+      // Update the user object with new preferences
+      user.script_preference = scriptType;
 
       console.log('✅ User preferences updated with script:', scriptType);
 

@@ -50,6 +50,26 @@ class MockWhatsAppService {
     return { messages: [{ id: mockMessageId }] };
   }
 
+  // Mock send interactive list (simplified interface)
+  async sendInteractiveList(phoneNumber, message, buttonText, items) {
+    console.log(`📱 MOCK: Sending interactive list to ${phoneNumber}`);
+    console.log(`💬 Message: ${message}`);
+    console.log(`🔘 Button: ${buttonText}`);
+    console.log(`📋 Items: ${items.length} items`);
+    
+    // Convert items to sections format and use sendList
+    const sections = [{
+      title: 'Options',
+      rows: items.map(item => ({
+        id: item.id,
+        title: item.title.length > 24 ? item.title.substring(0, 21) + '...' : item.title,
+        description: item.description || ''
+      }))
+    }];
+    
+    return await this.sendList(phoneNumber, message, sections, buttonText);
+  }
+
   // Mock send list
   async sendList(phoneNumber, message, sections, buttonText) {
     console.log(`📱 MOCK: Sending list to ${phoneNumber}`);
@@ -69,7 +89,10 @@ class MockWhatsAppService {
       type: 'list'
     });
     
-    return { messages: [{ id: mockMessageId }] };
+    return { 
+      messages: [{ id: mockMessageId }],
+      success: true 
+    };
   }
 
   // Get language selection list (same as real service)

@@ -94,6 +94,30 @@ class WhatsAppService {
     }
   }
 
+  // Send interactive list message (simplified interface)
+  async sendInteractiveList(to, text, buttonText, items) {
+    try {
+      console.log(`📱 Sending interactive list with ${items.length} items...`);
+      
+      // Convert items to WhatsApp list format
+      const sections = [{
+        title: 'Options',
+        rows: items.map(item => ({
+          id: item.id,
+          title: item.title.length > 24 ? item.title.substring(0, 21) + '...' : item.title,
+          description: item.description || ''
+        }))
+      }];
+      
+      // Use the existing sendList method
+      return await this.sendList(to, text, sections, buttonText);
+      
+    } catch (error) {
+      console.error('❌ Error in sendInteractiveList:', error.message);
+      throw error;
+    }
+  }
+
   // Send list message (for menu options)
   async sendList(to, text, sections, buttonText = 'Choose Option') {
     try {

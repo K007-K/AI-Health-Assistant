@@ -1388,10 +1388,10 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
         );
       }
 
-      // Send multilingual prevention summary
-      const preventionText = LanguageUtils.getText('disease_prevention_summary', user.preferred_language, 'en', user.script_preference);
+      // Generate disease-specific prevention recommendations
+      const specificPrevention = this.generateDiseaseSpecificPrevention(relevantDiseases, user.preferred_language, user.script_preference);
       
-      await this.whatsappService.sendMessage(user.phone_number, preventionText);
+      await this.whatsappService.sendMessage(user.phone_number, specificPrevention);
 
       // Show follow-up options
       const followUpButtons = [
@@ -1822,6 +1822,173 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
   // Keep the original method for backward compatibility
   formatSimpleDiseaseNews(disease, userLocation = null) {
     return this.formatLocationAwareDiseaseNews(disease, userLocation);
+  }
+
+  // Generate disease-specific prevention recommendations based on actual diseases shown
+  generateDiseaseSpecificPrevention(diseases, language = 'en', script = 'native') {
+    if (!diseases || diseases.length === 0) {
+      return LanguageUtils.getText('disease_prevention_summary', language, 'en', script);
+    }
+
+    // Analyze diseases to determine specific prevention measures
+    const preventionCategories = {
+      vectorBorne: false,    // Dengue, Chikungunya, Malaria, Zika
+      respiratory: false,    // COVID-19, H1N1, H3N2, TB
+      waterBorne: false,     // Cholera, Typhoid, Hepatitis A/E, Diarrhea
+      foodBorne: false,      // Food poisoning, Hepatitis A
+      contactBorne: false,   // Skin infections, Conjunctivitis
+      zoonotic: false       // Nipah, Bird flu, Anthrax
+    };
+
+    const specificDiseases = [];
+
+    // Categorize diseases based on their names and transmission modes
+    diseases.forEach(disease => {
+      const diseaseName = disease.name.toLowerCase();
+      specificDiseases.push(disease.name);
+
+      // Vector-borne diseases
+      if (diseaseName.includes('dengue') || diseaseName.includes('chikungunya') || 
+          diseaseName.includes('malaria') || diseaseName.includes('zika') ||
+          diseaseName.includes('japanese encephalitis')) {
+        preventionCategories.vectorBorne = true;
+      }
+
+      // Respiratory diseases
+      if (diseaseName.includes('covid') || diseaseName.includes('h1n1') || 
+          diseaseName.includes('h3n2') || diseaseName.includes('influenza') ||
+          diseaseName.includes('flu') || diseaseName.includes('tuberculosis') ||
+          diseaseName.includes('pneumonia')) {
+        preventionCategories.respiratory = true;
+      }
+
+      // Water-borne diseases
+      if (diseaseName.includes('cholera') || diseaseName.includes('typhoid') || 
+          diseaseName.includes('hepatitis') || diseaseName.includes('diarrhea') ||
+          diseaseName.includes('dysentery') || diseaseName.includes('gastroenteritis')) {
+        preventionCategories.waterBorne = true;
+      }
+
+      // Food-borne diseases
+      if (diseaseName.includes('food poisoning') || diseaseName.includes('salmonella') ||
+          diseaseName.includes('hepatitis a')) {
+        preventionCategories.foodBorne = true;
+      }
+
+      // Contact-borne diseases
+      if (diseaseName.includes('conjunctivitis') || diseaseName.includes('skin infection') ||
+          diseaseName.includes('scabies') || diseaseName.includes('ringworm')) {
+        preventionCategories.contactBorne = true;
+      }
+
+      // Zoonotic diseases
+      if (diseaseName.includes('nipah') || diseaseName.includes('bird flu') ||
+          diseaseName.includes('anthrax') || diseaseName.includes('rabies') ||
+          diseaseName.includes('melioidosis')) {
+        preventionCategories.zoonotic = true;
+      }
+    });
+
+    // Build specific prevention recommendations
+    const preventionMeasures = [];
+
+    if (preventionCategories.vectorBorne) {
+      preventionMeasures.push({
+        en: '🦟 **Mosquito Protection:** Use bed nets, repellents, remove stagnant water',
+        hi: '🦟 **मच्छर सुरक्षा:** मच्छरदानी का उपयोग करें, रिपेलेंट लगाएं, रुका हुआ पानी हटाएं',
+        te: '🦟 **దోమల రక్షణ:** దోమల వలలు, రిపెల్లెంట్లు వాడండి, నిల్వ నీరు తొలగించండి',
+        ta: '🦟 **கொசு பாதுகாப்பு:** கொசு வலைகள், விரட்டிகள் பயன்படுத்தவும், தேங்கிய நீரை அகற்றவும்',
+        or: '🦟 **ମଶା ସୁରକ୍ଷା:** ମଶା ଜାଲ, ରିପେଲେଣ୍ଟ ବ୍ୟବହାର କରନ୍ତୁ, ଜମା ପାଣି ହଟାନ୍ତୁ'
+      });
+    }
+
+    if (preventionCategories.respiratory) {
+      preventionMeasures.push({
+        en: '😷 **Respiratory Protection:** Wear masks, avoid crowds, maintain ventilation',
+        hi: '😷 **श्वसन सुरक्षा:** मास्क पहनें, भीड़ से बचें, हवादार जगह रहें',
+        te: '😷 **శ్వాసకోశ రక్షణ:** మాస్కులు ధరించండి, గుంపులను తప్పించండి, వెంటిలేషన్ ఉంచండి',
+        ta: '😷 **சுவாச பாதுకாப்பு:** முகக்கவசம் அணியவும், கூட்டத்தைத் தவிர்க்கவும், காற்றோட்டம் வைக்கவும்',
+        or: '😷 **ଶ୍ୱାସକୋଶ ସୁରକ୍ଷା:** ମାସ୍କ ପିନ୍ଧନ୍ତୁ, ଭିଡ଼ ଏଡାନ୍ତୁ, ବାୟୁ ଚଳାଚଳ ରଖନ୍ତୁ'
+      });
+    }
+
+    if (preventionCategories.waterBorne) {
+      preventionMeasures.push({
+        en: '💧 **Water Safety:** Drink boiled/filtered water, avoid street food, wash hands',
+        hi: '💧 **पानी की सुरक्षा:** उबला/फिल्टर किया पानी पिएं, स्ट्रीट फूड से बचें, हाथ धोएं',
+        te: '💧 **నీటి భద్రత:** ఉడకబెట్టిన/ఫిల్టర్ చేసిన నీరు త్రాగండి, వీధి ఆహారం తప్పించండి, చేతులు కడుక్కోండి',
+        ta: '💧 **நீர் பாதுகாப்பு:** கொதித்த/வடிகட்டிய நீர் குடிக்கவும், தெரு உணவைத் தவிர்க்கவும், கைகளைக் கழுவவும்',
+        or: '💧 **ପାଣି ସୁରକ୍ଷା:** ଫୁଟାଇଥିବା/ଫିଲ୍ଟର କରିଥିବା ପାଣି ପିଅନ୍ତୁ, ରାସ୍ତା ଖାଦ୍ୟ ଏଡାନ୍ତୁ, ହାତ ଧୋଇନ୍ତୁ'
+      });
+    }
+
+    if (preventionCategories.foodBorne) {
+      preventionMeasures.push({
+        en: '🍽️ **Food Safety:** Eat freshly cooked food, avoid raw items, maintain kitchen hygiene',
+        hi: '🍽️ **भोजन सुरक्षा:** ताजा पका खाना खाएं, कच्चे खाद्य से बचें, रसोई की सफाई रखें',
+        te: '🍽️ **ఆహార భద్రత:** తాజాగా వండిన ఆహారం తినండి, పచ్చి వస్తువులను తప్పించండి, వంటగది పరిశుభ్రత ఉంచండి',
+        ta: '🍽️ **உணவு பாதுகாப்பு:** புதிதாக சமைத்த உணவு சாப்பிடவும், பச்சை பொருட்களைத் தவிர்க்கவும், சமையலறை சுகாதாரம் பராமரிக்கவும்',
+        or: '🍽️ **ଖାଦ୍ୟ ସୁରକ୍ଷା:** ତାଜା ରନ୍ଧା ଖାଦ୍ୟ ଖାଆନ୍ତୁ, କଞ୍ଚା ଜିନିଷ ଏଡାନ୍ତୁ, ରୋଷେଇ ଘରର ସଫାତା ରଖନ୍ତୁ'
+      });
+    }
+
+    if (preventionCategories.contactBorne) {
+      preventionMeasures.push({
+        en: '🤝 **Contact Prevention:** Avoid sharing personal items, maintain personal hygiene',
+        hi: '🤝 **संपर्क रोकथाम:** व्यक्तिगत वस्तुएं साझा न करें, व्यक्तिगत स्वच्छता बनाए रखें',
+        te: '🤝 **సంపర్క నివారణ:** వ్యక్తిగత వస్తువులను పంచుకోవద్దు, వ్యక్తిగత పరిశుభ్రత ఉంచండి',
+        ta: '🤝 **தொடர்பு தடுப்பு:** தனிப்பட்ட பொருட்களைப் பகிர்ந்து கொள்ளாதீர்கள், தனிப்பட்ட சுகாதாரத்தை பராமரிக்கவும்',
+        or: '🤝 **ସମ୍ପର୍କ ନିବାରଣ:** ବ୍ୟକ୍ତିଗତ ଜିନିଷ ବାଣ୍ଟନ୍ତୁ ନାହିଁ, ବ୍ୟକ୍ତିଗତ ସଫାତା ରଖନ୍ତୁ'
+      });
+    }
+
+    if (preventionCategories.zoonotic) {
+      preventionMeasures.push({
+        en: '🐾 **Animal Safety:** Avoid contact with sick animals, cook meat thoroughly',
+        hi: '🐾 **पशु सुरक्षा:** बीमार जानवरों से संपर्क न करें, मांस को अच्छी तरह पकाएं',
+        te: '🐾 **జంతు భద్రత:** అనారోగ్య జంతువులతో సంపర్కం తప్పించండి, మాంసాన్ని బాగా వండండి',
+        ta: '🐾 **விலங்கு பாதுकாप்பு:** நோயுள்ள விலங்குகளுடன் தொடர்பைத் தவிர்க்கவும், இறைச்சியை நன்கு சமைக்கவும்',
+        or: '🐾 **ପଶୁ ସୁରକ୍ଷା:** ଅସୁସ୍ଥ ପଶୁମାନଙ୍କ ସହିତ ସମ୍ପର୍କ ଏଡାନ୍ତୁ, ମାଂସକୁ ଭଲ ଭାବରେ ରାନ୍ଧନ୍ତୁ'
+      });
+    }
+
+    // Always add general measures
+    preventionMeasures.push({
+      en: '🏥 **Medical Care:** Seek immediate help if symptoms appear, follow doctor\'s advice',
+      hi: '🏥 **चिकित्सा देखभाल:** लक्षण दिखने पर तुरंत सहायता लें, डॉक्टर की सलाह मानें',
+      te: '🏥 **వైద्య సేవ:** లక్షణాలు కనిపిస్తే వెంటనే సహాయం తీసుకోండి, వైద్యుల సలహా పాటించండి',
+      ta: '🏥 **மருத்துவ பராமரிப்பு:** அறிகுறிகள் தோன்றினால் உடனடியாக உதவி பெறவும், மருத்துவரின் ஆலோசனையைப் பின்பற்றவும்',
+      or: '🏥 **ଚିକିତ୍ସା ସେବା:** ଲକ୍ଷଣ ଦେଖାଗଲେ ତୁରନ୍ତ ସାହାଯ୍ୟ ନିଅନ୍ତୁ, ଡାକ୍ତରଙ୍କ ପରାମର୍ଶ ମାନନ୍ତୁ'
+    });
+
+    // Build the final message
+    const headerText = {
+      en: '🛡️ **Specific Prevention for Current Outbreaks:**',
+      hi: '🛡️ **वर्तमान प्रकोप के लिए विशिष्ट बचाव:**',
+      te: '🛡️ **ప్రస్తుత వ్యాప్తికి ప్రత్యేక నివారణ:**',
+      ta: '🛡️ **தற்போதைய வெடிப்புகளுக்கான குறிப्पिட்ட தடुप्पு:**',
+      or: '🛡️ **ବର୍ତ୍ତମାନ ପ୍ରକୋପ ପାଇଁ ବିଶେଷ ନିବାରଣ:**'
+    };
+
+    const footerText = {
+      en: '\n📍 **Want location-specific alerts?** Register below:',
+      hi: '\n📍 **स्थान-विशिष्ट अलर्ट चाहते हैं?** नीचे पंजीकरण करें:',
+      te: '\n📍 **స్థాన-ప్రత్యేక హెచ్చరికలు కావాలా?** క్రింద నమోదు చేసుకోండి:',
+      ta: '\n📍 **இடம் சார்ந்த எச्चरிक्कैகள் वेण्டुमा?** கীழே पतिवु செய्युङ्गள्:',
+      or: '\n📍 **ସ୍ଥାନ-ନିର୍ଦ୍ଦିଷ୍ଟ ଚେତାବନୀ ଚାହୁଁଛନ୍ତି?** ତଳେ ପଞ୍ଜୀକରଣ କରନ୍ତୁ:'
+    };
+
+    let message = headerText[language] || headerText.en;
+    message += '\n\n';
+
+    preventionMeasures.forEach(measure => {
+      const text = measure[language] || measure.en;
+      message += `• ${text}\n`;
+    });
+
+    message += footerText[language] || footerText.en;
+
+    return message;
   }
 
   // Get appropriate emoji for disease

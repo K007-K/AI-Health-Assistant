@@ -2104,35 +2104,51 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
         headerText[user.preferred_language] || headerText.en
       );
 
-      // Use interactive buttons instead of lists for better compatibility
-      // Group states into sets of 3 buttons (WhatsApp limit)
-      const buttonText = {
-        en: '🏛️ Select your state:',
-        hi: '🏛️ अपना राज्य चुनें:',
-        te: '🏛️ మీ రాష్ట్రాన్ని ఎంచుకోండి:',
-        ta: '🏛️ உங்கள் மாநிலத்தைத் தேர்ந்தெடுக்கவும்:',
-        or: '🏛️ ଆପଣଙ୍କ ରାଜ୍ୟ ବାଛନ୍ତୁ:'
+      // Use single scrollable interactive list (WhatsApp supports up to 10 items per list)
+      const listButtonText = {
+        en: 'Choose State',
+        hi: 'राज्य चुनें',
+        te: 'రాష్ట్రం ఎంచుకోండి',
+        ta: 'மாநிலம் தேர்ந்தெடுக்கவும்',
+        or: 'ରାଜ୍ୟ ବାଛନ୍ତୁ'
       };
 
-      // Send states in groups of 3 buttons per message
-      for (let i = 0; i < allStates.length; i += 3) {
-        const stateGroup = allStates.slice(i, i + 3);
-        const buttons = stateGroup.map(state => ({
+      const menuText = {
+        en: '🏛️ Select your state from the menu below:',
+        hi: '🏛️ नीचे दिए गए मेनू से अपना राज्य चुनें:',
+        te: '🏛️ క్రింది మెనూ నుండి మీ రాష్ట్రాన్ని ఎంచుకోండి:',
+        ta: '🏛️ கீழே உள்ள மெனுவிலிருந்து உங்கள் மாநிலத்தைத் தேர்ந்தெடுக்கவும்:',
+        or: '🏛️ ତଳେ ଥିବା ମେନୁରୁ ଆପଣଙ୍କ ରାଜ୍ୟ ବାଛନ୍ତୁ:'
+      };
+
+      // Send states in groups of 10 (WhatsApp list limit) but as scrollable lists
+      for (let i = 0; i < allStates.length; i += 10) {
+        const stateGroup = allStates.slice(i, i + 10);
+        const listItems = stateGroup.map(state => ({
           id: `state_${state.id}`,
-          title: state.state_name.length > 20 ? state.state_name.substring(0, 17) + '...' : state.state_name
+          title: state.state_name.length > 24 ? state.state_name.substring(0, 21) + '...' : state.state_name,
+          description: state.is_union_territory ? 'Union Territory' : 'State'
         }));
 
-        const groupNumber = Math.floor(i / 3) + 1;
-        const totalGroups = Math.ceil(allStates.length / 3);
+        const groupNumber = Math.floor(i / 10) + 1;
+        const totalGroups = Math.ceil(allStates.length / 10);
         
-        await this.whatsappService.sendInteractiveButtons(
+        let menuTitle = menuText[user.preferred_language] || menuText.en;
+        if (totalGroups > 1) {
+          menuTitle += ` (${groupNumber}/${totalGroups})`;
+        }
+        
+        await this.whatsappService.sendInteractiveList(
           user.phone_number,
-          `${buttonText[user.preferred_language] || buttonText.en} (${groupNumber}/${totalGroups})`,
-          buttons
+          menuTitle,
+          listButtonText[user.preferred_language] || listButtonText.en,
+          listItems
         );
 
-        // Small delay between button groups
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Small delay between lists if multiple needed
+        if (i + 10 < allStates.length) {
+          await new Promise(resolve => setTimeout(resolve, 300));
+        }
       }
 
       // Update session to wait for state selection directly
@@ -2143,23 +2159,27 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
     } catch (error) {
       console.error('Error showing state selection menu:', error);
       
-      // Enhanced fallback with popular states as buttons
+      // Enhanced fallback with popular states as list
       try {
         const popularStates = [
-          { id: 1, state_name: 'Andhra Pradesh' },
-          { id: 14, state_name: 'Maharashtra' },
-          { id: 11, state_name: 'Karnataka' }
+          { id: 1, state_name: 'Andhra Pradesh', is_union_territory: false },
+          { id: 14, state_name: 'Maharashtra', is_union_territory: false },
+          { id: 11, state_name: 'Karnataka', is_union_territory: false },
+          { id: 9, state_name: 'Delhi', is_union_territory: true },
+          { id: 21, state_name: 'Tamil Nadu', is_union_territory: false }
         ];
 
-        const fallbackButtons = popularStates.map(state => ({
+        const fallbackItems = popularStates.map(state => ({
           id: `state_${state.id}`,
-          title: state.state_name
+          title: state.state_name,
+          description: state.is_union_territory ? 'Union Territory' : 'State'
         }));
 
-        await this.whatsappService.sendInteractiveButtons(
+        await this.whatsappService.sendInteractiveList(
           user.phone_number,
           '🏛️ Popular states (or type your state name):',
-          fallbackButtons
+          'Choose State',
+          fallbackItems
         );
 
       } catch (buttonError) {

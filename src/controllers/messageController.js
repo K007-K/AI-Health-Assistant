@@ -1311,22 +1311,28 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
       const aiDiseaseMonitor = require('../services/aiDiseaseMonitorService');
       const aiMonitor = new aiDiseaseMonitor();
       
-      // Send main header
+      // Send multilingual main header
       const locationText = userLocation ? ` in ${userLocation.state}${userLocation.district ? ', ' + userLocation.district : ''}` : ' in India';
-      const headerText = `🦠 *Current Disease Outbreaks${locationText}*\n\nLatest information as of ${new Date().toLocaleDateString()}:`;
+      const currentDate = new Date().toLocaleDateString('en-IN', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      
+      const headerTemplate = LanguageUtils.getText('disease_outbreak_header', user.preferred_language, 'en', user.script_preference);
+      const headerText = headerTemplate.replace('{location}', locationText).replace('{date}', currentDate);
       
       await this.whatsappService.sendMessage(user.phone_number, headerText);
       await new Promise(resolve => setTimeout(resolve, 500));
 
       try {
-        // Get cached or fresh disease data from AI with Google Search
-        const diseaseData = await aiMonitor.getDailyDiseaseOutbreaks();
+        // Get real-time location-specific disease data from AI with Google Search
+        const diseaseResponse = await aiMonitor.fetchLocationSpecificDiseases(userLocation);
+        const diseaseData = diseaseResponse.diseases || [];
         
         if (!diseaseData || diseaseData.length === 0) {
-          await this.whatsappService.sendMessage(
-            user.phone_number,
-            '✅ Good news! No major disease outbreaks reported currently in India.\n\nStay healthy and maintain good hygiene practices!'
-          );
+          const noDiseaseText = LanguageUtils.getText('no_diseases_found', user.preferred_language, 'en', user.script_preference);
+          await this.whatsappService.sendMessage(user.phone_number, noDiseaseText);
           return;
         }
 
@@ -1339,16 +1345,14 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
           const stateDiseases = relevantDiseases.filter(d => d.isState && !d.isLocal);
           
           if (localDiseases.length > 0) {
-            await this.whatsappService.sendMessage(
-              user.phone_number,
-              `🚨 *Diseases in Your Area (${userLocation.district || userLocation.state}):*`
-            );
+            const localHeaderTemplate = LanguageUtils.getText('disease_local_header', user.preferred_language, 'en', user.script_preference);
+            const localHeaderText = localHeaderTemplate.replace('{location}', userLocation.district || userLocation.state);
+            await this.whatsappService.sendMessage(user.phone_number, localHeaderText);
             await new Promise(resolve => setTimeout(resolve, 300));
           } else if (stateDiseases.length > 0) {
-            await this.whatsappService.sendMessage(
-              user.phone_number,
-              `⚠️ *Diseases in ${userLocation.state}:*`
-            );
+            const stateHeaderTemplate = LanguageUtils.getText('disease_state_header', user.preferred_language, 'en', user.script_preference);
+            const stateHeaderText = stateHeaderTemplate.replace('{state}', userLocation.state);
+            await this.whatsappService.sendMessage(user.phone_number, stateHeaderText);
             await new Promise(resolve => setTimeout(resolve, 300));
           }
         }
@@ -1360,10 +1364,8 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
         for (const disease of relevantDiseases.slice(0, 4)) {
           // Show national header when we move from local/state to national diseases
           if (!hasShownNationalHeader && disease.priority === 4 && sentCount > 0) {
-            await this.whatsappService.sendMessage(
-              user.phone_number,
-              `\n🇮🇳 *Other Diseases Nationwide:*`
-            );
+            const nationalHeaderText = LanguageUtils.getText('disease_national_header', user.preferred_language, 'en', user.script_preference);
+            await this.whatsappService.sendMessage(user.phone_number, `\n${nationalHeaderText}`);
             await new Promise(resolve => setTimeout(resolve, 300));
             hasShownNationalHeader = true;
           }
@@ -1386,8 +1388,8 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
         );
       }
 
-      // Send prevention summary
-      const preventionText = `🛡️ *General Prevention:*\n• Maintain good hygiene\n• Drink clean water\n• Use mosquito protection\n• Seek medical help if symptoms appear\n\n📍 *Want location-specific alerts?* Register below:`;
+      // Send multilingual prevention summary
+      const preventionText = LanguageUtils.getText('disease_prevention_summary', user.preferred_language, 'en', user.script_preference);
       
       await this.whatsappService.sendMessage(user.phone_number, preventionText);
 

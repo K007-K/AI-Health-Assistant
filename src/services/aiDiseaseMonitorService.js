@@ -36,33 +36,64 @@ class AIDiseaseMonitorService {
     }
   }
 
-  // Fetch current disease status using Gemini AI with Google Search grounding
-  async fetchCurrentDiseaseStatus() {
-    console.log('🤖 Querying Gemini with Google Search for current disease outbreaks in India...');
+  // Fetch location-specific disease status using real-time web search
+  async fetchLocationSpecificDiseases(userLocation = null) {
+    console.log('🤖 Querying Gemini with Google Search for location-specific disease outbreaks...');
     
-    const prompt = `Search for current disease outbreaks in India from recent news and health reports. 
+    const currentDate = new Date().toLocaleDateString('en-IN', {
+      year: 'numeric',
+      month: 'long', 
+      day: 'numeric'
+    });
     
-    Provide information about 3 most significant current disease outbreaks in India in this EXACT format:
+    // Create location-specific search query
+    let locationQuery = 'India';
+    if (userLocation) {
+      if (userLocation.district && userLocation.state) {
+        locationQuery = `${userLocation.district}, ${userLocation.state}, India`;
+      } else if (userLocation.state) {
+        locationQuery = `${userLocation.state}, India`;
+      }
+    }
+    
+    const prompt = `Search the web for the LATEST disease outbreaks and health alerts in ${locationQuery} as of ${currentDate}. 
+    
+    PRIORITY ORDER:
+    1. First search for diseases specifically in ${locationQuery}
+    2. Then search for diseases in nearby regions
+    3. Finally include major nationwide outbreaks
+    
+    Provide information about the 4 most relevant current disease outbreaks in this EXACT format:
     
     DISEASE 1: [Disease Name]
-    LOCATION: [States/regions affected]
-    CASES: [Number if available, or "Multiple cases reported"]
+    LOCATION: [Specific location - districts/cities/states affected]
+    CASES: [Latest case numbers with date if available]
     SYMPTOMS: [Main symptoms]
-    PREVENTION: [Key prevention measure]
+    PREVENTION: [Key prevention measures]
+    RELEVANCE: [LOCAL/STATE/NEARBY/NATIONAL]
     
     DISEASE 2: [Disease Name]
-    LOCATION: [States/regions affected] 
-    CASES: [Number if available, or "Multiple cases reported"]
+    LOCATION: [Specific location - districts/cities/states affected]
+    CASES: [Latest case numbers with date if available]
     SYMPTOMS: [Main symptoms]
-    PREVENTION: [Key prevention measure]
+    PREVENTION: [Key prevention measures]
+    RELEVANCE: [LOCAL/STATE/NEARBY/NATIONAL]
     
     DISEASE 3: [Disease Name]
-    LOCATION: [States/regions affected]
-    CASES: [Number if available, or "Multiple cases reported"]
+    LOCATION: [Specific location - districts/cities/states affected]
+    CASES: [Latest case numbers with date if available]
     SYMPTOMS: [Main symptoms]
-    PREVENTION: [Key prevention measure]
+    PREVENTION: [Key prevention measures]
+    RELEVANCE: [LOCAL/STATE/NEARBY/NATIONAL]
     
-    Focus on recent outbreaks like Nipah virus, H1N1, Dengue, Chikungunya, viral fever, or any other current health alerts in India. Use Google Search to find the most recent information.`;
+    DISEASE 4: [Disease Name]
+    LOCATION: [Specific location - districts/cities/states affected]
+    CASES: [Latest case numbers with date if available]
+    SYMPTOMS: [Main symptoms]
+    PREVENTION: [Key prevention measures]
+    RELEVANCE: [LOCAL/STATE/NEARBY/NATIONAL]
+    
+    Search for recent outbreaks like Dengue, Chikungunya, H1N1, H3N2, Nipah virus, viral fever, malaria, typhoid, hepatitis, or any other current health alerts. Use Google Search to find the most recent news and health department reports from ${currentDate}.`;
 
     try {
       const response = await this.geminiService.generateResponseWithGrounding(
@@ -89,7 +120,7 @@ class AIDiseaseMonitorService {
     }
   }
 
-  // Parse structured text response from AI
+  // Parse enhanced structured text response from AI with location relevance
   parseTextResponse(response) {
     const diseases = [];
     
@@ -101,10 +132,15 @@ class AIDiseaseMonitorService {
         const lines = block.trim().split('\n');
         const disease = {
           name: '',
-          affected_locations: [],
-          symptoms: [],
-          safety_measures: [],
-          national_stats: {}
+          location: '',
+          cases: '',
+          symptoms: '',
+          prevention: '',
+          relevance: 'NATIONAL',
+          priority: 4,
+          isLocal: false,
+          isState: false,
+          isNearby: false
         };
         
         // Extract disease name from first line
@@ -117,27 +153,42 @@ class AIDiseaseMonitorService {
           const trimmedLine = line.trim();
           
           if (trimmedLine.startsWith('LOCATION:')) {
-            const location = trimmedLine.replace('LOCATION:', '').trim();
-            disease.affected_locations.push({
-              state: location,
-              estimated_cases: 'Multiple cases reported',
-              trend: 'monitoring'
-            });
+            disease.location = trimmedLine.replace('LOCATION:', '').trim();
           }
           
           if (trimmedLine.startsWith('CASES:')) {
-            const cases = trimmedLine.replace('CASES:', '').trim();
-            disease.national_stats.total_cases = cases;
+            disease.cases = trimmedLine.replace('CASES:', '').trim();
           }
           
           if (trimmedLine.startsWith('SYMPTOMS:')) {
-            const symptoms = trimmedLine.replace('SYMPTOMS:', '').trim();
-            disease.symptoms = symptoms.split(',').map(s => s.trim());
+            disease.symptoms = trimmedLine.replace('SYMPTOMS:', '').trim();
           }
           
           if (trimmedLine.startsWith('PREVENTION:')) {
-            const prevention = trimmedLine.replace('PREVENTION:', '').trim();
-            disease.safety_measures = [prevention];
+            disease.prevention = trimmedLine.replace('PREVENTION:', '').trim();
+          }
+          
+          if (trimmedLine.startsWith('RELEVANCE:')) {
+            const relevance = trimmedLine.replace('RELEVANCE:', '').trim();
+            disease.relevance = relevance;
+            
+            // Set priority and flags based on relevance
+            switch (relevance) {
+              case 'LOCAL':
+                disease.priority = 1;
+                disease.isLocal = true;
+                break;
+              case 'STATE':
+                disease.priority = 2;
+                disease.isState = true;
+                break;
+              case 'NEARBY':
+                disease.priority = 3;
+                disease.isNearby = true;
+                break;
+              default:
+                disease.priority = 4;
+            }
           }
         }
         

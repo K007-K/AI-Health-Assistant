@@ -421,6 +421,34 @@ class MessageController {
     }
   }
 
+  // Show main menu using interactive buttons (more reliable)
+  async showMainMenuButtons(user) {
+    try {
+      console.log('📱 Showing main menu with interactive buttons...');
+      
+      const menuText = LanguageUtils.getText('main_menu', user.preferred_language, 'en', user.script_preference);
+      const mainButtons = this.whatsappService.getMainMenuButtons(user.preferred_language, user.script_preference);
+      
+      await this.whatsappService.sendInteractiveButtons(
+        user.phone_number,
+        menuText,
+        mainButtons
+      );
+
+      await this.userService.updateUserSession(user.id, 'main_menu');
+      
+      await this.conversationService.saveBotMessage(
+        user.id,
+        menuText,
+        'main_menu',
+        user.preferred_language
+      );
+    } catch (error) {
+      console.error('Error in showMainMenuButtons:', error);
+      throw error;
+    }
+  }
+
   // Show main menu using list (supports 6 options)
   async showMainMenu(user) {
     try {
@@ -432,11 +460,22 @@ class MessageController {
       
       console.log('🔍 DEBUG showMainMenu - Generated menu text preview:', menuText.substring(0, 50) + '...');
 
-      await this.whatsappService.sendList(
+      // Use interactive buttons for better reliability
+      console.log('📱 Using interactive buttons for main menu...');
+      const mainButtons = this.whatsappService.getMainMenuButtons(user.preferred_language, user.script_preference);
+      
+      await this.whatsappService.sendInteractiveButtons(
         user.phone_number,
         menuText,
-        menuList.sections,
-        'Choose Option'
+        mainButtons
+      );
+      
+      // Send additional options as text for full menu access
+      const additionalOptions = `\n\n📌 *More Options:*\n🌱 Type "tips" for Health Tips\n🦠 Type "alerts" for Disease Alerts\n🌐 Type "/language" to Change Language\n📊 Type "feedback" for Feedback`;
+      
+      await this.whatsappService.sendMessage(
+        user.phone_number,
+        additionalOptions
       );
 
       await this.userService.updateUserSession(user.id, 'main_menu');

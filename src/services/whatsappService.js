@@ -84,12 +84,20 @@ class WhatsAppService {
   // Send list message (for menu options)
   async sendList(to, text, sections, buttonText = 'Choose Option') {
     try {
+      console.log('📱 Attempting to send interactive list message...');
+      
+      // Validate sections structure
+      if (!sections || !Array.isArray(sections) || sections.length === 0) {
+        throw new Error('Invalid sections provided for list message');
+      }
+      
       // Validate and truncate titles if needed (WhatsApp limit: 24 chars)
       const validatedSections = sections.map(section => ({
-        ...section,
+        title: section.title || 'Options',
         rows: section.rows.map(row => ({
-          ...row,
-          title: row.title.length > 24 ? row.title.substring(0, 21) + '...' : row.title
+          id: row.id,
+          title: row.title.length > 24 ? row.title.substring(0, 21) + '...' : row.title,
+          description: row.description && row.description.length > 72 ? row.description.substring(0, 69) + '...' : row.description
         }))
       }));
 
@@ -106,6 +114,8 @@ class WhatsAppService {
           }
         }
       };
+      
+      console.log('📱 List payload:', JSON.stringify(payload, null, 2));
 
       const response = await axios.post(
         `${this.baseURL}/${this.phoneNumberId}/messages`,
@@ -117,19 +127,45 @@ class WhatsAppService {
           }
         }
       );
-
+      
+      console.log('✅ Interactive list sent successfully!');
       return response.data;
     } catch (error) {
-      console.error('Error sending list message:', error.response?.data || error.message);
+      console.error('❌ Error sending list message:', error.response?.data || error.message);
+      console.error('❌ Full error details:', error.response?.data?.error || error.message);
       
-      // Fallback to simple text message if list fails
+      // Check if it's a specific WhatsApp API error
+      if (error.response?.data?.error?.code) {
+        console.error(`🚨 WhatsApp API Error Code: ${error.response.data.error.code}`);
+        console.error(`🚨 WhatsApp API Error Message: ${error.response.data.error.message}`);
+      }
+      
+      // Fallback to interactive buttons if list fails
       try {
-        console.log('📱 Fallback: Sending simple text message instead of list');
+        console.log('📱 Fallback: Trying interactive buttons instead of list');
+        const buttons = sections[0]?.rows?.slice(0, 3).map(row => ({
+          type: 'reply',
+          reply: {
+            id: row.id,
+            title: row.title.length > 20 ? row.title.substring(0, 17) + '...' : row.title
+          }
+        })) || [];
+        
+        if (buttons.length > 0) {
+          return await this.sendInteractiveButtons(to, text, buttons);
+        }
+      } catch (buttonError) {
+        console.error('❌ Interactive buttons also failed:', buttonError);
+      }
+      
+      // Final fallback to simple text message
+      try {
+        console.log('📱 Final Fallback: Sending simple text message');
         const optionsList = sections[0]?.rows?.map((row, index) => `${index + 1}. ${row.title}`).join('\n') || 'Please type "menu" for options';
         const fallbackText = `${text}\n\nOptions:\n${optionsList}`;
         return await this.sendMessage(to, fallbackText);
       } catch (fallbackError) {
-        console.error('Fallback message also failed:', fallbackError);
+        console.error('All fallback methods failed:', fallbackError);
         throw error;
       }
     }
@@ -379,6 +415,47 @@ class WhatsAppService {
     
     return menus[language] || menus.en;
   }
+
+  // Get main menu buttons (3-button limit) - Alternative to list
+  getMainMenuButtons(language = 'en', scriptType = 'native') {
+    // Check for transliterated version first
+    if (scriptType === 'transliteration' && language !== 'en') {
+      const transKey = `${language}_trans`;
+      if (this.mainMenuButtons[transKey]) {
+        return this.mainMenuButtons[transKey];
+      }
+    }
+    
+    return this.mainMenuButtons[language] || this.mainMenuButtons.en;
+  }
+
+  mainMenuButtons = {
+    en: [
+      { type: 'reply', reply: { id: 'chat_ai', title: '🤖 Chat with AI' } },
+      { type: 'reply', reply: { id: 'symptom_check', title: '🩺 Check Symptoms' } },
+      { type: 'reply', reply: { id: 'more_options', title: '⚙️ More Options' } }
+    ],
+    hi: [
+      { type: 'reply', reply: { id: 'chat_ai', title: '🤖 AI से बात करें' } },
+      { type: 'reply', reply: { id: 'symptom_check', title: '🩺 लक्षण जांचें' } },
+      { type: 'reply', reply: { id: 'more_options', title: '⚙️ और विकल्प' } }
+    ],
+    te: [
+      { type: 'reply', reply: { id: 'chat_ai', title: '🤖 AI తో చాట్' } },
+      { type: 'reply', reply: { id: 'symptom_check', title: '🩺 లక్షణాలు చూడండి' } },
+      { type: 'reply', reply: { id: 'more_options', title: '⚙️ మరిన్ని ఆప్షన్స్' } }
+    ],
+    hi_trans: [
+      { type: 'reply', reply: { id: 'chat_ai', title: '🤖 AI se baat karo' } },
+      { type: 'reply', reply: { id: 'symptom_check', title: '🩺 Lakshan jancho' } },
+      { type: 'reply', reply: { id: 'more_options', title: '⚙️ Aur vikalp' } }
+    ],
+    te_trans: [
+      { type: 'reply', reply: { id: 'chat_ai', title: '🤖 AI tho chat cheyandi' } },
+      { type: 'reply', reply: { id: 'symptom_check', title: '🩺 Lakshanalu chudandi' } },
+      { type: 'reply', reply: { id: 'more_options', title: '⚙️ Marini options' } }
+    ]
+  };
 
   // Get more options menu buttons (3-button limit)
   getMoreOptionsButtons(language = 'en') {

@@ -83,6 +83,12 @@ class MessageController {
         return;
       }
 
+      // Handle state name input (when user types state name)
+      if (currentState === 'selecting_state') {
+        await this.handleStateNameInput(user, content);
+        return;
+      }
+
       // Route to specific handlers based on intent and current state
       switch (intent) {
         case 'greeting':
@@ -1461,9 +1467,6 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
 
       // Show interactive state selection
       await this.showStateSelectionMenu(user, cacheService);
-
-      // Update session to wait for location
-      await this.userService.updateUserSession(user.id, 'waiting_for_alert_location');
       
     } catch (error) {
       console.error('Error in handleTurnOnAlerts:', error);
@@ -2082,7 +2085,7 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
     return message;
   }
 
-  // Show direct state selection menu (simplified)
+  // Show interactive state selection with buttons
   async showStateSelectionMenu(user, cacheService) {
     try {
       // Get all states directly (no region grouping)
@@ -2101,48 +2104,35 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
         headerText[user.preferred_language] || headerText.en
       );
 
-      // Create state list (WhatsApp supports max 10 items per list)
-      const stateItems = allStates.slice(0, 10).map(state => ({
-        id: `state_${state.id}`,
-        title: state.state_name.length > 24 ? state.state_name.substring(0, 21) + '...' : state.state_name,
-        description: state.is_union_territory ? 'Union Territory' : 'State'
-      }));
-
-      const listButtonText = {
-        en: 'Choose State',
-        hi: 'राज्य चुनें',
-        te: 'రాష్ట్రం ఎంచుకోండి',
-        ta: 'மாநிலம் தேர்ந்தெடுக்கவும்',
-        or: 'ରାଜ୍ୟ ବାଛନ୍ତୁ'
+      // Use interactive buttons instead of lists for better compatibility
+      // Group states into sets of 3 buttons (WhatsApp limit)
+      const buttonText = {
+        en: '🏛️ Select your state:',
+        hi: '🏛️ अपना राज्य चुनें:',
+        te: '🏛️ మీ రాష్ట్రాన్ని ఎంచుకోండి:',
+        ta: '🏛️ உங்கள் மாநிலத்தைத் தேர்ந்தெடுக்கவும்:',
+        or: '🏛️ ଆପଣଙ୍କ ରାଜ୍ୟ ବାଛନ୍ତୁ:'
       };
 
-      await this.whatsappService.sendInteractiveList(
-        user.phone_number,
-        '🏛️ Select your state:',
-        listButtonText[user.preferred_language] || listButtonText.en,
-        stateItems
-      );
+      // Send states in groups of 3 buttons per message
+      for (let i = 0; i < allStates.length; i += 3) {
+        const stateGroup = allStates.slice(i, i + 3);
+        const buttons = stateGroup.map(state => ({
+          id: `state_${state.id}`,
+          title: state.state_name.length > 20 ? state.state_name.substring(0, 17) + '...' : state.state_name
+        }));
 
-      // If there are more than 10 states, send additional lists
-      if (allStates.length > 10) {
-        for (let i = 10; i < allStates.length; i += 10) {
-          const nextBatch = allStates.slice(i, i + 10);
-          const nextItems = nextBatch.map(state => ({
-            id: `state_${state.id}`,
-            title: state.state_name.length > 24 ? state.state_name.substring(0, 21) + '...' : state.state_name,
-            description: state.is_union_territory ? 'Union Territory' : 'State'
-          }));
+        const groupNumber = Math.floor(i / 3) + 1;
+        const totalGroups = Math.ceil(allStates.length / 3);
+        
+        await this.whatsappService.sendInteractiveButtons(
+          user.phone_number,
+          `${buttonText[user.preferred_language] || buttonText.en} (${groupNumber}/${totalGroups})`,
+          buttons
+        );
 
-          await this.whatsappService.sendInteractiveList(
-            user.phone_number,
-            `🏛️ More states (${i + 1}-${Math.min(i + 10, allStates.length)}):`,
-            listButtonText[user.preferred_language] || listButtonText.en,
-            nextItems
-          );
-
-          // Small delay between lists
-          await new Promise(resolve => setTimeout(resolve, 300));
-        }
+        // Small delay between button groups
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
 
       // Update session to wait for state selection directly
@@ -2153,19 +2143,40 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
     } catch (error) {
       console.error('Error showing state selection menu:', error);
       
-      // Fallback to text input
-      const fallbackText = {
-        en: '📍 Please type your state name (e.g., "Andhra Pradesh", "Maharashtra"):',
-        hi: '📍 कृपया अपने राज्य का नाम टाइप करें (जैसे, "आंध्र प्रदेश", "महाराष्ट्र"):',
-        te: '📍 దయచేసి మీ రాష్ట్ర పేరును టైప్ చేయండి (ఉదా., "ఆంధ్ర ప్రదేశ్", "మహారాష్ట్ర"):',
-        ta: '📍 உங்கள் மாநில பெயரைத் தட்டச்சு செய்யுங்கள் (எ.கா., "ஆந்திர பிரதேசம்", "மகாராஷ்டிரா"):',
-        or: '📍 ଦୟାକରି ଆପଣଙ୍କ ରାଜ୍ୟର ନାମ ଟାଇପ୍ କରନ୍ତୁ (ଯଥା, "ଆନ୍ଧ୍ର ପ୍ରଦେଶ", "ମହାରାଷ୍ଟ୍ର"):'
-      };
+      // Enhanced fallback with popular states as buttons
+      try {
+        const popularStates = [
+          { id: 1, state_name: 'Andhra Pradesh' },
+          { id: 14, state_name: 'Maharashtra' },
+          { id: 11, state_name: 'Karnataka' }
+        ];
 
-      await this.whatsappService.sendMessage(
-        user.phone_number,
-        fallbackText[user.preferred_language] || fallbackText.en
-      );
+        const fallbackButtons = popularStates.map(state => ({
+          id: `state_${state.id}`,
+          title: state.state_name
+        }));
+
+        await this.whatsappService.sendInteractiveButtons(
+          user.phone_number,
+          '🏛️ Popular states (or type your state name):',
+          fallbackButtons
+        );
+
+      } catch (buttonError) {
+        // Final fallback to text input
+        const fallbackText = {
+          en: '📍 Please type your state name (e.g., "Andhra Pradesh", "Maharashtra"):',
+          hi: '📍 कृपया अपने राज्य का नाम टाइप करें (जैसे, "आंध्र प्रदेश", "महाराष्ट्र"):',
+          te: '📍 దయచేసి మీ రాష్ట్ర పేరును టైప్ చేయండి (ఉదా., "ఆంధ్ర ప్రదేశ్", "మహారాష్ట్ర"):',
+          ta: '📍 உங்கள் மாநில பெயரைத் தட்டச்சு செய்யுங்கள் (எ.கா., "ஆந்திர பிரதேசம்", "மகாராஷ்டிரா"):',
+          or: '📍 ଦୟାକରି ଆପଣଙ୍କ ରାଜ୍ୟର ନାମ ଟାଇପ୍ କରନ୍ତୁ (ଯଥା, "ଆନ୍ଧ୍ର ପ୍ରଦେଶ", "ମହାରାଷ୍ଟ୍ର"):'
+        };
+
+        await this.whatsappService.sendMessage(
+          user.phone_number,
+          fallbackText[user.preferred_language] || fallbackText.en
+        );
+      }
     }
   }
 
@@ -2176,6 +2187,68 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
     const DiseaseOutbreakCacheService = require('../services/diseaseOutbreakCacheService');
     const cacheService = new DiseaseOutbreakCacheService();
     await this.showStateSelectionMenu(user, cacheService);
+  }
+
+  // Handle state name input (when user types state name)
+  async handleStateNameInput(user, stateName) {
+    try {
+      console.log(`🔍 User ${user.phone_number} typed state name: ${stateName}`);
+      
+      const DiseaseOutbreakCacheService = require('../services/diseaseOutbreakCacheService');
+      const cacheService = new DiseaseOutbreakCacheService();
+      
+      // Search for the state by name
+      const searchResults = await cacheService.getIndianStates(stateName);
+      
+      if (searchResults.length === 0) {
+        // No exact match found, show suggestions
+        const allStates = await cacheService.getIndianStates();
+        const suggestions = allStates.filter(state => 
+          state.state_name.toLowerCase().includes(stateName.toLowerCase())
+        ).slice(0, 3);
+        
+        if (suggestions.length > 0) {
+          const suggestionButtons = suggestions.map(state => ({
+            id: `state_${state.id}`,
+            title: state.state_name
+          }));
+          
+          await this.whatsappService.sendInteractiveButtons(
+            user.phone_number,
+            `🔍 Did you mean one of these states?`,
+            suggestionButtons
+          );
+        } else {
+          await this.whatsappService.sendMessage(
+            user.phone_number,
+            `❌ State "${stateName}" not found. Please try again with the correct state name or select from the buttons above.`
+          );
+        }
+        return;
+      }
+      
+      if (searchResults.length === 1) {
+        // Exact match found, proceed with registration
+        const selectedState = searchResults[0];
+        await this.handleStateSelection(user, `state_${selectedState.id}`);
+      } else {
+        // Multiple matches, show options
+        const matchButtons = searchResults.slice(0, 3).map(state => ({
+          id: `state_${state.id}`,
+          title: state.state_name
+        }));
+        
+        await this.whatsappService.sendInteractiveButtons(
+          user.phone_number,
+          `🔍 Multiple states found. Please select the correct one:`,
+          matchButtons
+        );
+      }
+      
+    } catch (error) {
+      console.error('Error handling state name input:', error);
+      await this.handleError(user.phone_number, error);
+    }
   }
 
   // Handle state selection

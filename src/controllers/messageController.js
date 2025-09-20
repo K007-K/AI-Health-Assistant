@@ -1357,25 +1357,45 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
           }
         }
 
-        // Send diseases in priority order with clear sections
+        // Send diseases with clear state vs nationwide sections
         let sentCount = 0;
+        let hasShownStateHeader = false;
         let hasShownNationalHeader = false;
         
-        for (const disease of relevantDiseases.slice(0, 4)) {
-          // Show national header when we move from local/state to national diseases
-          if (!hasShownNationalHeader && disease.priority === 4 && sentCount > 0) {
-            const nationalHeaderText = LanguageUtils.getText('disease_national_header', user.preferred_language, 'en', user.script_preference);
-            await this.whatsappService.sendMessage(user.phone_number, `\n${nationalHeaderText}`);
+        // First show state-specific diseases
+        const stateDiseases = relevantDiseases.filter(d => d.isState || d.isLocal);
+        if (stateDiseases.length > 0 && userStateName) {
+          if (!hasShownStateHeader) {
+            const stateHeaderText = `⚠️ *Diseases in ${userStateName}:*`;
+            await this.whatsappService.sendMessage(user.phone_number, stateHeaderText);
+            await new Promise(resolve => setTimeout(resolve, 300));
+            hasShownStateHeader = true;
+          }
+          
+          for (const disease of stateDiseases.slice(0, 3)) {
+            const message = this.formatLocationAwareDiseaseNews(disease, userLocation);
+            await this.whatsappService.sendMessage(user.phone_number, message);
+            sentCount++;
+            await new Promise(resolve => setTimeout(resolve, 800));
+          }
+        }
+        
+        // Then show nationwide diseases
+        const nationalDiseases = relevantDiseases.filter(d => !d.isState && !d.isLocal);
+        if (nationalDiseases.length > 0) {
+          if (!hasShownNationalHeader) {
+            const nationalHeaderText = `🇮🇳 *Nationwide Disease Outbreaks:*`;
+            await this.whatsappService.sendMessage(user.phone_number, nationalHeaderText);
             await new Promise(resolve => setTimeout(resolve, 300));
             hasShownNationalHeader = true;
           }
           
-          const message = this.formatLocationAwareDiseaseNews(disease, userLocation);
-          await this.whatsappService.sendMessage(user.phone_number, message);
-          
-          sentCount++;
-          // Add delay between messages
-          await new Promise(resolve => setTimeout(resolve, 800));
+          for (const disease of nationalDiseases.slice(0, 4)) {
+            const message = this.formatLocationAwareDiseaseNews(disease, userLocation);
+            await this.whatsappService.sendMessage(user.phone_number, message);
+            sentCount++;
+            await new Promise(resolve => setTimeout(resolve, 800));
+          }
         }
         
         // Generate disease-specific prevention recommendations

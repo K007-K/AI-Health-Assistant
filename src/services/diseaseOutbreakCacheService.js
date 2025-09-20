@@ -16,22 +16,83 @@ class DiseaseOutbreakCacheService {
   }
 
   /**
-   * Get disease outbreak data with smart caching
-   * @param {string|null} stateName - State name or null for nationwide
-   * @returns {Promise<Object>} Cached or fresh disease data
+   * Get comprehensive disease outbreak data (state + nationwide) with smart caching
+   * @param {string|null} stateName - State name or null for nationwide only
+   * @returns {Promise<Object>} Cached or fresh comprehensive disease data
    */
   async getDiseaseOutbreakData(stateName = null) {
-    const cacheType = stateName ? 'state' : 'nationwide';
     const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
 
-    console.log(`🔍 Checking cache for ${cacheType} data${stateName ? ` (${stateName})` : ''} for ${today}`);
+    console.log(`🔍 Getting comprehensive disease data${stateName ? ` for ${stateName} + nationwide` : ' nationwide only'} for ${today}`);
 
     try {
-      // 1. Check if we have cached data for today
-      const cachedData = await this.getCachedData(cacheType, stateName, today);
+      // Get both state-specific and nationwide data
+      const stateData = stateName ? await this.getStateSpecificData(stateName, today) : null;
+      const nationwideData = await this.getNationwideData(today);
+      
+      // Combine all diseases with proper categorization
+      const allDiseases = [];
+      
+      // Add state-specific diseases (higher priority)
+      if (stateData && stateData.diseases) {
+        stateData.diseases.forEach(disease => {
+          allDiseases.push({
+            ...disease,
+            isState: true,
+            isLocal: true,
+            priority: 1,
+            source: stateData.source
+          });
+        });
+      }
+      
+      // Add nationwide diseases (lower priority)
+      if (nationwideData && nationwideData.diseases) {
+        nationwideData.diseases.forEach(disease => {
+          allDiseases.push({
+            ...disease,
+            isState: false,
+            isLocal: false,
+            priority: 4,
+            source: nationwideData.source
+          });
+        });
+      }
+      
+      return {
+        diseases: allDiseases,
+        stateSpecific: stateData?.diseases || [],
+        nationwide: nationwideData?.diseases || [],
+        source: stateData?.source === 'fresh' || nationwideData?.source === 'fresh' ? 'fresh' : 'cache',
+        cached_at: new Date().toISOString(),
+        userState: stateName
+      };
+
+    } catch (error) {
+      console.error(`❌ Error in getDiseaseOutbreakData:`, error);
+      
+      // Return fallback data
+      return {
+        diseases: [],
+        stateSpecific: [],
+        nationwide: [],
+        source: 'error_fallback',
+        cached_at: new Date().toISOString(),
+        userState: stateName
+      };
+    }
+  }
+
+  /**
+   * Get state-specific disease data
+   */
+  async getStateSpecificData(stateName, date) {
+    try {
+      // Check cache first
+      const cachedData = await this.getCachedData('state', stateName, date);
       
       if (cachedData) {
-        console.log(`✅ Using cached ${cacheType} data from database`);
+        console.log(`✅ Using cached state data for ${stateName}`);
         return {
           diseases: cachedData.parsed_diseases,
           source: 'cache',
@@ -39,9 +100,9 @@ class DiseaseOutbreakCacheService {
         };
       }
 
-      // 2. No cache found, query AI and cache the result
-      console.log(`🤖 No cache found, querying AI for fresh ${cacheType} data`);
-      const freshData = await this.queryAndCacheData(cacheType, stateName);
+      // No cache, get fresh data
+      console.log(`🤖 Fetching fresh state data for ${stateName}`);
+      const freshData = await this.queryAndCacheData('state', stateName);
       
       return {
         diseases: freshData.diseases,
@@ -50,24 +111,41 @@ class DiseaseOutbreakCacheService {
       };
 
     } catch (error) {
-      console.error(`❌ Error in getDiseaseOutbreakData:`, error);
+      console.error(`Error getting state data for ${stateName}:`, error);
+      return { diseases: [], source: 'error' };
+    }
+  }
+
+  /**
+   * Get nationwide disease data
+   */
+  async getNationwideData(date) {
+    try {
+      // Check cache first
+      const cachedData = await this.getCachedData('nationwide', null, date);
       
-      // Fallback: try to get yesterday's cache if today fails
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayStr = yesterday.toISOString().split('T')[0];
-      
-      const fallbackCache = await this.getCachedData(cacheType, stateName, yesterdayStr);
-      if (fallbackCache) {
-        console.log(`⚠️ Using yesterday's cache as fallback`);
+      if (cachedData) {
+        console.log(`✅ Using cached nationwide data`);
         return {
-          diseases: fallbackCache.parsed_diseases,
-          source: 'fallback_cache',
-          cached_at: fallbackCache.created_at
+          diseases: cachedData.parsed_diseases,
+          source: 'cache',
+          cached_at: cachedData.created_at
         };
       }
 
-      throw error;
+      // No cache, get fresh data
+      console.log(`🤖 Fetching fresh nationwide data`);
+      const freshData = await this.queryAndCacheData('nationwide', null);
+      
+      return {
+        diseases: freshData.diseases,
+        source: 'fresh',
+        cached_at: new Date().toISOString()
+      };
+
+    } catch (error) {
+      console.error(`Error getting nationwide data:`, error);
+      return { diseases: [], source: 'error' };
     }
   }
 
@@ -109,11 +187,27 @@ class DiseaseOutbreakCacheService {
    */
   async queryAndCacheData(cacheType, stateName) {
     try {
-      // Prepare location for AI query
-      const userLocation = stateName ? { state: stateName } : null;
+      let aiResponse;
       
-      // Query AI service
-      const aiResponse = await this.aiDiseaseMonitor.fetchLocationSpecificDiseases(userLocation);
+      if (cacheType === 'state' && stateName) {
+        // Get state-specific diseases
+        const diseases = await this.aiDiseaseMonitor.fetchStateSpecificDiseases(stateName);
+        aiResponse = {
+          diseases: diseases,
+          rawResponse: `State-specific diseases for ${stateName}`,
+          location: stateName
+        };
+      } else if (cacheType === 'nationwide') {
+        // Get nationwide diseases
+        const diseases = await this.aiDiseaseMonitor.fetchNationwideDiseases();
+        aiResponse = {
+          diseases: diseases,
+          rawResponse: 'Nationwide diseases across India',
+          location: 'India'
+        };
+      } else {
+        throw new Error(`Invalid cache type: ${cacheType}`);
+      }
       
       if (!aiResponse || !aiResponse.diseases) {
         throw new Error('Invalid AI response received');
@@ -122,7 +216,7 @@ class DiseaseOutbreakCacheService {
       // Cache the response
       await this.cacheResponse(cacheType, stateName, aiResponse);
 
-      console.log(`💾 Cached fresh ${cacheType} data for future use`);
+      console.log(`💾 Cached fresh ${cacheType} data (${aiResponse.diseases.length} diseases) for future use`);
       
       return aiResponse;
 

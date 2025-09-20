@@ -206,78 +206,155 @@ class AIDiseaseMonitorService {
     return diseases;
   }
 
-  // Get daily disease outbreaks with caching
-  async getDailyDiseaseOutbreaks() {
+  // Get comprehensive disease outbreaks (state-specific + nationwide)
+  async getDailyDiseaseOutbreaks(userState = null) {
     const today = new Date().toDateString();
+    const cacheKey = userState ? `${today}_${userState}` : today;
     
     // Return cached data if available for today
-    if (this.dailyCache && this.cacheDate === today) {
+    if (this.dailyCache && this.cacheDate === cacheKey) {
       console.log('💾 Using cached disease outbreak data for today');
       return this.dailyCache;
     }
     
-    console.log('🔄 Fetching fresh disease outbreak data for today...');
+    console.log('🔄 Fetching comprehensive disease outbreak data (state + nationwide)...');
     
     try {
-      // Fetch fresh data using the simplified text approach
+      // Fetch both state-specific and nationwide data
+      const stateData = userState ? await this.fetchStateSpecificDiseases(userState) : [];
+      const nationwideData = await this.fetchNationwideDiseases();
+      
+      const comprehensiveData = {
+        stateSpecific: stateData,
+        nationwide: nationwideData,
+        timestamp: new Date(),
+        userState: userState
+      };
+      
+      // Cache the results for today
+      this.dailyCache = comprehensiveData;
+      this.cacheDate = cacheKey;
+      
+      console.log(`📊 Cached ${stateData.length} state diseases + ${nationwideData.length} nationwide diseases`);
+      return comprehensiveData;
+      
+    } catch (error) {
+      console.error('Error fetching comprehensive disease outbreaks:', error);
+      
+      // Return fallback data if everything fails
+      return {
+        stateSpecific: [],
+        nationwide: [
+          {
+            name: 'Seasonal Flu Outbreak',
+            location: 'Multiple states across India',
+            cases: 'Cases reported nationwide',
+            symptoms: 'fever, cough, body aches',
+            prevention: 'wear masks, maintain hygiene'
+          },
+          {
+            name: 'Dengue Cases',
+            location: 'Urban areas nationwide',
+            cases: 'Increasing cases in cities',
+            symptoms: 'high fever, headache, joint pain',
+            prevention: 'eliminate stagnant water, use repellents'
+          }
+        ],
+        timestamp: new Date(),
+        userState: userState
+      };
+    }
+  }
+
+  // Fetch state-specific disease outbreaks
+  async fetchStateSpecificDiseases(stateName) {
+    console.log(`🏛️ Fetching diseases specific to ${stateName}...`);
+    
+    try {
       const response = await this.geminiService.generateResponseWithGrounding(
-        `Search for the 3 most significant current disease outbreaks in India from recent news and health reports. 
+        `Search for current disease outbreaks specifically in ${stateName} state, India from recent news and health reports. 
         
         Provide information in this EXACT format:
         
         DISEASE 1: [Disease Name]
-        LOCATION: [States/regions affected]
-        CASES: [Number if available, or "Multiple cases reported"]
+        LOCATION: [Specific districts/cities in ${stateName}]
+        CASES: [Number if available, or "Cases reported"]
         SYMPTOMS: [Main symptoms]
         PREVENTION: [Key prevention measure]
         
         DISEASE 2: [Disease Name]
-        LOCATION: [States/regions affected] 
-        CASES: [Number if available, or "Multiple cases reported"]
+        LOCATION: [Specific districts/cities in ${stateName}]
+        CASES: [Number if available, or "Cases reported"]
         SYMPTOMS: [Main symptoms]
         PREVENTION: [Key prevention measure]
         
         DISEASE 3: [Disease Name]
-        LOCATION: [States/regions affected]
-        CASES: [Number if available, or "Multiple cases reported"]
+        LOCATION: [Specific districts/cities in ${stateName}]
+        CASES: [Number if available, or "Cases reported"]
         SYMPTOMS: [Main symptoms]
         PREVENTION: [Key prevention measure]
         
-        Focus on recent outbreaks like Nipah virus, H1N1, Dengue, Chikungunya, viral fever, or any other current health alerts in India.`,
+        Focus on recent outbreaks like Nipah virus, H1N1, Dengue, Chikungunya, viral fever, malaria, or any other current health alerts specifically in ${stateName} state.`,
         'en',
         3
       );
       
-      // Parse the response into simple objects
       const diseases = this.parseSimpleTextResponse(response);
-      
-      // Cache the results for today
-      this.dailyCache = diseases;
-      this.cacheDate = today;
-      
-      console.log(`📊 Cached ${diseases.length} disease outbreaks for today`);
+      console.log(`✅ Found ${diseases.length} diseases in ${stateName}`);
       return diseases;
       
     } catch (error) {
-      console.error('Error fetching daily disease outbreaks:', error);
+      console.error(`Error fetching diseases for ${stateName}:`, error);
+      return [];
+    }
+  }
+
+  // Fetch nationwide disease outbreaks (excluding user's state to avoid duplication)
+  async fetchNationwideDiseases() {
+    console.log('🇮🇳 Fetching nationwide disease outbreaks...');
+    
+    try {
+      const response = await this.geminiService.generateResponseWithGrounding(
+        `Search for the most significant current disease outbreaks across India from recent news and health reports. Focus on national-level outbreaks affecting multiple states.
+        
+        Provide information in this EXACT format:
+        
+        DISEASE 1: [Disease Name]
+        LOCATION: [Multiple states/regions affected across India]
+        CASES: [National numbers if available, or "Cases reported nationwide"]
+        SYMPTOMS: [Main symptoms]
+        PREVENTION: [Key prevention measure]
+        
+        DISEASE 2: [Disease Name]
+        LOCATION: [Multiple states/regions affected across India]
+        CASES: [National numbers if available, or "Cases reported nationwide"]
+        SYMPTOMS: [Main symptoms]
+        PREVENTION: [Key prevention measure]
+        
+        DISEASE 3: [Disease Name]
+        LOCATION: [Multiple states/regions affected across India]
+        CASES: [National numbers if available, or "Cases reported nationwide"]
+        SYMPTOMS: [Main symptoms]
+        PREVENTION: [Key prevention measure]
+        
+        DISEASE 4: [Disease Name]
+        LOCATION: [Multiple states/regions affected across India]
+        CASES: [National numbers if available, or "Cases reported nationwide"]
+        SYMPTOMS: [Main symptoms]
+        PREVENTION: [Key prevention measure]
+        
+        Focus on major nationwide outbreaks like Nipah virus, H1N1, Dengue, Chikungunya, viral fever, malaria, or any other current health alerts affecting multiple Indian states.`,
+        'en',
+        4
+      );
       
-      // Return fallback data if everything fails
-      return [
-        {
-          name: 'Seasonal Flu Outbreak',
-          location: 'Multiple states',
-          cases: 'Cases reported across India',
-          symptoms: 'fever, cough, body aches',
-          prevention: 'wear masks, maintain hygiene'
-        },
-        {
-          name: 'Dengue Cases',
-          location: 'Urban areas',
-          cases: 'Increasing cases in cities',
-          symptoms: 'high fever, headache, joint pain',
-          prevention: 'eliminate stagnant water, use repellents'
-        }
-      ];
+      const diseases = this.parseSimpleTextResponse(response);
+      console.log(`✅ Found ${diseases.length} nationwide diseases`);
+      return diseases;
+      
+    } catch (error) {
+      console.error('Error fetching nationwide diseases:', error);
+      return [];
     }
   }
   

@@ -143,6 +143,36 @@ class ConversationService {
       // Otherwise, continue AI chat
       return 'ai_chat_message';
     }
+    
+    // If user is in symptom check, only allow specific exit commands
+    if (currentState === 'symptom_check') {
+      // Multilingual menu commands
+      if (this.isMenuCommand(lowerMessage)) return 'menu_request';
+      if (this.isLanguageCommand(lowerMessage)) return 'change_language';
+      
+      // Check if user wants to switch to different feature
+      if (message === 'chat_ai' || lowerMessage.includes('chat with ai')) return 'ai_chat';
+      if (message === 'preventive_tips' || lowerMessage.includes('health tips')) return 'preventive_tips';
+      if (message === 'disease_alerts' || lowerMessage.includes('disease alerts')) return 'disease_alerts';
+      
+      // Otherwise, continue symptom checking conversation
+      return 'symptom_input';
+    }
+    
+    // If user is in preventive tips, only allow specific exit commands
+    if (currentState === 'preventive_tips') {
+      // Multilingual menu commands
+      if (this.isMenuCommand(lowerMessage)) return 'menu_request';
+      if (this.isLanguageCommand(lowerMessage)) return 'change_language';
+      
+      // Check if user wants to switch to different feature
+      if (message === 'chat_ai' || lowerMessage.includes('chat with ai')) return 'ai_chat';
+      if (message === 'symptom_check' || lowerMessage.includes('check symptoms')) return 'symptom_check';
+      if (message === 'disease_alerts' || lowerMessage.includes('disease alerts')) return 'disease_alerts';
+      
+      // Otherwise, continue preventive tips conversation
+      return 'preventive_tips_request';
+    }
 
     // Button-based intents (list selections) - exact IDs
     if (message.startsWith('lang_')) return 'language_selection';

@@ -631,10 +631,9 @@ class MessageController {
           user.preferred_language
         );
 
-        // Show follow-up options after analysis
-        setTimeout(async () => {
-          await this.showSymptomFollowUpOptions(user);
-        }, 2000);
+        // Keep user in symptom_check state for continuous conversation
+        // Don't show follow-up buttons - let conversation flow naturally
+        // User can continue asking questions or type 'menu' to exit
       }
     } catch (error) {
       console.error('Error in handleSymptomCheck:', error);
@@ -692,12 +691,10 @@ class MessageController {
           user.preferred_language
         );
 
-        // Clear waiting state and show follow-up options
+        // Clear waiting state and keep user in preventive_tips for continuous conversation
         await this.userService.updateUserSession(user.id, 'preventive_tips', { waitingForDiseaseName: false });
         
-        setTimeout(async () => {
-          await this.showPreventiveTipsFollowUpOptions(user);
-        }, 2000);
+        // Don't show follow-up buttons - let conversation flow naturally
         return; // Important: return here to avoid falling through to other logic
       } else {
         // User selected category - determine category and provide detailed information
@@ -766,10 +763,8 @@ class MessageController {
           user.preferred_language
         );
 
-        // Show follow-up options after tips
-        setTimeout(async () => {
-          await this.showPreventiveTipsFollowUpOptions(user);
-        }, 2000);
+        // Keep user in preventive_tips state for continuous conversation
+        // Don't show follow-up buttons - let conversation flow naturally
       }
     } catch (error) {
       console.error('Error in handlePreventiveTips:', error);

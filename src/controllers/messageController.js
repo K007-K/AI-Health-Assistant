@@ -1378,40 +1378,63 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
           await new Promise(resolve => setTimeout(resolve, 800));
         }
         
+        // Generate disease-specific prevention recommendations
+        const specificPrevention = this.generateDiseaseSpecificPrevention(relevantDiseases, user.preferred_language, user.script_preference);
+        
+        await this.whatsappService.sendMessage(user.phone_number, specificPrevention);
+
+        // Show follow-up options
+        const followUpButtons = [
+          { id: 'turn_on_alerts', title: '🔔 Get Alerts' },
+          { id: 'disease_alerts', title: '↩️ Back' },
+          { id: 'back_to_menu', title: '🏠 Main Menu' }
+        ];
+
+        await this.whatsappService.sendInteractiveButtons(
+          user.phone_number,
+          '📱 Want alerts for disease outbreaks in your area?',
+          followUpButtons
+        );
+        
       } catch (aiError) {
         console.error('AI disease monitoring failed:', aiError);
         
-        // Fall back to simple message if everything fails
+        // Fall back to simple message with general prevention if everything fails
+        const fallbackPrevention = LanguageUtils.getText('disease_prevention_summary', user.preferred_language, 'en', user.script_preference);
+        
         await this.whatsappService.sendMessage(
           user.phone_number,
           '🦠 *Current Disease Outbreaks in India*\n\n• Seasonal flu cases reported in multiple states\n• Dengue cases increasing in urban areas\n• Maintain hygiene and seek medical help if needed\n\n🛡️ Stay safe and healthy!'
         );
+        
+        await this.whatsappService.sendMessage(user.phone_number, fallbackPrevention);
+        
+        // Show follow-up options even in fallback
+        const followUpButtons = [
+          { id: 'turn_on_alerts', title: '🔔 Get Alerts' },
+          { id: 'disease_alerts', title: '↩️ Back' },
+          { id: 'back_to_menu', title: '🏠 Main Menu' }
+        ];
+
+        await this.whatsappService.sendInteractiveButtons(
+          user.phone_number,
+          '📱 Want alerts for disease outbreaks in your area?',
+          followUpButtons
+        );
       }
-
-      // Generate disease-specific prevention recommendations
-      const specificPrevention = this.generateDiseaseSpecificPrevention(relevantDiseases, user.preferred_language, user.script_preference);
-      
-      await this.whatsappService.sendMessage(user.phone_number, specificPrevention);
-
-      // Show follow-up options
-      const followUpButtons = [
-        { id: 'turn_on_alerts', title: '🔔 Get Alerts' },
-        { id: 'disease_alerts', title: '↩️ Back' },
-        { id: 'back_to_menu', title: '🏠 Main Menu' }
-      ];
-
-      await this.whatsappService.sendInteractiveButtons(
-        user.phone_number,
-        '📱 Want alerts for disease outbreaks in your area?',
-        followUpButtons
-      );
       
     } catch (error) {
       console.error('Error showing disease outbreaks:', error);
+      
+      // Send error message with fallback prevention
+      const fallbackPrevention = LanguageUtils.getText('disease_prevention_summary', user.preferred_language, 'en', user.script_preference);
+      
       await this.whatsappService.sendMessage(
         user.phone_number,
         '❌ Sorry, unable to get disease outbreak information right now. Please try again later.'
       );
+      
+      await this.whatsappService.sendMessage(user.phone_number, fallbackPrevention);
     }
   }
 

@@ -15,10 +15,12 @@ A multilingual AI-powered WhatsApp chatbot for healthcare education, designed fo
 - **♿ Accessibility Features**: Easy mode, long text mode, audio optimization
 - **📊 Feedback System**: User satisfaction tracking and accuracy measurement
 - **💾 Robust Database**: Supabase with conversation history and user preferences
+- **🚨 Real-time Disease Outbreak Alerts**: Location-specific disease monitoring with AI-powered web search
+- **🛡️ Disease-Specific Prevention**: Dynamic prevention recommendations based on actual diseases
 
 ### 🚧 Coming Soon Features (Government Database Integration Required)
 - **📅 Appointment Scheduling**: Integration with local healthcare providers
-- **🚨 Real-time Outbreak Alerts**: Disease outbreak notifications by location
+- **📈 Predictive Health Analytics**: Advanced disease outbreak prediction models
 - **💉 Vaccination Tracking**: Government vaccination schedule integration
 - **🏥 Healthcare Provider Directory**: Local PHC and hospital information
 

@@ -156,8 +156,12 @@ class MessageController {
           await this.handleTurnOffAlerts(user);
           break;
 
-        case 'confirm_turn_off_alerts':
-          await this.handleConfirmTurnOffAlerts(user);
+        case 'confirm_delete_alert_data':
+          await this.handleConfirmDeleteAlertData(user);
+          break;
+
+        case 'confirm_disable_alerts':
+          await this.handleConfirmDisableAlerts(user);
           break;
 
         case 'menu_request':
@@ -1514,13 +1518,17 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
     }
   }
 
-  // Handle turning off alerts
+  // Handle turning off alerts with data deletion
   async handleTurnOffAlerts(user) {
     try {
       console.log('🔕 User requesting to turn off alerts:', user.phone_number);
       
+      // Initialize cache service
+      const DiseaseOutbreakCacheService = require('../services/diseaseOutbreakCacheService');
+      const cacheService = new DiseaseOutbreakCacheService();
+      
       // Check if registered
-      const isRegistered = await this.diseaseAlertService.isUserRegistered(user.phone_number);
+      const isRegistered = await cacheService.isUserRegisteredForAlerts(user.phone_number);
       
       if (!isRegistered) {
         await this.whatsappService.sendMessage(
@@ -1541,15 +1549,28 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
         return;
       }
 
-      // Ask for confirmation
+      // Get user's current state info for confirmation
+      const userStateInfo = await cacheService.getUserSelectedState(user.phone_number);
+      const stateName = userStateInfo?.indian_states?.state_name || 'your area';
+
+      // Ask for confirmation with options
       const confirmButtons = [
-        { id: 'confirm_turn_off_alerts', title: '✅ Yes, Turn Off' },
+        { id: 'confirm_delete_alert_data', title: '🗑️ Delete All Data' },
+        { id: 'confirm_disable_alerts', title: '⏸️ Just Disable' },
         { id: 'disease_alerts', title: '❌ Cancel' }
       ];
 
+      const confirmationText = {
+        en: `⚠️ *Turn Off Disease Alerts*\n\nYou are currently registered for alerts in ${stateName}.\n\nChoose how you want to turn off alerts:\n\n🗑️ **Delete All Data:** Completely remove your alert preferences\n⏸️ **Just Disable:** Keep your location but stop alerts\n\nWhat would you like to do?`,
+        hi: `⚠️ *रोग अलर्ट बंद करें*\n\nआप वर्तमान में ${stateName} में अलर्ट के लिए पंजीकृत हैं।\n\nअलर्ट बंद करने का तरीका चुनें:\n\n🗑️ **सभी डेटा हटाएं:** अपनी अलर्ट प्राथमिकताएं पूरी तरह हटाएं\n⏸️ **केवल अक्षम करें:** अपना स्थान रखें लेकिन अलर्ट बंद करें\n\nआप क्या करना चाहते हैं?`,
+        te: `⚠️ *వ్యాధి హెచ్చరికలను ఆపండి*\n\nమీరు ప్రస్తుతం ${stateName}లో హెచ్చరికల కోసం నమోదు చేసుకున్నారు।\n\nహెచ్చరికలను ఆపడానికి మార్గాన్ని ఎంచుకోండి:\n\n🗑️ **అన్ని డేటాను తొలగించండి:** మీ హెచ్చరిక ప్రాధాన్యతలను పూర్తిగా తొలగించండి\n⏸️ **కేవలం నిలిపివేయండి:** మీ స్థానాన్ని ఉంచండి కానీ హెచ్చరికలను ఆపండి\n\nమీరు ఏమి చేయాలనుకుంటున్నారు?`,
+        ta: `⚠️ *நோய் எச்சரிக்கைகளை நிறுத்தவும்*\n\nநீங்கள் தற்போது ${stateName}இல் எச்சரிக்கைகளுக்கு பதிவு செய்யப்பட்டுள்ளீர்கள்.\n\nஎச்சரிக்கைகளை நிறுத்துவதற்கான வழியைத் தேர்ந்தெடுக்கவும்:\n\n🗑️ **அனைத்து தரவையும் நீக்கவும்:** உங்கள் எச்சரிக்கை விருப்பத்தேர்வுகளை முழுமையாக அகற்றவும்\n⏸️ **வெறும் முடக்கவும்:** உங்கள் இடத்தை வைத்துக்கொண்டு எச்சரிக்கைகளை நிறுத்தவும்\n\nநீங்கள் என்ன செய்ய விரும்புகிறீர்கள்?`,
+        or: `⚠️ *ରୋଗ ଚେତାବନୀ ବନ୍ଦ କରନ୍ତୁ*\n\nଆପଣ ବର୍ତ୍ତମାନ ${stateName}ରେ ଚେତାବନୀ ପାଇଁ ପଞ୍ଜୀକୃତ ଅଛନ୍ତି।\n\nଚେତାବନୀ ବନ୍ଦ କରିବାର ଉପାୟ ବାଛନ୍ତୁ:\n\n🗑️ **ସମସ୍ତ ଡାଟା ଡିଲିଟ କରନ୍ତୁ:** ଆପଣଙ୍କ ଚେତାବନୀ ପସନ୍ଦଗୁଡ଼ିକୁ ସମ୍ପୂର୍ଣ୍ଣ ଭାବେ ହଟାନ୍ତୁ\n⏸️ **କେବଳ ଅକ୍ଷମ କରନ୍ତୁ:** ଆପଣଙ୍କ ସ୍ଥାନ ରଖନ୍ତୁ କିନ୍ତୁ ଚେତାବନୀ ବନ୍ଦ କରନ୍ତୁ\n\nଆପଣ କଣ କରିବାକୁ ଚାହାଁନ୍ତି?`
+      };
+
       await this.whatsappService.sendInteractiveButtons(
         user.phone_number,
-        '⚠️ *Confirm Turn Off Alerts*\n\nAre you sure you want to stop receiving disease outbreak alerts?\n\nYou will no longer be notified about disease outbreaks in your area.',
+        confirmationText[user.preferred_language] || confirmationText.en,
         confirmButtons
       );
       
@@ -1559,22 +1580,34 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
     }
   }
 
-  // Handle confirmation to turn off alerts
-  async handleConfirmTurnOffAlerts(user) {
+  // Handle confirmation to delete all alert data
+  async handleConfirmDeleteAlertData(user) {
     try {
-      console.log('✅ Confirming turn off alerts for:', user.phone_number);
+      console.log('🗑️ Confirming delete all alert data for:', user.phone_number);
       
-      const result = await this.diseaseAlertService.unregisterUserFromAlerts(user.phone_number);
+      // Initialize cache service
+      const DiseaseOutbreakCacheService = require('../services/diseaseOutbreakCacheService');
+      const cacheService = new DiseaseOutbreakCacheService();
       
-      if (result.success) {
+      const success = await cacheService.turnOffAlertsAndDeleteData(user.phone_number);
+      
+      if (success) {
+        const successText = {
+          en: '✅ *All Alert Data Deleted*\n\nYour disease outbreak alert preferences have been completely removed from our system.\n\n• Location data deleted\n• Alert preferences deleted\n• No more notifications\n\nYou can register again anytime from the Disease Alerts menu.\n\nStay healthy! 🌟',
+          hi: '✅ *सभी अलर्ट डेटा हटा दिया गया*\n\nआपकी रोग प्रकोप अलर्ट प्राथमिकताएं हमारे सिस्टम से पूरी तरह हटा दी गई हैं।\n\n• स्थान डेटा हटाया गया\n• अलर्ट प्राथमिकताएं हटाई गईं\n• अब कोई सूचना नहीं\n\nआप रोग अलर्ट मेनू से कभी भी फिर से पंजीकरण कर सकते हैं।\n\nस्वस्थ रहें! 🌟',
+          te: '✅ *అన్ని హెచ్చరిక డేటా తొలగించబడింది*\n\nమీ వ్యాధి వ్యాప్తి హెచ్చరిక ప్రాధాన్యతలు మా సిస్టమ్ నుండి పూర్తిగా తొలగించబడ్డాయి.\n\n• స్థాన డేటా తొలగించబడింది\n• హెచ్చరిక ప్రాధాన్యతలు తొలగించబడ్డాయి\n• ఇకపై నోటిఫికేషన్లు లేవు\n\nమీరు వ్యాధి హెచ్చరికల మెనూ నుండి ఎప్పుడైనా మళ్లీ నమోదు చేసుకోవచ్చు.\n\nఆరోగ్యంగా ఉండండి! 🌟',
+          ta: '✅ *அனைத்து எச்சரிக்கை தரவும் நீக்கப்பட்டது*\n\nஉங்கள் நோய் வெடிப்பு எச்சரிக்கை விருப்பத்தேர்வுகள் எங்கள் அமைப்பிலிருந்து முழுமையாக அகற்றப்பட்டுள்ளன.\n\n• இட தரவு நீக்கப்பட்டது\n• எச்சரிக்கை விருப்பத்தேர்வுகள் நீக்கப்பட்டன\n• இனி அறிவிப்புகள் இல்லை\n\nநோய் எச்சரிக்கைகள் மெனுவிலிருந்து எப்போது வேண்டுமானாலும் மீண்டும் பதிவு செய்யலாம்.\n\nஆரோக்கியமாக இருங்கள்! 🌟',
+          or: '✅ *ସମସ୍ତ ଚେତାବନୀ ଡାଟା ଡିଲିଟ ହୋଇଗଲା*\n\nଆପଣଙ୍କ ରୋଗ ପ୍ରକୋପ ଚେତାବନୀ ପସନ୍ଦଗୁଡ଼ିକ ଆମ ସିଷ୍ଟମରୁ ସମ୍ପୂର୍ଣ୍ଣ ଭାବେ ହଟାଯାଇଛି।\n\n• ସ୍ଥାନ ଡାଟା ଡିଲିଟ ହୋଇଛି\n• ଚେତାବନୀ ପସନ୍ଦଗୁଡ଼ିକ ଡିଲିଟ ହୋଇଛି\n• ଆଉ କୌଣସି ନୋଟିଫିକେସନ ନାହିଁ\n\nଆପଣ ରୋଗ ଚେତାବନୀ ମେନୁରୁ ଯେକୌଣସି ସମୟରେ ପୁନର୍ବାର ପଞ୍ଜୀକରଣ କରିପାରିବେ।\n\nସୁସ୍ଥ ରୁହନ୍ତୁ! 🌟'
+        };
+        
         await this.whatsappService.sendMessage(
           user.phone_number,
-          '✅ *Alerts Turned Off Successfully*\n\nYou have been unregistered from disease outbreak alerts.\n\nYou can turn them back on anytime from the Disease Alerts menu.\n\nStay healthy! 🌟'
+          successText[user.preferred_language] || successText.en
         );
       } else {
         await this.whatsappService.sendMessage(
           user.phone_number,
-          '❌ Failed to turn off alerts. Please try again later.'
+          '❌ Failed to delete alert data. Please try again later.'
         );
       }
       
@@ -1584,7 +1617,49 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
       }, 2000);
       
     } catch (error) {
-      console.error('Error confirming turn off alerts:', error);
+      console.error('Error confirming delete alert data:', error);
+      await this.handleError(user.phone_number, error);
+    }
+  }
+
+  // Handle confirmation to disable alerts (keep data)
+  async handleConfirmDisableAlerts(user) {
+    try {
+      console.log('⏸️ Confirming disable alerts for:', user.phone_number);
+      
+      // Initialize cache service
+      const DiseaseOutbreakCacheService = require('../services/diseaseOutbreakCacheService');
+      const cacheService = new DiseaseOutbreakCacheService();
+      
+      const success = await cacheService.disableAlerts(user.phone_number);
+      
+      if (success) {
+        const successText = {
+          en: '⏸️ *Alerts Disabled*\n\nYour disease outbreak alerts have been disabled.\n\n• Your location preferences are saved\n• No notifications will be sent\n• You can re-enable anytime\n\nTo turn alerts back on, visit the Disease Alerts menu.\n\nStay healthy! 🌟',
+          hi: '⏸️ *अलर्ट अक्षम किए गए*\n\nआपके रोग प्रकोप अलर्ट अक्षम कर दिए गए हैं।\n\n• आपकी स्थान प्राथमिकताएं सहेजी गई हैं\n• कोई सूचना नहीं भेजी जाएगी\n• आप कभी भी फिर से सक्षम कर सकते हैं\n\nअलर्ट वापस चालू करने के लिए, रोग अलर्ट मेनू पर जाएं।\n\nस्वस्थ रहें! 🌟',
+          te: '⏸️ *హెచ్చరికలు నిలిపివేయబడ్డాయి*\n\nమీ వ్యాధి వ్యాప్తి హెచ్చరికలు నిలిపివేయబడ్డాయి.\n\n• మీ స్థాన ప్రాధాన్యతలు సేవ్ చేయబడ్డాయి\n• నోటిఫికేషన్లు పంపబడవు\n• మీరు ఎప్పుడైనా మళ్లీ ఎనేబుల్ చేయవచ్చు\n\nహెచ్చరికలను తిరిగి ఆన్ చేయడానికి, వ్యాధి హెచ్చరికల మెనూను సందర్శించండి.\n\nఆరోగ్యంగా ఉండండి! 🌟',
+          ta: '⏸️ *எச்சரிக்கைகள் முடக்கப்பட்டன*\n\nஉங்கள் நோய் வெடிப்பு எச்சரிக்கைகள் முடக்கப்பட்டுள்ளன.\n\n• உங்கள் இட விருப்பத்தேர்வுகள் சேமிக்கப்பட்டுள்ளன\n• அறிவிப்புகள் அனுப்பப்படாது\n• நீங்கள் எப்போது வேண்டுமானாலும் மீண்டும் இயக்கலாம்\n\nஎச்சரிக்கைகளை மீண்டும் இயக்க, நோய் எச்சரிக்கைகள் மெனுவைப் பார்வையிடவும்.\n\nஆரோக்கியமாக இருங்கள்! 🌟',
+          or: '⏸️ *ଚେତାବନୀ ଅକ୍ଷମ କରାଗଲା*\n\nଆପଣଙ୍କ ରୋଗ ପ୍ରକୋପ ଚେତାବନୀ ଅକ୍ଷମ କରାଯାଇଛି।\n\n• ଆପଣଙ୍କ ସ୍ଥାନ ପସନ୍ଦଗୁଡ଼ିକ ସେଭ କରାଯାଇଛି\n• କୌଣସି ନୋଟିଫିକେସନ ପଠାଯିବ ନାହିଁ\n• ଆପଣ ଯେକୌଣସି ସମୟରେ ପୁନର୍ବାର ସକ୍ଷମ କରିପାରିବେ\n\nଚେତାବନୀ ପୁନର୍ବାର ଚାଲୁ କରିବାକୁ, ରୋଗ ଚେତାବନୀ ମେନୁ ଦେଖନ୍ତୁ।\n\nସୁସ୍ଥ ରୁହନ୍ତୁ! 🌟'
+        };
+        
+        await this.whatsappService.sendMessage(
+          user.phone_number,
+          successText[user.preferred_language] || successText.en
+        );
+      } else {
+        await this.whatsappService.sendMessage(
+          user.phone_number,
+          '❌ Failed to disable alerts. Please try again later.'
+        );
+      }
+      
+      // Return to main menu
+      setTimeout(async () => {
+        await this.showMainMenu(user);
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Error confirming disable alerts:', error);
       await this.handleError(user.phone_number, error);
     }
   }

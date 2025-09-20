@@ -337,6 +337,90 @@ class DiseaseOutbreakCacheService {
   }
 
   /**
+   * Turn off alerts and delete user alert data
+   * @param {string} phoneNumber - User's phone number
+   * @returns {Promise<boolean>} Success status
+   */
+  async turnOffAlertsAndDeleteData(phoneNumber) {
+    try {
+      console.log(`🔕 Turning off alerts and deleting data for user: ${phoneNumber}`);
+      
+      // Delete user's alert preferences completely
+      const { error } = await this.supabase
+        .from('user_alert_preferences')
+        .delete()
+        .eq('phone_number', phoneNumber);
+
+      if (error) {
+        console.error('Error deleting user alert preferences:', error);
+        return false;
+      }
+
+      console.log(`✅ Successfully deleted alert data for user: ${phoneNumber}`);
+      return true;
+
+    } catch (error) {
+      console.error('Error turning off alerts and deleting data:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Check if user is registered for alerts
+   * @param {string} phoneNumber - User's phone number
+   * @returns {Promise<boolean>} Registration status
+   */
+  async isUserRegisteredForAlerts(phoneNumber) {
+    try {
+      const { data, error } = await this.supabase
+        .from('user_alert_preferences')
+        .select('id, alert_enabled')
+        .eq('phone_number', phoneNumber)
+        .single();
+
+      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
+        console.error('Error checking user registration:', error);
+        return false;
+      }
+
+      return data && data.alert_enabled;
+
+    } catch (error) {
+      console.error('Error checking user registration:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Disable alerts without deleting data (soft disable)
+   * @param {string} phoneNumber - User's phone number
+   * @returns {Promise<boolean>} Success status
+   */
+  async disableAlerts(phoneNumber) {
+    try {
+      const { error } = await this.supabase
+        .from('user_alert_preferences')
+        .update({
+          alert_enabled: false,
+          updated_at: new Date().toISOString()
+        })
+        .eq('phone_number', phoneNumber);
+
+      if (error) {
+        console.error('Error disabling alerts:', error);
+        return false;
+      }
+
+      console.log(`✅ Successfully disabled alerts for user: ${phoneNumber}`);
+      return true;
+
+    } catch (error) {
+      console.error('Error disabling alerts:', error);
+      return false;
+    }
+  }
+
+  /**
    * Clean up old cache entries (called by background job)
    * @param {number} daysToKeep - Number of days to keep (default: 7)
    * @returns {Promise<number>} Number of entries deleted

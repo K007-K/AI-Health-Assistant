@@ -229,11 +229,26 @@ class DiseaseOutbreakCacheService {
         .single();
 
       if (!existingPrefs) {
-        // Create new alert preferences
+        // Get state information to populate required fields
+        const { data: stateData } = await this.supabase
+          .from('indian_states')
+          .select('state_name')
+          .eq('id', stateId)
+          .single();
+
+        if (!stateData) {
+          console.error('State not found for ID:', stateId);
+          return false;
+        }
+
+        // Create new alert preferences with required fields
         const { error: insertError } = await this.supabase
           .from('user_alert_preferences')
           .insert({
             phone_number: phoneNumber,
+            state: stateData.state_name,
+            district: 'All Districts', // Default value
+            pincode: '000000', // Default value
             selected_state_id: stateId,
             alert_enabled: true,
             alert_frequency: 'daily'
@@ -244,10 +259,23 @@ class DiseaseOutbreakCacheService {
           return false;
         }
       } else {
+        // Get state information for update
+        const { data: stateData } = await this.supabase
+          .from('indian_states')
+          .select('state_name')
+          .eq('id', stateId)
+          .single();
+
+        if (!stateData) {
+          console.error('State not found for ID:', stateId);
+          return false;
+        }
+
         // Update existing preferences
         const { error: updateError } = await this.supabase
           .from('user_alert_preferences')
           .update({
+            state: stateData.state_name,
             selected_state_id: stateId,
             alert_enabled: true,
             updated_at: new Date().toISOString()

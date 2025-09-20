@@ -1443,10 +1443,14 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
       const DiseaseOutbreakCacheService = require('../services/diseaseOutbreakCacheService');
       const cacheService = new DiseaseOutbreakCacheService();
       
-      // Check if user already has a selected state
+      // Check if user already has a selected state and is properly registered
       const existingState = await cacheService.getUserSelectedState(user.phone_number);
       
-      if (existingState && existingState.alert_enabled) {
+      // More robust check: user must exist, have alerts enabled, AND have a valid state
+      if (existingState && 
+          existingState.alert_enabled && 
+          existingState.selected_state_id && 
+          existingState.indian_states?.state_name) {
         const stateName = existingState.indian_states?.state_name || 'your area';
         await this.whatsappService.sendMessage(
           user.phone_number,

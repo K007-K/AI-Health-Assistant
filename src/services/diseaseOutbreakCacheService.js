@@ -325,6 +325,16 @@ class DiseaseOutbreakCacheService {
         return null;
       }
 
+      // Debug logging to help identify issues
+      if (data) {
+        console.log(`🔍 getUserSelectedState for ${phoneNumber}:`, {
+          alert_enabled: data.alert_enabled,
+          selected_state_id: data.selected_state_id,
+          has_state_data: !!data.indian_states,
+          state_name: data.indian_states?.state_name
+        });
+      }
+
       return data;
 
     } catch (error) {
@@ -365,7 +375,7 @@ class DiseaseOutbreakCacheService {
   }
 
   /**
-   * Turn off alerts and delete user alert data
+   * Turn off alerts and delete user alert data (comprehensive cleanup)
    * @param {string} phoneNumber - User's phone number
    * @returns {Promise<boolean>} Success status
    */
@@ -373,18 +383,47 @@ class DiseaseOutbreakCacheService {
     try {
       console.log(`🔕 Turning off alerts and deleting data for user: ${phoneNumber}`);
       
-      // Delete user's alert preferences completely
-      const { error } = await this.supabase
+      // First, get all records for this phone number (in case there are duplicates)
+      const { data: existingRecords, error: selectError } = await this.supabase
+        .from('user_alert_preferences')
+        .select('id, phone_number, alert_enabled')
+        .eq('phone_number', phoneNumber);
+
+      if (selectError) {
+        console.error('Error fetching user records for deletion:', selectError);
+        return false;
+      }
+
+      if (!existingRecords || existingRecords.length === 0) {
+        console.log(`ℹ️ No records found for ${phoneNumber} - already deleted`);
+        return true;
+      }
+
+      console.log(`📋 Found ${existingRecords.length} record(s) for ${phoneNumber}`);
+
+      // Delete ALL records for this phone number
+      const { error: deleteError } = await this.supabase
         .from('user_alert_preferences')
         .delete()
         .eq('phone_number', phoneNumber);
 
-      if (error) {
-        console.error('Error deleting user alert preferences:', error);
+      if (deleteError) {
+        console.error('Error deleting user alert preferences:', deleteError);
         return false;
       }
 
-      console.log(`✅ Successfully deleted alert data for user: ${phoneNumber}`);
+      // Verify deletion was successful
+      const { data: verifyRecords } = await this.supabase
+        .from('user_alert_preferences')
+        .select('id')
+        .eq('phone_number', phoneNumber);
+
+      if (verifyRecords && verifyRecords.length > 0) {
+        console.error(`⚠️ Deletion verification failed: ${verifyRecords.length} records still exist`);
+        return false;
+      }
+
+      console.log(`✅ Successfully deleted all alert data for user: ${phoneNumber}`);
       return true;
 
     } catch (error) {

@@ -468,22 +468,14 @@ class MessageController {
       
       console.log('🔍 DEBUG showMainMenu - Generated menu text preview:', menuText.substring(0, 50) + '...');
 
-      // Use interactive buttons for better reliability
-      console.log('📱 Using interactive buttons for main menu...');
-      const mainButtons = this.whatsappService.getMainMenuButtons(safeUser.preferred_language, safeUser.script_preference);
+      // Use interactive list (like Images 2 & 3)
+      console.log('📱 Using interactive list for main menu...');
       
-      await this.whatsappService.sendInteractiveButtons(
+      await this.whatsappService.sendList(
         safeUser.phone_number,
         menuText,
-        mainButtons
-      );
-      
-      // Send additional options as text for full menu access
-      const additionalOptions = `\n\n📌 *More Options:*\n🌱 Type "tips" for Health Tips\n🦠 Type "alerts" for Disease Alerts\n🌐 Type "/language" to Change Language\n📊 Type "feedback" for Feedback`;
-      
-      await this.whatsappService.sendMessage(
-        safeUser.phone_number,
-        additionalOptions
+        menuList.sections,
+        'Choose Option'
       );
 
       await this.userService.updateUserSession(safeUser.id, 'main_menu');

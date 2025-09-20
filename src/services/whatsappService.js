@@ -153,22 +153,37 @@ class WhatsAppService {
         console.error(`🚨 WhatsApp API Error Message: ${error.response.data.error.message}`);
       }
       
-      // Fallback to interactive buttons if list fails
-      try {
-        console.log('📱 Fallback: Trying interactive buttons instead of list');
-        const buttons = sections[0]?.rows?.slice(0, 3).map(row => ({
-          type: 'reply',
-          reply: {
-            id: row.id,
-            title: row.title.length > 20 ? row.title.substring(0, 17) + '...' : row.title
+      // Check if it's a credentials/permission issue vs API limitation
+      const isCredentialError = error.response?.status === 401 || 
+                               error.response?.data?.error?.code === 190 ||
+                               error.response?.data?.error?.type === 'OAuthException';
+      
+      const isInteractiveNotSupported = error.response?.data?.error?.code === 131051 ||
+                                       error.response?.data?.error?.message?.includes('Interactive messages are not supported');
+      
+      if (isCredentialError) {
+        console.log('🔑 Credential Error: Cannot send interactive messages without valid WhatsApp API credentials');
+        console.log('📝 In production, ensure WHATSAPP_ACCESS_TOKEN and WHATSAPP_PHONE_NUMBER_ID are configured');
+        throw error; // Don't fallback for credential errors
+      }
+      
+      if (isInteractiveNotSupported) {
+        console.log('📱 Interactive Lists Not Supported: Falling back to buttons');
+        try {
+          const buttons = sections[0]?.rows?.slice(0, 3).map(row => ({
+            type: 'reply',
+            reply: {
+              id: row.id,
+              title: row.title.length > 20 ? row.title.substring(0, 17) + '...' : row.title
+            }
+          })) || [];
+          
+          if (buttons.length > 0) {
+            return await this.sendInteractiveButtons(to, text, buttons);
           }
-        })) || [];
-        
-        if (buttons.length > 0) {
-          return await this.sendInteractiveButtons(to, text, buttons);
+        } catch (buttonError) {
+          console.error('❌ Interactive buttons also failed:', buttonError);
         }
-      } catch (buttonError) {
-        console.error('❌ Interactive buttons also failed:', buttonError);
       }
       
       // Final fallback to simple text message

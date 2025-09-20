@@ -772,6 +772,105 @@ class MessageController {
     }
   }
 
+  // Prioritize diseases by location relevance
+  prioritizeDiseasesByLocation(diseases, userLocation) {
+    if (!userLocation || !userLocation.state) {
+      return diseases;
+    }
+
+    const userState = userLocation.state.toLowerCase();
+    const userDistrict = userLocation.district?.toLowerCase();
+    
+    // Define nearby states for better regional relevance
+    const nearbyStates = {
+      'andhra pradesh': ['telangana', 'karnataka', 'tamil nadu', 'odisha'],
+      'telangana': ['andhra pradesh', 'karnataka', 'maharashtra', 'odisha'],
+      'karnataka': ['andhra pradesh', 'telangana', 'tamil nadu', 'kerala', 'maharashtra', 'goa'],
+      'tamil nadu': ['andhra pradesh', 'karnataka', 'kerala', 'puducherry'],
+      'kerala': ['tamil nadu', 'karnataka'],
+      'maharashtra': ['karnataka', 'telangana', 'gujarat', 'madhya pradesh', 'goa'],
+      'gujarat': ['maharashtra', 'rajasthan', 'madhya pradesh'],
+      'rajasthan': ['gujarat', 'haryana', 'punjab', 'uttar pradesh', 'madhya pradesh'],
+      'uttar pradesh': ['delhi', 'haryana', 'rajasthan', 'madhya pradesh', 'bihar'],
+      'bihar': ['uttar pradesh', 'jharkhand', 'west bengal'],
+      'west bengal': ['bihar', 'jharkhand', 'odisha', 'sikkim'],
+      'odisha': ['west bengal', 'jharkhand', 'andhra pradesh', 'telangana'],
+      'punjab': ['haryana', 'himachal pradesh', 'rajasthan'],
+      'haryana': ['punjab', 'delhi', 'uttar pradesh', 'rajasthan'],
+      'delhi': ['haryana', 'uttar pradesh']
+    };
+
+    const prioritizedDiseases = diseases.map(disease => {
+      const location = disease.location?.toLowerCase() || '';
+      let priority = 4; // Default: nationwide
+      let isLocal = false;
+      let isState = false;
+      let isNearby = false;
+
+      // Check for district-level match (highest priority)
+      if (userDistrict && location.includes(userDistrict)) {
+        priority = 1;
+        isLocal = true;
+      }
+      // Check for state-level match
+      else if (location.includes(userState)) {
+        priority = 2;
+        isState = true;
+      }
+      // Check for nearby states
+      else if (nearbyStates[userState]?.some(state => location.includes(state))) {
+        priority = 3;
+        isNearby = true;
+      }
+
+      return {
+        ...disease,
+        priority,
+        isLocal,
+        isState,
+        isNearby,
+        relevanceScore: this.calculateRelevanceScore(disease, userLocation)
+      };
+    });
+
+    // Sort by priority (1 = most relevant), then by relevance score
+    return prioritizedDiseases.sort((a, b) => {
+      if (a.priority !== b.priority) {
+        return a.priority - b.priority;
+      }
+      return b.relevanceScore - a.relevanceScore;
+    });
+  }
+
+  // Calculate relevance score based on severity, cases, and recency
+  calculateRelevanceScore(disease, userLocation) {
+    let score = 0;
+    
+    // Severity indicators
+    const severityKeywords = ['death', 'severe', 'critical', 'outbreak', 'epidemic'];
+    const description = (disease.description || '').toLowerCase();
+    severityKeywords.forEach(keyword => {
+      if (description.includes(keyword)) score += 10;
+    });
+    
+    // Case count indicators
+    const caseNumbers = description.match(/\d+/g);
+    if (caseNumbers) {
+      const maxCases = Math.max(...caseNumbers.map(Number));
+      if (maxCases > 100) score += 15;
+      else if (maxCases > 50) score += 10;
+      else if (maxCases > 10) score += 5;
+    }
+    
+    // Recent mentions (current year)
+    const currentYear = new Date().getFullYear();
+    if (description.includes(currentYear.toString())) {
+      score += 5;
+    }
+    
+    return score;
+  }
+
   // Handle coming soon features
   async handleAppointments(user) {
     const comingSoonText = LanguageUtils.getText('coming_soon', user.preferred_language);
@@ -1231,22 +1330,48 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
           return;
         }
 
-        // Filter diseases relevant to user location if available
-        let relevantDiseases = diseaseData;
+        // Prioritize diseases by location relevance
+        let relevantDiseases = this.prioritizeDiseasesByLocation(diseaseData, userLocation);
+        
+        // If user has location, show location-specific header
         if (userLocation && userLocation.state) {
-          const locationSpecific = diseaseData.filter(disease => 
-            disease.location?.toLowerCase().includes(userLocation.state.toLowerCase())
-          );
-          if (locationSpecific.length > 0) {
-            relevantDiseases = [...locationSpecific, ...diseaseData.filter(d => !locationSpecific.includes(d))];
+          const localDiseases = relevantDiseases.filter(d => d.isLocal);
+          const stateDiseases = relevantDiseases.filter(d => d.isState && !d.isLocal);
+          
+          if (localDiseases.length > 0) {
+            await this.whatsappService.sendMessage(
+              user.phone_number,
+              `🚨 *Diseases in Your Area (${userLocation.district || userLocation.state}):*`
+            );
+            await new Promise(resolve => setTimeout(resolve, 300));
+          } else if (stateDiseases.length > 0) {
+            await this.whatsappService.sendMessage(
+              user.phone_number,
+              `⚠️ *Diseases in ${userLocation.state}:*`
+            );
+            await new Promise(resolve => setTimeout(resolve, 300));
           }
         }
 
-        // Format and send top 3 disease outbreaks
-        for (const disease of relevantDiseases.slice(0, 3)) {
-          const message = this.formatSimpleDiseaseNews(disease, userLocation);
+        // Send diseases in priority order with clear sections
+        let sentCount = 0;
+        let hasShownNationalHeader = false;
+        
+        for (const disease of relevantDiseases.slice(0, 4)) {
+          // Show national header when we move from local/state to national diseases
+          if (!hasShownNationalHeader && disease.priority === 4 && sentCount > 0) {
+            await this.whatsappService.sendMessage(
+              user.phone_number,
+              `\n🇮🇳 *Other Diseases Nationwide:*`
+            );
+            await new Promise(resolve => setTimeout(resolve, 300));
+            hasShownNationalHeader = true;
+          }
+          
+          const message = this.formatLocationAwareDiseaseNews(disease, userLocation);
           await this.whatsappService.sendMessage(user.phone_number, message);
           
+          sentCount++;
           // Add delay between messages
           await new Promise(resolve => setTimeout(resolve, 800));
         }
@@ -1640,21 +1765,34 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
     return message.trim();
   }
 
-  // Format simple disease news from cached data
-  formatSimpleDiseaseNews(disease, userLocation = null) {
+  // Format location-aware disease news with priority indicators
+  formatLocationAwareDiseaseNews(disease, userLocation = null) {
     const emoji = this.getDiseaseEmoji(disease.name);
-    let headline = `${emoji} *${disease.name}`;
+    let locationIndicator = '';
+    
+    // Add location relevance indicator based on priority
+    if (disease.isLocal || disease.priority === 1) {
+      locationIndicator = '🚨 ';
+    } else if (disease.isState || disease.priority === 2) {
+      locationIndicator = '⚠️ ';
+    } else if (disease.isNearby || disease.priority === 3) {
+      locationIndicator = '📍 ';
+    } else {
+      locationIndicator = '🔍 ';
+    }
+    
+    let headline = `${locationIndicator}${emoji} *${disease.name}`;
     
     if (disease.location) {
       headline += ` in ${disease.location}`;
     } else {
-      headline += ` Across India`;
+      headline += ` (Multiple States)`;
     }
     headline += '*';
     
     let message = headline + '\n\n';
     
-    // Add bullet points
+    // Add bullet points with enhanced information
     if (disease.cases) {
       message += `• ${disease.cases}\n`;
     }
@@ -1667,7 +1805,21 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
       message += `• Prevention: ${disease.prevention}\n`;
     }
     
+    // Add distance context for user
+    if (userLocation && disease.location && !disease.isLocal && !disease.isState) {
+      if (disease.isNearby) {
+        message += `• Distance: Nearby state\n`;
+      } else {
+        message += `• Distance: Other region\n`;
+      }
+    }
+    
     return message.trim();
+  }
+  
+  // Keep the original method for backward compatibility
+  formatSimpleDiseaseNews(disease, userLocation = null) {
+    return this.formatLocationAwareDiseaseNews(disease, userLocation);
   }
 
   // Get appropriate emoji for disease

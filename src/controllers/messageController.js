@@ -1345,18 +1345,6 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
         const userLocation = userStateName ? { state: userStateName } : null;
         let relevantDiseases = this.prioritizeDiseasesByLocation(diseases, userLocation);
         
-        // If user has selected state, show state-specific header
-        if (userStateName) {
-          const stateDiseases = relevantDiseases.filter(d => d.isState || d.isLocal);
-
-          if (stateDiseases.length > 0) {
-            const stateHeaderTemplate = LanguageUtils.getText('disease_state_header', user.preferred_language, 'en', user.script_preference);
-            const stateHeaderText = stateHeaderTemplate.replace('{state}', userStateName);
-            await this.whatsappService.sendMessage(user.phone_number, stateHeaderText);
-            await new Promise(resolve => setTimeout(resolve, 300));
-          }
-        }
-
         // Send diseases with clear state vs nationwide sections
         let sentCount = 0;
         let hasShownStateHeader = false;

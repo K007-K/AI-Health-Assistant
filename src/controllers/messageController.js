@@ -487,7 +487,18 @@ class MessageController {
   // Handle AI chat - continuous conversation with image support
   async handleAIChat(user, message, mediaData = null) {
     try {
+      // Check if this is the first AI chat message (when coming from menu)
+      const currentSession = await this.userService.getUserSession(user.id);
+      const isFirstAIMessage = currentSession?.session_state !== 'ai_chat';
+      
       await this.userService.updateUserSession(user.id, 'ai_chat');
+
+      // If first AI message, send helpful instructions
+      if (isFirstAIMessage) {
+        const instructionText = LanguageUtils.getText('ai_chat_instructions', user.preferred_language, 'en', user.script_preference);
+        await this.whatsappService.sendMessage(user.phone_number, instructionText);
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Brief pause
+      }
 
       // Get conversation context
       const context = await this.conversationService.getRecentContext(user.id);

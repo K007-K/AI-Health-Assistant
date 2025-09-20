@@ -240,6 +240,92 @@ Aaji mun aapanku kipari sahaayya kariparibi? Eka bikalpa baachantu:`
     or_trans: '✅ Aapankar feedback paain dhanyabaad! Aapankar sandesh sameekshaa paain aam team ku pathaayi deichihi. Swaasthya sahayak ku unnata karibaaare aapankar sahaayya ku aame prashansaa karuchi.'
   },
 
+  ai_chat_instructions: {
+    en: `🤖 *AI Chat Mode Activated*
+
+You can now chat freely with me! Ask any health questions.
+
+💡 *Quick Commands:*
+• Type "menu" or "मेनू" to return to main menu
+• Type "/language" or "/भाषा" to change language
+
+What would you like to know?`,
+    hi: `🤖 *AI चैट मोड सक्रिय*
+
+अब आप मुझसे स्वतंत्र रूप से चैट कर सकते हैं! कोई भी स्वास्थ्य प्रश्न पूछें।
+
+💡 *त्वरित कमांड:*
+• मुख्य मेनू पर वापस जाने के लिए "मेनू" टाइप करें
+• भाषा बदलने के लिए "/भाषा" टाइप करें
+
+आप क्या जानना चाहते हैं?`,
+    te: `🤖 *AI చాట్ మోడ్ యాక్టివేట్ అయింది*
+
+ఇప్పుడు మీరు నాతో స్వేచ్ఛగా చాట్ చేయవచ్చు! ఏదైనా ఆరోగ్య ప్రశ్నలు అడగండి।
+
+💡 *త్వరిత కమాండ్స్:*
+• మెయిన్ మెనూకు తిరిగి వెళ్లడానికి "మెను" టైప్ చేయండి
+• భాష మార్చడానికి "/భాష" టైప్ చేయండి
+
+మీరు ఏమి తెలుసుకోవాలనుకుంటున్నారు?`,
+    ta: `🤖 *AI சாட் பயன்முறை செயல்படுத்தப்பட்டது*
+
+இப்போது நீங்கள் என்னுடன் சுதந்திரமாக அரட்டை அடிக்கலாம்! ஏதேனும் சுகாதார கேள்விகளைக் கேளுங்கள்।
+
+💡 *விரைவு கட்டளைகள்:*
+• பிரதான மெனுவிற்குத் திரும்ப "மெனு" என்று தட்டச்சு செய்யுங்கள்
+• மொழியை மாற்ற "/மொழி" என்று தட்டச்சு செய்யுங்கள்
+
+நீங்கள் என்ன தெரிந்து கொள்ள விரும்புகிறீர்கள்?`,
+    or: `🤖 *AI ଚାଟ୍ ମୋଡ୍ ସକ୍ରିୟ*
+
+ଏବେ ଆପଣ ମୋ ସହିତ ମୁକ୍ତ ଭାବରେ ଚାଟ୍ କରିପାରିବେ! କୌଣସି ସ୍ୱାସ୍ଥ୍ୟ ପ୍ରଶ୍ନ ପଚାରନ୍ତୁ।
+
+💡 *ତୁରନ୍ତ କମାଣ୍ଡ:*
+• ମୁଖ୍ୟ ମେନୁକୁ ଫେରିବା ପାଇଁ "ମେନୁ" ଟାଇପ୍ କରନ୍ତୁ
+• ଭାଷା ବଦଳାଇବା ପାଇଁ "/ଭାଷା" ଟାଇପ୍ କରନ୍ତୁ
+
+ଆପଣ କଣ ଜାଣିବାକୁ ଚାହାଁନ୍ତି?`,
+    
+    // Transliterated versions
+    hi_trans: `🤖 *AI Chat Mode Active*
+
+Ab aap mujhse freely chat kar sakte hain! Koi bhi health question puchiye.
+
+💡 *Quick Commands:*
+• Main menu ke liye "menu" type kariye
+• Language change ke liye "/bhasha" type kariye
+
+Aap kya jaanna chahte hain?`,
+    te_trans: `🤖 *AI Chat Mode Activate ayindi*
+
+Ippudu meeru naatho freely chat cheyavachu! Edaina health questions adagandi.
+
+💡 *Quick Commands:*
+• Main menu ki velladaaniki "menu" type cheyandi
+• Language marchudaaniki "/bhasha" type cheyandi
+
+Meeru emi telusukovaali anukuntunnaru?`,
+    ta_trans: `🤖 *AI Chat Mode Activate aayiduchu*
+
+Ippudu neenga ennoda freely chat adippadalam! Edhaavadhu health questions kelunga.
+
+💡 *Quick Commands:*
+• Main menu ku poradhu "menu" type pannunga
+• Language maatradhu "/mozhi" type pannunga
+
+Neenga enna therinja konum?`,
+    or_trans: `🤖 *AI Chat Mode Active*
+
+Ebe aapan mo sahita mukta bhabare chat karipaariben! Kounasi swaasthya prashna pacharantu.
+
+💡 *Quick Commands:*
+• Mukhya menu ku pheribaa paain "menu" type karantu
+• Bhaashaa badalaaibaa paain "/bhaashaa" type karantu
+
+Aapan kana jaanibaku chahaanti?`
+  },
+
   more_options_menu: {
     en: `⚙️ More Options — Additional services:
 

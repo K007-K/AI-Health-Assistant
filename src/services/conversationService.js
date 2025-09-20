@@ -134,6 +134,16 @@ class ConversationService {
     const lowerMessage = message.toLowerCase();
     const trimmedMessage = message.trim();
 
+    // If user is in AI chat, only allow specific exit commands
+    if (currentState === 'ai_chat') {
+      // Multilingual menu commands
+      if (this.isMenuCommand(lowerMessage)) return 'menu_request';
+      if (this.isLanguageCommand(lowerMessage)) return 'change_language';
+      
+      // Otherwise, continue AI chat
+      return 'ai_chat_message';
+    }
+
     // Button-based intents (list selections) - exact IDs
     if (message.startsWith('lang_')) return 'language_selection';
     if (message.startsWith('script_')) return 'script_selection';
@@ -400,6 +410,42 @@ class ConversationService {
       console.error('Error in updateMessageMetadata:', error);
       throw error;
     }
+  }
+
+  // Check if message is a menu command in any language
+  isMenuCommand(lowerMessage) {
+    const menuCommands = [
+      // English
+      'menu', 'main menu', 'back', 'home', '/menu',
+      // Hindi
+      'मेनू', 'मुख्य मेनू', 'वापस', 'होम', '/मेनू',
+      // Telugu  
+      'మెను', 'ముఖ్య మెను', 'వెనుకకు', 'హోమ్', '/మెను',
+      // Tamil
+      'மெனு', 'முதன்மை மெனு', 'பின்', 'வீடு', '/மெனு',
+      // Odia
+      'ମେନୁ', 'ମୁଖ୍ୟ ମେନୁ', 'ପଛକୁ', 'ଘର', '/ମେନୁ'
+    ];
+    
+    return menuCommands.some(cmd => lowerMessage.includes(cmd));
+  }
+
+  // Check if message is a language change command in any language
+  isLanguageCommand(lowerMessage) {
+    const languageCommands = [
+      // English
+      '/language', 'change language', 'switch language', 'language settings',
+      // Hindi
+      '/भाषा', 'भाषा बदलें', 'भाषा स्विच करें', 'भाषा सेटिंग्स',
+      // Telugu
+      '/భాష', 'భాష మార్చండి', 'భాష మార్చు', 'భాష సెట్టింగ్స్',
+      // Tamil
+      '/மொழி', 'மொழி மாற்று', 'மொழி மாற்றம்', 'மொழி அமைப்புகள்',
+      // Odia
+      '/ଭାଷା', 'ଭାଷା ବଦଳାନ୍ତୁ', 'ଭାଷା ସୁଇଚ୍', 'ଭାଷା ସେଟିଂସ୍'
+    ];
+    
+    return languageCommands.some(cmd => lowerMessage.includes(cmd));
   }
 }
 

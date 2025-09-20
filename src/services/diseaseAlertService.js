@@ -219,12 +219,15 @@ class DiseaseAlertService {
     return false;
   }
 
-  // Send disease alert to user
+  // Send comprehensive disease alert to user (state + nationwide)
   async sendDiseaseAlert(user, diseaseCase) {
     const disease = diseaseCase.disease;
-    const message = this.formatAlertMessage(user, disease, diseaseCase);
     
     try {
+      // Get both state-specific and nationwide data
+      const alertData = await this.getComprehensiveAlertData(user, disease);
+      const message = this.formatComprehensiveAlertMessage(user, disease, alertData);
+      
       // Send WhatsApp message
       const messageId = await this.whatsappService.sendMessage(
         user.phone_number,
@@ -244,7 +247,8 @@ class DiseaseAlertService {
             state: diseaseCase.state,
             district: diseaseCase.district,
             pincode: diseaseCase.pincode,
-            active_cases: diseaseCase.active_cases
+            active_cases: diseaseCase.active_cases,
+            nationwide_cases: alertData.nationwide.total_cases
           },
           delivery_status: 'sent',
           whatsapp_message_id: messageId,
@@ -259,7 +263,7 @@ class DiseaseAlertService {
         })
         .eq('id', user.id);
 
-      console.log(`✅ Alert sent to ${user.phone_number} for ${disease.disease_name}`);
+      console.log(`✅ Comprehensive alert sent to ${user.phone_number} for ${disease.disease_name}`);
       
     } catch (error) {
       console.error(`Failed to send alert to ${user.phone_number}:`, error);
@@ -267,7 +271,221 @@ class DiseaseAlertService {
     }
   }
 
-  // Format alert message
+  // Get comprehensive alert data (state + nationwide)
+  async getComprehensiveAlertData(user, disease) {
+    try {
+      console.log(`📊 Getting comprehensive alert data for ${disease.disease_name}`);
+      
+      // Get user's state from preferences or user object
+      let userState = user.state; // Try user object first
+      
+      if (!userState) {
+        const { data: userPrefs } = await this.supabase
+          .from('user_alert_preferences')
+          .select('state')
+          .eq('phone_number', user.phone_number)
+          .single();
+        
+        userState = userPrefs?.state;
+      }
+      
+      console.log(`📍 User state identified as: ${userState}`);
+      
+      // Get state-specific data
+      const { data: stateData } = await this.supabase
+        .from('disease_cases')
+        .select(`
+          *,
+          disease:diseases(*)
+        `)
+        .eq('disease_id', disease.id)
+        .eq('state', userState)
+        .order('reported_date', { ascending: false })
+        .limit(7); // Last 7 days
+      
+      // Get nationwide data (all states)
+      const { data: nationwideData } = await this.supabase
+        .from('disease_cases')
+        .select(`
+          state,
+          active_cases,
+          cases_today,
+          week_trend,
+          reported_date
+        `)
+        .eq('disease_id', disease.id)
+        .order('reported_date', { ascending: false });
+      
+      // Process state data
+      const stateStats = this.processStateData(stateData, userState);
+      
+      // Process nationwide data
+      const nationwideStats = this.processNationwideData(nationwideData);
+      
+      return {
+        state: stateStats,
+        nationwide: nationwideStats,
+        userState: userState
+      };
+      
+    } catch (error) {
+      console.error('Error getting comprehensive alert data:', error);
+      // Return fallback data
+      return {
+        state: { total_cases: 0, trend: 'stable', affected_districts: 0, cases_today: 0 },
+        nationwide: { total_cases: 0, affected_states: 0, trend: 'stable', top_affected_states: [] },
+        userState: user.state || 'Unknown'
+      };
+    }
+  }
+
+  // Process state-specific data
+  processStateData(stateData, stateName) {
+    if (!stateData || stateData.length === 0) {
+      return {
+        total_cases: 0,
+        cases_today: 0,
+        trend: 'stable',
+        affected_districts: 0,
+        last_updated: null
+      };
+    }
+    
+    const latest = stateData[0];
+    const totalCases = stateData.reduce((sum, record) => sum + (record.active_cases || 0), 0);
+    const casesToday = latest.cases_today || 0;
+    const trend = latest.week_trend || 'stable';
+    
+    // Count unique districts
+    const uniqueDistricts = new Set(stateData.map(record => record.district).filter(Boolean));
+    
+    return {
+      total_cases: totalCases,
+      cases_today: casesToday,
+      trend: trend,
+      affected_districts: uniqueDistricts.size,
+      last_updated: latest.reported_date
+    };
+  }
+
+  // Process nationwide data
+  processNationwideData(nationwideData) {
+    if (!nationwideData || nationwideData.length === 0) {
+      return {
+        total_cases: 0,
+        affected_states: 0,
+        trend: 'stable',
+        top_affected_states: []
+      };
+    }
+    
+    // Group by state and sum cases
+    const stateGroups = {};
+    nationwideData.forEach(record => {
+      if (!stateGroups[record.state]) {
+        stateGroups[record.state] = {
+          state: record.state,
+          total_cases: 0,
+          latest_trend: record.week_trend
+        };
+      }
+      stateGroups[record.state].total_cases += record.active_cases || 0;
+    });
+    
+    const stateStats = Object.values(stateGroups);
+    const totalCases = stateStats.reduce((sum, state) => sum + state.total_cases, 0);
+    const affectedStates = stateStats.filter(state => state.total_cases > 0).length;
+    
+    // Get top 3 affected states
+    const topStates = stateStats
+      .sort((a, b) => b.total_cases - a.total_cases)
+      .slice(0, 3);
+    
+    // Determine overall trend
+    const increasingStates = nationwideData.filter(record => record.week_trend === 'increasing').length;
+    const totalRecords = nationwideData.length;
+    const trend = increasingStates > totalRecords * 0.3 ? 'increasing' : 'stable';
+    
+    return {
+      total_cases: totalCases,
+      affected_states: affectedStates,
+      trend: trend,
+      top_affected_states: topStates
+    };
+  }
+
+  // Format comprehensive alert message (state + nationwide)
+  formatComprehensiveAlertMessage(user, disease, alertData) {
+    const riskEmoji = {
+      low: '🟢',
+      medium: '🟡', 
+      high: '🔴',
+      critical: '🚨'
+    };
+
+    const trendEmoji = {
+      increasing: '📈',
+      decreasing: '📉',
+      stable: '➡️'
+    };
+
+    const emoji = riskEmoji[disease.risk_level] || '⚠️';
+    
+    let message = `${emoji} *DISEASE OUTBREAK ALERT*\n`;
+    message += `🦠 *${disease.disease_name.toUpperCase()}*\n\n`;
+    
+    // STATE-SPECIFIC SECTION
+    const stateName = alertData.userState || 'Unknown';
+    message += `📍 *IN YOUR STATE (${stateName.toUpperCase()}):*\n`;
+    message += `• Active Cases: ${alertData.state.total_cases}\n`;
+    message += `• Today's Cases: ${alertData.state.cases_today}\n`;
+    message += `• Trend: ${trendEmoji[alertData.state.trend] || '➡️'} ${alertData.state.trend.charAt(0).toUpperCase() + alertData.state.trend.slice(1)}\n`;
+    message += `• Affected Districts: ${alertData.state.affected_districts}\n\n`;
+    
+    // NATIONWIDE SECTION
+    message += `🇮🇳 *NATIONWIDE STATUS:*\n`;
+    message += `• Total Cases: ${alertData.nationwide.total_cases}\n`;
+    message += `• Affected States: ${alertData.nationwide.affected_states}\n`;
+    message += `• Overall Trend: ${trendEmoji[alertData.nationwide.trend] || '➡️'} ${alertData.nationwide.trend.charAt(0).toUpperCase() + alertData.nationwide.trend.slice(1)}\n`;
+    
+    if (alertData.nationwide.top_affected_states.length > 0) {
+      message += `• Most Affected: ${alertData.nationwide.top_affected_states.slice(0, 3).map(state => `${state.state} (${state.total_cases})`).join(', ')}\n`;
+    }
+    message += `\n`;
+    
+    // HEALTH INFORMATION
+    message += `*🦠 Key Symptoms:*\n`;
+    if (disease.symptoms && disease.symptoms.length > 0) {
+      disease.symptoms.slice(0, 4).forEach(symptom => {
+        message += `• ${symptom}\n`;
+      });
+    }
+    message += `\n`;
+    
+    message += `*🛡️ Safety Measures:*\n`;
+    if (disease.safety_measures && disease.safety_measures.length > 0) {
+      disease.safety_measures.slice(0, 3).forEach(measure => {
+        message += `• ${measure}\n`;
+      });
+    }
+    message += `\n`;
+    
+    message += `*💊 Prevention:*\n`;
+    if (disease.prevention_methods && disease.prevention_methods.length > 0) {
+      disease.prevention_methods.slice(0, 3).forEach(method => {
+        message += `• ${method}\n`;
+      });
+    }
+    message += `\n`;
+    
+    message += `⚠️ *Risk Level: ${disease.risk_level.toUpperCase()}*\n\n`;
+    message += `_🏥 Consult healthcare providers if you experience symptoms._\n`;
+    message += `_📱 Reply 'STOP ALERTS' to unsubscribe._`;
+    
+    return message;
+  }
+
+  // Format alert message (legacy - kept for compatibility)
   formatAlertMessage(user, disease, caseData) {
     const riskEmoji = {
       low: '🟢',

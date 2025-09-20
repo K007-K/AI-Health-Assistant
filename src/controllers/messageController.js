@@ -452,20 +452,28 @@ class MessageController {
   // Show main menu using list (supports 6 options)
   async showMainMenu(user) {
     try {
-      console.log('🔍 DEBUG showMainMenu - User script_preference:', user.script_preference);
-      console.log('🔍 DEBUG showMainMenu - User preferred_language:', user.preferred_language);
+      // Validate user data and provide defaults
+      const safeUser = {
+        preferred_language: user.preferred_language || 'en',
+        script_preference: user.script_preference || 'native',
+        phone_number: user.phone_number || 'unknown',
+        id: user.id || 'unknown'
+      };
       
-      const menuText = LanguageUtils.getText('main_menu', user.preferred_language, 'en', user.script_preference);
-      const menuList = this.whatsappService.getMainMenuList(user.preferred_language, user.script_preference);
+      console.log('🔍 DEBUG showMainMenu - User script_preference:', safeUser.script_preference);
+      console.log('🔍 DEBUG showMainMenu - User preferred_language:', safeUser.preferred_language);
+      
+      const menuText = LanguageUtils.getText('main_menu', safeUser.preferred_language, 'en', safeUser.script_preference);
+      const menuList = this.whatsappService.getMainMenuList(safeUser.preferred_language, safeUser.script_preference);
       
       console.log('🔍 DEBUG showMainMenu - Generated menu text preview:', menuText.substring(0, 50) + '...');
 
       // Use interactive buttons for better reliability
       console.log('📱 Using interactive buttons for main menu...');
-      const mainButtons = this.whatsappService.getMainMenuButtons(user.preferred_language, user.script_preference);
+      const mainButtons = this.whatsappService.getMainMenuButtons(safeUser.preferred_language, safeUser.script_preference);
       
       await this.whatsappService.sendInteractiveButtons(
-        user.phone_number,
+        safeUser.phone_number,
         menuText,
         mainButtons
       );
@@ -474,17 +482,17 @@ class MessageController {
       const additionalOptions = `\n\n📌 *More Options:*\n🌱 Type "tips" for Health Tips\n🦠 Type "alerts" for Disease Alerts\n🌐 Type "/language" to Change Language\n📊 Type "feedback" for Feedback`;
       
       await this.whatsappService.sendMessage(
-        user.phone_number,
+        safeUser.phone_number,
         additionalOptions
       );
 
-      await this.userService.updateUserSession(user.id, 'main_menu');
+      await this.userService.updateUserSession(safeUser.id, 'main_menu');
       
       await this.conversationService.saveBotMessage(
-        user.id,
+        safeUser.id,
         menuText,
         'main_menu',
-        user.preferred_language
+        safeUser.preferred_language
       );
     } catch (error) {
       console.error('Error in showMainMenu:', error);

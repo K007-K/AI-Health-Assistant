@@ -11,76 +11,65 @@ class MockWhatsAppService {
 
   // Mock send message
   async sendMessage(phoneNumber, message) {
-    if (this.isTestMode) {
-      console.log(`📱 MOCK: Sending message to ${phoneNumber}`);
-      console.log(`💬 Message: ${message.substring(0, 100)}...`);
-      
-      const mockMessageId = `mock_msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
-      this.sentMessages.push({
-        id: mockMessageId,
-        to: phoneNumber,
-        message: message,
-        timestamp: new Date(),
-        status: 'sent'
-      });
-      
-      return mockMessageId;
-    }
+    console.log(`📱 MOCK: Sending message to ${phoneNumber}`);
+    console.log(`💬 Message: ${message.substring(0, 100)}${message.length > 100 ? '...' : ''}`);
     
-    // In production, this would call the real WhatsApp API
-    throw new Error('Real WhatsApp API not configured for testing');
+    const mockMessageId = `mock_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    this.sentMessages.push({
+      id: mockMessageId,
+      to: phoneNumber,
+      message: message,
+      timestamp: new Date(),
+      status: 'sent',
+      type: 'text'
+    });
+    
+    return { messages: [{ id: mockMessageId }] };
   }
 
   // Mock send interactive buttons
-  async sendInteractiveButtons(phoneNumber, message, buttons) {
-    if (this.isTestMode) {
-      console.log(`📱 MOCK: Sending interactive buttons to ${phoneNumber}`);
-      console.log(`💬 Message: ${message}`);
-      console.log(`🔘 Buttons: ${buttons.map(b => b.title).join(', ')}`);
-      
-      const mockMessageId = `mock_btn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
-      this.sentMessages.push({
-        id: mockMessageId,
-        to: phoneNumber,
-        message: message,
-        buttons: buttons,
-        timestamp: new Date(),
-        status: 'sent',
-        type: 'interactive_buttons'
-      });
-      
-      return mockMessageId;
-    }
+  async sendInteractiveButtons(phoneNumber, message, buttons, header = null) {
+    console.log(`📱 MOCK: Sending interactive buttons to ${phoneNumber}`);
+    console.log(`💬 Message: ${message}`);
+    console.log(`🔘 Buttons: ${buttons.length} buttons`);
     
-    throw new Error('Real WhatsApp API not configured for testing');
+    const mockMessageId = `mock_buttons_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    this.sentMessages.push({
+      id: mockMessageId,
+      to: phoneNumber,
+      message: message,
+      buttons: buttons,
+      header: header,
+      timestamp: new Date(),
+      status: 'sent',
+      type: 'interactive_buttons'
+    });
+    
+    return { messages: [{ id: mockMessageId }] };
   }
 
   // Mock send list
   async sendList(phoneNumber, message, sections, buttonText) {
-    if (this.isTestMode) {
-      console.log(`📱 MOCK: Sending list to ${phoneNumber}`);
-      console.log(`💬 Message: ${message}`);
-      console.log(`📋 Sections: ${sections.length} sections`);
-      
-      const mockMessageId = `mock_list_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
-      this.sentMessages.push({
-        id: mockMessageId,
-        to: phoneNumber,
-        message: message,
-        sections: sections,
-        buttonText: buttonText,
-        timestamp: new Date(),
-        status: 'sent',
-        type: 'list'
-      });
-      
-      return mockMessageId;
-    }
+    console.log(`📱 MOCK: Sending list to ${phoneNumber}`);
+    console.log(`💬 Message: ${message}`);
+    console.log(`📋 Sections: ${sections.length} sections`);
     
-    throw new Error('Real WhatsApp API not configured for testing');
+    const mockMessageId = `mock_list_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    this.sentMessages.push({
+      id: mockMessageId,
+      to: phoneNumber,
+      message: message,
+      sections: sections,
+      buttonText: buttonText,
+      timestamp: new Date(),
+      status: 'sent',
+      type: 'list'
+    });
+    
+    return { messages: [{ id: mockMessageId }] };
   }
 
   // Get language selection list (same as real service)
@@ -131,6 +120,55 @@ class MockWhatsAppService {
     };
     
     return menus[language] || menus.en;
+  }
+
+  // Get main menu buttons (same as real service)
+  getMainMenuButtons(language = 'en', scriptType = 'native') {
+    const buttons = {
+      en: [
+        { type: 'reply', reply: { id: 'chat_ai', title: '🤖 Chat with AI' } },
+        { type: 'reply', reply: { id: 'symptom_check', title: '🩺 Check Symptoms' } },
+        { type: 'reply', reply: { id: 'more_options', title: '⚙️ More Options' } }
+      ],
+      hi: [
+        { type: 'reply', reply: { id: 'chat_ai', title: '🤖 AI से बात करें' } },
+        { type: 'reply', reply: { id: 'symptom_check', title: '🩺 लक्षण जांचें' } },
+        { type: 'reply', reply: { id: 'more_options', title: '⚙️ और विकल्प' } }
+      ],
+      te: [
+        { type: 'reply', reply: { id: 'chat_ai', title: '🤖 AI తో చాట్' } },
+        { type: 'reply', reply: { id: 'symptom_check', title: '🩺 లక్షణాలు చూడండి' } },
+        { type: 'reply', reply: { id: 'more_options', title: '⚙️ మరిన్ని ఆప్షన్స్' } }
+      ],
+      hi_trans: [
+        { type: 'reply', reply: { id: 'chat_ai', title: '🤖 AI se baat karo' } },
+        { type: 'reply', reply: { id: 'symptom_check', title: '🩺 Lakshan jancho' } },
+        { type: 'reply', reply: { id: 'more_options', title: '⚙️ Aur vikalp' } }
+      ],
+      te_trans: [
+        { type: 'reply', reply: { id: 'chat_ai', title: '🤖 AI tho chat cheyandi' } },
+        { type: 'reply', reply: { id: 'symptom_check', title: '🩺 Lakshanalu chudandi' } },
+        { type: 'reply', reply: { id: 'more_options', title: '⚙️ Marini options' } }
+      ]
+    };
+    
+    // Check for transliterated version first
+    if (scriptType === 'transliteration' && language !== 'en') {
+      const transKey = `${language}_trans`;
+      if (buttons[transKey]) {
+        return buttons[transKey];
+      }
+    }
+    
+    return buttons[language] || buttons.en;
+  }
+
+  // Get script preference buttons
+  getScriptPreferenceButtons(language) {
+    return [
+      { type: 'reply', reply: { id: 'script_native', title: `📜 Native Script` } },
+      { type: 'reply', reply: { id: 'script_transliteration', title: `🅰️ Roman Letters` } }
+    ];
   }
 
   // Get sent messages for testing

@@ -48,13 +48,26 @@ class WhatsAppService {
           type: 'button',
           body: { text: text },
           action: {
-            buttons: buttons.map((button, index) => ({
-              type: 'reply',
-              reply: {
-                id: button.id || `btn_${index}`,
-                title: button.title.substring(0, 20) // WhatsApp limit
+            buttons: buttons.map((button, index) => {
+              // Handle different button formats
+              if (button.type === 'reply' && button.reply) {
+                return {
+                  type: 'reply',
+                  reply: {
+                    id: button.reply.id || `btn_${index}`,
+                    title: (button.reply.title || '').substring(0, 20) // WhatsApp limit
+                  }
+                };
+              } else {
+                return {
+                  type: 'reply',
+                  reply: {
+                    id: button.id || `btn_${index}`,
+                    title: (button.title || '').substring(0, 20) // WhatsApp limit
+                  }
+                };
               }
-            }))
+            })
           }
         }
       };

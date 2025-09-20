@@ -1291,28 +1291,24 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
     }
   }
 
-  // Handle viewing current disease outbreaks with formatted responses
-  async handleViewActiveDiseases(user, specificDisease = null) {
+  // Handle viewing active diseases with smart caching
+  async handleViewActiveDiseases(user) {
     try {
       console.log('🦠 Showing current disease outbreaks to user:', user.phone_number);
       
-      // No loading message - direct response
+      // Initialize cache service
+      const DiseaseOutbreakCacheService = require('../services/diseaseOutbreakCacheService');
+      const cacheService = new DiseaseOutbreakCacheService();
       
-      // Get user location from preferences if registered for alerts
-      const { data: alertPrefs } = await this.diseaseAlertService.supabase
-        .from('user_alert_preferences')
-        .select('state, district, pincode')
-        .eq('phone_number', user.phone_number)
-        .single();
-
-      const userLocation = alertPrefs || null;
+      // Get user's selected state for targeted alerts
+      const userStateInfo = await cacheService.getUserSelectedState(user.phone_number);
+      const userStateName = userStateInfo?.indian_states?.state_name || null;
       
-      // Get real-time disease outbreak data using AI with Google Search
-      const aiDiseaseMonitor = require('../services/aiDiseaseMonitorService');
-      const aiMonitor = new aiDiseaseMonitor();
+      // Get disease outbreak data using smart caching (no redundant queries)
+      const diseaseData = await cacheService.getDiseaseOutbreakData(userStateName);
       
       // Send multilingual main header
-      const locationText = userLocation ? ` in ${userLocation.state}${userLocation.district ? ', ' + userLocation.district : ''}` : ' in India';
+      const locationText = userStateName ? ` in ${userStateName}` : ' in India';
       const currentDate = new Date().toLocaleDateString('en-IN', {
         year: 'numeric',
         month: 'long',
@@ -1326,32 +1322,26 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
       await new Promise(resolve => setTimeout(resolve, 500));
 
       try {
-        // Get real-time location-specific disease data from AI with Google Search
-        const diseaseResponse = await aiMonitor.fetchLocationSpecificDiseases(userLocation);
-        const diseaseData = diseaseResponse.diseases || [];
+        // Use cached disease data (eliminates redundant API calls)
+        const diseases = diseaseData.diseases || [];
         
-        if (!diseaseData || diseaseData.length === 0) {
+        if (!diseases || diseases.length === 0) {
           const noDiseaseText = LanguageUtils.getText('no_diseases_found', user.preferred_language, 'en', user.script_preference);
           await this.whatsappService.sendMessage(user.phone_number, noDiseaseText);
           return;
         }
 
         // Prioritize diseases by location relevance
-        let relevantDiseases = this.prioritizeDiseasesByLocation(diseaseData, userLocation);
+        const userLocation = userStateName ? { state: userStateName } : null;
+        let relevantDiseases = this.prioritizeDiseasesByLocation(diseases, userLocation);
         
-        // If user has location, show location-specific header
-        if (userLocation && userLocation.state) {
-          const localDiseases = relevantDiseases.filter(d => d.isLocal);
-          const stateDiseases = relevantDiseases.filter(d => d.isState && !d.isLocal);
-          
-          if (localDiseases.length > 0) {
-            const localHeaderTemplate = LanguageUtils.getText('disease_local_header', user.preferred_language, 'en', user.script_preference);
-            const localHeaderText = localHeaderTemplate.replace('{location}', userLocation.district || userLocation.state);
-            await this.whatsappService.sendMessage(user.phone_number, localHeaderText);
-            await new Promise(resolve => setTimeout(resolve, 300));
-          } else if (stateDiseases.length > 0) {
+        // If user has selected state, show state-specific header
+        if (userStateName) {
+          const stateDiseases = relevantDiseases.filter(d => d.isState || d.isLocal);
+
+          if (stateDiseases.length > 0) {
             const stateHeaderTemplate = LanguageUtils.getText('disease_state_header', user.preferred_language, 'en', user.script_preference);
-            const stateHeaderText = stateHeaderTemplate.replace('{state}', userLocation.state);
+            const stateHeaderText = stateHeaderTemplate.replace('{state}', userStateName);
             await this.whatsappService.sendMessage(user.phone_number, stateHeaderText);
             await new Promise(resolve => setTimeout(resolve, 300));
           }
@@ -1383,7 +1373,9 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
         
         await this.whatsappService.sendMessage(user.phone_number, specificPrevention);
 
-        // Show follow-up options
+        // Show data source and follow-up options
+        const sourceText = diseaseData.source === 'cache' ? '💾 Cached data' : '🆕 Fresh data';
+        
         const followUpButtons = [
           { id: 'turn_on_alerts', title: '🔔 Get Alerts' },
           { id: 'disease_alerts', title: '↩️ Back' },
@@ -1392,7 +1384,7 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
 
         await this.whatsappService.sendInteractiveButtons(
           user.phone_number,
-          '📱 Want alerts for disease outbreaks in your area?',
+          `📱 Want alerts for disease outbreaks in your area? ${sourceText}`,
           followUpButtons
         );
         
@@ -1438,32 +1430,29 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
     }
   }
 
-  // Handle turning on alerts
+  // Handle turning on alerts with interactive state selection
   async handleTurnOnAlerts(user) {
     try {
       console.log('🔔 User requesting to turn on alerts:', user.phone_number);
       
-      // Check if already registered
-      const isRegistered = await this.diseaseAlertService.isUserRegistered(user.phone_number);
+      // Initialize cache service for state selection
+      const DiseaseOutbreakCacheService = require('../services/diseaseOutbreakCacheService');
+      const cacheService = new DiseaseOutbreakCacheService();
       
-      if (isRegistered) {
+      // Check if user already has a selected state
+      const existingState = await cacheService.getUserSelectedState(user.phone_number);
+      
+      if (existingState && existingState.alerts_enabled) {
+        const stateName = existingState.indian_states?.state_name || 'your area';
         await this.whatsappService.sendMessage(
           user.phone_number,
-          '✅ You are already registered for disease outbreak alerts!\n\nYou will receive notifications about disease outbreaks in your area.\n\nReply "STOP ALERTS" anytime to unsubscribe.'
+          `✅ You are already registered for disease outbreak alerts in ${stateName}!\n\nYou will receive notifications about disease outbreaks in your area.\n\nReply "STOP ALERTS" anytime to unsubscribe.`
         );
         return;
       }
 
-      // Ask for location details
-      const locationPrompts = {
-        en: '📍 *Location Required for Alerts*\n\nTo send you relevant disease outbreak alerts, please provide your location:\n\n*Format:* State, District, Pincode\n*Example:* Maharashtra, Mumbai, 400001\n\nPlease enter your location:',
-        hi: '📍 *अलर्ट के लिए स्थान आवश्यक*\n\nआपको प्रासंगिक रोग प्रकोप अलर्ट भेजने के लिए, कृपया अपना स्थान प्रदान करें:\n\n*प्रारूप:* राज्य, जिला, पिनकोड\n*उदाहरण:* महाराष्ट्र, मुंबई, 400001\n\nकृपया अपना स्थान दर्ज करें:'
-      };
-
-      await this.whatsappService.sendMessage(
-        user.phone_number,
-        locationPrompts[user.preferred_language] || locationPrompts.en
-      );
+      // Show interactive state selection
+      await this.showStateSelectionMenu(user, cacheService);
 
       // Update session to wait for location
       await this.userService.updateUserSession(user.id, 'waiting_for_alert_location');
@@ -2012,6 +2001,165 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
     message += footerText[language] || footerText.en;
 
     return message;
+  }
+
+  // Show interactive state selection menu
+  async showStateSelectionMenu(user, cacheService) {
+    try {
+      // Get states grouped by region for better UX
+      const statesGrouped = await cacheService.getStatesGroupedByRegion();
+      
+      const headerText = {
+        en: '📍 *Select Your State for Disease Alerts*\n\nChoose your state to receive location-specific disease outbreak alerts:',
+        hi: '📍 *रोग अलर्ट के लिए अपना राज्य चुनें*\n\nस्थान-विशिष्ट रोग प्रकोप अलर्ट प्राप्त करने के लिए अपना राज्य चुनें:',
+        te: '📍 *వ్యాధి హెచ్చరికల కోసం మీ రాష్ట్రాన్ని ఎంచుకోండి*\n\nస్థాన-ప్రత్యేక వ్యాధి వ్యాప్తి హెచ్చరికలను పొందడానికి మీ రాష్ట్రాన్ని ఎంచుకోండి:',
+        ta: '📍 *நோய் எச்சரிக்கைகளுக்கு உங்கள் மாநிலத்தைத் தேர்ந்தெடுக்கவும்*\n\nஇடம் சார்ந்த நோய் வெடிப்பு எச்சரிக்கைகளைப் பெற உங்கள் மாநிலத்தைத் தேர்ந்தெடுக்கவும்:',
+        or: '📍 *ରୋଗ ଚେତାବନୀ ପାଇଁ ଆପଣଙ୍କ ରାଜ୍ୟ ବାଛନ୍ତୁ*\n\nସ୍ଥାନ-ନିର୍ଦ୍ଦିଷ୍ଟ ରୋଗ ପ୍ରକୋପ ଚେତାବନୀ ପାଇବାକୁ ଆପଣଙ୍କ ରାଜ୍ୟ ବାଛନ୍ତୁ:'
+      };
+
+      await this.whatsappService.sendMessage(
+        user.phone_number,
+        headerText[user.preferred_language] || headerText.en
+      );
+
+      // Create region-based buttons (WhatsApp supports max 3 buttons per message)
+      const regions = Object.keys(statesGrouped);
+      const regionButtons = [];
+
+      // Group regions into sets of 3 for multiple messages
+      for (let i = 0; i < regions.length; i += 3) {
+        const regionSet = regions.slice(i, i + 3);
+        const buttons = regionSet.map(region => ({
+          id: `region_${region.toLowerCase().replace(/\s+/g, '_')}`,
+          title: `${region} (${statesGrouped[region].length})`
+        }));
+
+        await this.whatsappService.sendInteractiveButtons(
+          user.phone_number,
+          `🗺️ Select a region:`,
+          buttons
+        );
+
+        // Small delay between button messages
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+
+      // Store states data in user session for later use
+      await this.userService.updateUserSession(user.id, 'selecting_region', {
+        statesGrouped: statesGrouped
+      });
+
+    } catch (error) {
+      console.error('Error showing state selection menu:', error);
+      
+      // Fallback to text input
+      const fallbackText = {
+        en: '📍 Please type your state name (e.g., "Andhra Pradesh", "Maharashtra"):',
+        hi: '📍 कृपया अपने राज्य का नाम टाइप करें (जैसे, "आंध्र प्रदेश", "महाराष्ट्र"):',
+        te: '📍 దయచేసి మీ రాష్ట్ర పేరును టైప్ చేయండి (ఉదా., "ఆంధ్ర ప్రదేశ్", "మహారాష్ట్ర"):',
+        ta: '📍 உங்கள் மாநில பெயரைத் தட்டச்சு செய்யுங்கள் (எ.கா., "ஆந்திர பிரதேசம்", "மகாராஷ்டிரா"):',
+        or: '📍 ଦୟାକରି ଆପଣଙ୍କ ରାଜ୍ୟର ନାମ ଟାଇପ୍ କରନ୍ତୁ (ଯଥା, "ଆନ୍ଧ୍ର ପ୍ରଦେଶ", "ମହାରାଷ୍ଟ୍ର"):'
+      };
+
+      await this.whatsappService.sendMessage(
+        user.phone_number,
+        fallbackText[user.preferred_language] || fallbackText.en
+      );
+    }
+  }
+
+  // Handle region selection
+  async handleRegionSelection(user, regionId) {
+    try {
+      const DiseaseOutbreakCacheService = require('../services/diseaseOutbreakCacheService');
+      const cacheService = new DiseaseOutbreakCacheService();
+      
+      // Get user session data
+      const session = await this.userService.getUserSession(user.id);
+      const statesGrouped = session?.data?.statesGrouped;
+      
+      if (!statesGrouped) {
+        throw new Error('States data not found in session');
+      }
+
+      // Extract region name from ID
+      const regionName = regionId.replace('region_', '').replace(/_/g, ' ');
+      const properRegionName = Object.keys(statesGrouped).find(
+        region => region.toLowerCase().replace(/\s+/g, '_') === regionName
+      );
+
+      if (!properRegionName || !statesGrouped[properRegionName]) {
+        throw new Error('Invalid region selected');
+      }
+
+      const states = statesGrouped[properRegionName];
+      
+      // Create state selection buttons (max 10 buttons per list)
+      const stateButtons = states.slice(0, 10).map(state => ({
+        id: `state_${state.id}`,
+        title: state.state_name.length > 20 ? state.state_name.substring(0, 20) + '...' : state.state_name
+      }));
+
+      await this.whatsappService.sendInteractiveList(
+        user.phone_number,
+        `🏛️ Select your state from ${properRegionName}:`,
+        'Choose State',
+        stateButtons
+      );
+
+      // Update session to wait for state selection
+      await this.userService.updateUserSession(user.id, 'selecting_state', {
+        region: properRegionName,
+        states: states
+      });
+
+    } catch (error) {
+      console.error('Error handling region selection:', error);
+      await this.handleError(user.phone_number, error);
+    }
+  }
+
+  // Handle state selection
+  async handleStateSelection(user, stateId) {
+    try {
+      const DiseaseOutbreakCacheService = require('../services/diseaseOutbreakCacheService');
+      const cacheService = new DiseaseOutbreakCacheService();
+      
+      // Extract state ID from selection
+      const actualStateId = parseInt(stateId.replace('state_', ''));
+      
+      // Update user's selected state
+      const success = await cacheService.updateUserSelectedState(user.phone_number, actualStateId);
+      
+      if (success) {
+        // Get state info for confirmation
+        const stateInfo = await cacheService.getUserSelectedState(user.phone_number);
+        const stateName = stateInfo?.indian_states?.state_name || 'your selected state';
+        
+        const confirmationText = {
+          en: `✅ *Alerts Activated!*\n\nYou will now receive disease outbreak alerts for ${stateName}.\n\n🔔 Alert frequency: Daily\n📱 Delivery: WhatsApp messages\n\nReply "STOP ALERTS" anytime to unsubscribe.`,
+          hi: `✅ *अलर्ट सक्रिय!*\n\nअब आपको ${stateName} के लिए रोग प्रकोप अलर्ट मिलेंगे।\n\n🔔 अलर्ट आवृत्ति: दैनिक\n📱 डिलीवरी: व्हाट्सएप संदेश\n\nसदस्यता रद्द करने के लिए कभी भी "STOP ALERTS" का उत्तर दें।`,
+          te: `✅ *హెచ్చరికలు సక్రియం చేయబడ్డాయి!*\n\nఇప్పుడు మీకు ${stateName} కోసం వ్యాధి వ్యాప్తి హెచ్చరికలు వస్తాయి.\n\n🔔 హెచ్చరిక ఫ్రీక్వెన్సీ: రోజువారీ\n📱 డెలివరీ: వాట్సాప్ మెసేజ్‌లు\n\nసబ్‌స్క్రిప్షన్ రద్దు చేయడానికి ఎప్పుడైనా "STOP ALERTS" అని రిప్లై చేయండి.`,
+          ta: `✅ *எச்சரிக்கைகள் செயல்படுத்தப்பட்டன!*\n\nஇப்போது நீங்கள் ${stateName}க்கான நோய் வெடிப்பு எச்சரிக்கைகளைப் பெறுவீர்கள்.\n\n🔔 எச்சரிக்கை அதிர்வெண்: தினசரி\n📱 டெலிவரி: வாட்ஸ்அப் செய்திகள்\n\nசந்தாவை ரத்து செய்ய எப்போது வேண்டுமானாலும் "STOP ALERTS" என்று பதிலளிக்கவும்.`,
+          or: `✅ *ଚେତାବନୀ ସକ୍ରିୟ!*\n\nଏବେ ଆପଣ ${stateName} ପାଇଁ ରୋଗ ପ୍ରକୋପ ଚେତାବନୀ ପାଇବେ।\n\n🔔 ଚେତାବନୀ ଫ୍ରିକ୍ୱେନ୍ସି: ଦୈନିକ\n📱 ଡେଲିଭରି: ହ୍ୱାଟସଆପ ମେସେଜ\n\nସବସ୍କ୍ରିପସନ ବାତିଲ କରିବାକୁ ଯେକୌଣସି ସମୟରେ "STOP ALERTS" ରିପ୍ଲାଇ କରନ୍ତୁ।`
+        };
+
+        await this.whatsappService.sendMessage(
+          user.phone_number,
+          confirmationText[user.preferred_language] || confirmationText.en
+        );
+
+        // Clear user session
+        await this.userService.updateUserSession(user.id, 'main_menu');
+        
+      } else {
+        throw new Error('Failed to update user state selection');
+      }
+
+    } catch (error) {
+      console.error('Error handling state selection:', error);
+      await this.handleError(user.phone_number, error);
+    }
   }
 
   // Get appropriate emoji for disease

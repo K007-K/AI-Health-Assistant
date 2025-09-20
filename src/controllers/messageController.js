@@ -2082,11 +2082,11 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
     return message;
   }
 
-  // Show interactive state selection menu
+  // Show direct state selection menu (simplified)
   async showStateSelectionMenu(user, cacheService) {
     try {
-      // Get states grouped by region for better UX
-      const statesGrouped = await cacheService.getStatesGroupedByRegion();
+      // Get all states directly (no region grouping)
+      const allStates = await cacheService.getIndianStates();
       
       const headerText = {
         en: '📍 *Select Your State for Disease Alerts*\n\nChoose your state to receive location-specific disease outbreak alerts:',
@@ -2101,31 +2101,53 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
         headerText[user.preferred_language] || headerText.en
       );
 
-      // Create region-based buttons (WhatsApp supports max 3 buttons per message)
-      const regions = Object.keys(statesGrouped);
-      const regionButtons = [];
+      // Create state list (WhatsApp supports max 10 items per list)
+      const stateItems = allStates.slice(0, 10).map(state => ({
+        id: `state_${state.id}`,
+        title: state.state_name.length > 24 ? state.state_name.substring(0, 21) + '...' : state.state_name,
+        description: state.is_union_territory ? 'Union Territory' : 'State'
+      }));
 
-      // Group regions into sets of 3 for multiple messages
-      for (let i = 0; i < regions.length; i += 3) {
-        const regionSet = regions.slice(i, i + 3);
-        const buttons = regionSet.map(region => ({
-          id: `region_${region.toLowerCase().replace(/\s+/g, '_')}`,
-          title: `${region} (${statesGrouped[region].length})`
-        }));
+      const listButtonText = {
+        en: 'Choose State',
+        hi: 'राज्य चुनें',
+        te: 'రాష్ట్రం ఎంచుకోండి',
+        ta: 'மாநிலம் தேர்ந்தெடுக்கவும்',
+        or: 'ରାଜ୍ୟ ବାଛନ୍ତୁ'
+      };
 
-        await this.whatsappService.sendInteractiveButtons(
-          user.phone_number,
-          `🗺️ Select a region:`,
-          buttons
-        );
+      await this.whatsappService.sendInteractiveList(
+        user.phone_number,
+        '🏛️ Select your state:',
+        listButtonText[user.preferred_language] || listButtonText.en,
+        stateItems
+      );
 
-        // Small delay between button messages
-        await new Promise(resolve => setTimeout(resolve, 300));
+      // If there are more than 10 states, send additional lists
+      if (allStates.length > 10) {
+        for (let i = 10; i < allStates.length; i += 10) {
+          const nextBatch = allStates.slice(i, i + 10);
+          const nextItems = nextBatch.map(state => ({
+            id: `state_${state.id}`,
+            title: state.state_name.length > 24 ? state.state_name.substring(0, 21) + '...' : state.state_name,
+            description: state.is_union_territory ? 'Union Territory' : 'State'
+          }));
+
+          await this.whatsappService.sendInteractiveList(
+            user.phone_number,
+            `🏛️ More states (${i + 1}-${Math.min(i + 10, allStates.length)}):`,
+            listButtonText[user.preferred_language] || listButtonText.en,
+            nextItems
+          );
+
+          // Small delay between lists
+          await new Promise(resolve => setTimeout(resolve, 300));
+        }
       }
 
-      // Store states data in user session for later use
-      await this.userService.updateUserSession(user.id, 'selecting_region', {
-        statesGrouped: statesGrouped
+      // Update session to wait for state selection directly
+      await this.userService.updateUserSession(user.id, 'selecting_state', {
+        allStates: allStates
       });
 
     } catch (error) {
@@ -2147,55 +2169,13 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
     }
   }
 
-  // Handle region selection
+  // Handle region selection (deprecated - now going directly to states)
   async handleRegionSelection(user, regionId) {
-    try {
-      const DiseaseOutbreakCacheService = require('../services/diseaseOutbreakCacheService');
-      const cacheService = new DiseaseOutbreakCacheService();
-      
-      // Get user session data
-      const session = await this.userService.getUserSession(user.id);
-      const statesGrouped = session?.data?.statesGrouped;
-      
-      if (!statesGrouped) {
-        throw new Error('States data not found in session');
-      }
-
-      // Extract region name from ID
-      const regionName = regionId.replace('region_', '').replace(/_/g, ' ');
-      const properRegionName = Object.keys(statesGrouped).find(
-        region => region.toLowerCase().replace(/\s+/g, '_') === regionName
-      );
-
-      if (!properRegionName || !statesGrouped[properRegionName]) {
-        throw new Error('Invalid region selected');
-      }
-
-      const states = statesGrouped[properRegionName];
-      
-      // Create state selection buttons (max 10 buttons per list)
-      const stateButtons = states.slice(0, 10).map(state => ({
-        id: `state_${state.id}`,
-        title: state.state_name.length > 20 ? state.state_name.substring(0, 20) + '...' : state.state_name
-      }));
-
-      await this.whatsappService.sendInteractiveList(
-        user.phone_number,
-        `🏛️ Select your state from ${properRegionName}:`,
-        'Choose State',
-        stateButtons
-      );
-
-      // Update session to wait for state selection
-      await this.userService.updateUserSession(user.id, 'selecting_state', {
-        region: properRegionName,
-        states: states
-      });
-
-    } catch (error) {
-      console.error('Error handling region selection:', error);
-      await this.handleError(user.phone_number, error);
-    }
+    // Redirect to direct state selection
+    console.log('Region selection deprecated, redirecting to direct state selection');
+    const DiseaseOutbreakCacheService = require('../services/diseaseOutbreakCacheService');
+    const cacheService = new DiseaseOutbreakCacheService();
+    await this.showStateSelectionMenu(user, cacheService);
   }
 
   // Handle state selection

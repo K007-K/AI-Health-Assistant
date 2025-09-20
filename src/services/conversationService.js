@@ -170,8 +170,8 @@ class ConversationService {
     if (trimmedMessage.includes('🔕 Turn OFF Alerts') || lowerMessage.includes('turn off alerts') || lowerMessage === 'alerts off') return 'turn_off_alerts';
     if (trimmedMessage.includes('📊 Feedback') || lowerMessage.includes('feedback & accuracy')) return 'feedback';
     
-    // Language change commands
-    if (message === '/language' || lowerMessage === '/language') return 'change_language';
+    // Language change commands - Enhanced with transliterated versions
+    if (this.isLanguageCommand(lowerMessage)) return 'change_language';
     
     // More options menu selections and Change Language from main menu
     if (trimmedMessage.includes('🌐 Change Language') || trimmedMessage.includes('🌐 भाषा बदलें') || trimmedMessage.includes('🌐 భాష మార్చండి') || lowerMessage.includes('change language') || lowerMessage.includes('switch to different language')) return 'change_language';
@@ -197,8 +197,8 @@ class ConversationService {
     if (trimmedMessage.includes('🥗 Nutrition & Hygiene') || lowerMessage.includes('nutrition') || lowerMessage.includes('hygiene')) return 'preventive_tips';
     if (trimmedMessage.includes('🏃 Exercise & Lifestyle') || lowerMessage.includes('exercise') || lowerMessage.includes('lifestyle')) return 'preventive_tips';
     
-    // Navigation commands  
-    if (trimmedMessage.includes('📋 Main Menu') || lowerMessage.includes('menu') || lowerMessage.includes('back') || lowerMessage.includes('main menu')) {
+    // Navigation commands - Enhanced with multilingual support
+    if (trimmedMessage.includes('📋 Main Menu') || this.isMenuCommand(lowerMessage)) {
       return 'menu_request';
     }
     
@@ -417,14 +417,22 @@ class ConversationService {
     const menuCommands = [
       // English
       'menu', 'main menu', 'back', 'home', '/menu',
-      // Hindi
+      // Hindi - Native script
       'मेनू', 'मुख्य मेनू', 'वापस', 'होम', '/मेनू',
-      // Telugu  
+      // Hindi - Transliterated
+      'menu', 'mukhya menu', 'wapas', 'ghar',
+      // Telugu - Native script
       'మెను', 'ముఖ్య మెను', 'వెనుకకు', 'హోమ్', '/మెను',
-      // Tamil
+      // Telugu - Transliterated
+      'menu', 'mukhya menu', 'venukaku', 'home',
+      // Tamil - Native script
       'மெனு', 'முதன்மை மெனு', 'பின்', 'வீடு', '/மெனு',
-      // Odia
-      'ମେନୁ', 'ମୁଖ୍ୟ ମେନୁ', 'ପଛକୁ', 'ଘର', '/ମେନୁ'
+      // Tamil - Transliterated
+      'menu', 'muthanmai menu', 'pin', 'veedu',
+      // Odia - Native script
+      'ମେନୁ', 'ମୁଖ୍ୟ ମେନୁ', 'ପଛକୁ', 'ଘର', '/ମେନୁ',
+      // Odia - Transliterated
+      'menu', 'mukhya menu', 'pachaku', 'ghara'
     ];
     
     return menuCommands.some(cmd => lowerMessage.includes(cmd));
@@ -435,14 +443,22 @@ class ConversationService {
     const languageCommands = [
       // English
       '/language', 'change language', 'switch language', 'language settings',
-      // Hindi
+      // Hindi - Native script
       '/भाषा', 'भाषा बदलें', 'भाषा स्विच करें', 'भाषा सेटिंग्स',
-      // Telugu
+      // Hindi - Transliterated
+      '/bhasha', '/basha', 'bhasha badlo', 'basha badlo', 'language change karo',
+      // Telugu - Native script
       '/భాష', 'భాష మార్చండి', 'భాష మార్చు', 'భాష సెట్టింగ్స్',
-      // Tamil
+      // Telugu - Transliterated
+      '/bhasha', '/basha', 'bhasha marchandi', 'basha marchandi', 'language marchu',
+      // Tamil - Native script
       '/மொழி', 'மொழி மாற்று', 'மொழி மாற்றம்', 'மொழி அமைப்புகள்',
-      // Odia
-      '/ଭାଷା', 'ଭାଷା ବଦଳାନ୍ତୁ', 'ଭାଷା ସୁଇଚ୍', 'ଭାଷା ସେଟିଂସ୍'
+      // Tamil - Transliterated
+      '/mozhi', '/basha', 'mozhi maatru', 'language maatru',
+      // Odia - Native script
+      '/ଭାଷା', 'ଭାଷା ବଦଳାନ୍ତୁ', 'ଭାଷା ସୁଇଚ୍', 'ଭାଷା ସେଟିଂସ୍',
+      // Odia - Transliterated
+      '/bhaasha', '/basha', 'bhaasha badalantu', 'language change'
     ];
     
     return languageCommands.some(cmd => lowerMessage.includes(cmd));

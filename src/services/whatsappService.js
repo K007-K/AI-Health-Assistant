@@ -243,7 +243,7 @@ class WhatsAppService {
   }
 
   // Get main menu as list (supports 6 options)
-  getMainMenuList(language = 'en') {
+  getMainMenuList(language = 'en', scriptType = 'native') {
     const menus = {
       en: {
         sections: [{
@@ -309,8 +309,74 @@ class WhatsAppService {
             { id: 'feedback', title: '📊 ମତାମତ ଏବଂ ସଠିକତା', description: 'ପ୍ରତିକ୍ରିଯାକୁ ମୂଲ୍ଯାଙ୍କନ କରନ୍ତୁ ଏବଂ ସଠିକତା ଉନ୍ନତି କରିବାରେ ସାହାଯ୍ଯ କରନ୍ତୁ' }
           ]
         }]
+      },
+      
+      // Transliterated versions
+      hi_trans: {
+        sections: [{
+          title: "📋 Main Menu",
+          rows: [
+            { id: 'chat_ai', title: '🤖 AI se baat karo', description: 'Swasthya prashn pucho aur margdarshan pao' },
+            { id: 'symptom_check', title: '🩺 Lakshan jancho', description: 'Lakshano ka vishleshan karo aur sifarish pao' },
+            { id: 'preventive_tips', title: '🌱 Swasthya sujhav', description: 'Bimariyo, poshan aur jeevansheli ke bare mein jano' },
+            { id: 'disease_alerts', title: '🦠 Rog prakop alert', description: 'Sakriya rog dekho aur alert prabandhan karo' },
+            { id: 'change_language', title: '🌐 Bhasha badlo', description: 'Alag bhasha mein badlo' },
+            { id: 'feedback', title: '📊 Feedback aur sachaita', description: 'Pratikriyao ko rate karo aur sachaita sudharne mein madad karo' }
+          ]
+        }]
+      },
+      
+      te_trans: {
+        sections: [{
+          title: "📋 Main Menu",
+          rows: [
+            { id: 'chat_ai', title: '🤖 AI tho chat cheyandi', description: 'Aarogya prashnalu adigi margadarshanam pondandi' },
+            { id: 'symptom_check', title: '🩺 Lakshanalu thanikhi cheyandi', description: 'Lakshanalanu vishleshinchi sifarasulu pondandi' },
+            { id: 'preventive_tips', title: '🌱 Aarogya chitkalu', description: 'Vyadhulu, poshanalu & jeevanasheli gurinchi telusukondi' },
+            { id: 'disease_alerts', title: '🦠 Vyadhi vyapthi hecharikalu', description: 'Churukaina vyadhulanu chudandi & hecharikalanu nirvahinchandhi' },
+            { id: 'change_language', title: '🌐 Bhasha marchandi', description: 'Vere bhashaku marchandi' },
+            { id: 'feedback', title: '📊 Feedback & khachithatvam', description: 'Spandanalanu rate cheyandi & khachithatvam meruguparachadamlo sahayapadandi' }
+          ]
+        }]
+      },
+      
+      ta_trans: {
+        sections: [{
+          title: "📋 Main Menu",
+          rows: [
+            { id: 'chat_ai', title: '🤖 AI udan aratai', description: 'Sugathara kelvikal kettu vazhikattuthal perungal' },
+            { id: 'symptom_check', title: '🩺 Arikuri saripar', description: 'Arikurikarai pakuppaivu seithu parinthurakairai perungal' },
+            { id: 'preventive_tips', title: '🌱 Aarokkiya kuripugal', description: 'Noikal, oottachatthu & valkkai murai patri ariyungal' },
+            { id: 'disease_alerts', title: '🦠 Noi virivu echarikaikal', description: 'Tarpothaiya noikarai parkavum & echarikaikairai nirvahikkavum' },
+            { id: 'change_language', title: '🌐 Mozhi maatru', description: 'Veru mozhiku maatru' },
+            { id: 'feedback', title: '📊 Karuthu & sariyaana nilai', description: 'Spandanakairai rate seiyungal & sariyaana nilayai merugupaduthadhil uthavungal' }
+          ]
+        }]
+      },
+      
+      or_trans: {
+        sections: [{
+          title: "📋 Main Menu",
+          rows: [
+            { id: 'chat_ai', title: '🤖 AI sahita chat karanta', description: 'Swaasthya prashna pacharanta o margadarshan paanta' },
+            { id: 'symptom_check', title: '🩺 Lakshan jancha karanta', description: 'Lakshana vishleshan karanta o sifarish paanta' },
+            { id: 'preventive_tips', title: '🌱 Swaasthya tips', description: 'Rog, aahaar o jeevan shaili bisayare jaananta' },
+            { id: 'disease_alerts', title: '🦠 Rog prakop alert', description: 'Sakriya rog dekhanta o alert byabasthapana karanta' },
+            { id: 'change_language', title: '🌐 Bhaasha badalanta', description: 'Anya bhaashaku badalanta' },
+            { id: 'feedback', title: '📊 Feedback o sachaita', description: 'Pratikriya rate karanta o sachaita sudharibaa sahayata karanta' }
+          ]
+        }]
       }
     };
+    
+    // Check for transliterated version first
+    if (scriptType === 'transliteration' && language !== 'en') {
+      const transKey = `${language}_trans`;
+      if (menus[transKey]) {
+        return menus[transKey];
+      }
+    }
+    
     return menus[language] || menus.en;
   }
 

@@ -428,7 +428,7 @@ class MessageController {
       console.log('🔍 DEBUG showMainMenu - User preferred_language:', user.preferred_language);
       
       const menuText = LanguageUtils.getText('main_menu', user.preferred_language, 'en', user.script_preference);
-      const menuList = this.whatsappService.getMainMenuList(user.preferred_language);
+      const menuList = this.whatsappService.getMainMenuList(user.preferred_language, user.script_preference);
       
       console.log('🔍 DEBUG showMainMenu - Generated menu text preview:', menuText.substring(0, 50) + '...');
 

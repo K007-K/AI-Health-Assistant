@@ -1442,7 +1442,7 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
       // Check if user already has a selected state
       const existingState = await cacheService.getUserSelectedState(user.phone_number);
       
-      if (existingState && existingState.alerts_enabled) {
+      if (existingState && existingState.alert_enabled) {
         const stateName = existingState.indian_states?.state_name || 'your area';
         await this.whatsappService.sendMessage(
           user.phone_number,

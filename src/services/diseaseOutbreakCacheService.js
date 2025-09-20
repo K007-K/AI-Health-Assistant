@@ -235,7 +235,7 @@ class DiseaseOutbreakCacheService {
           .insert({
             phone_number: phoneNumber,
             selected_state_id: stateId,
-            alerts_enabled: true,
+            alert_enabled: true,
             alert_frequency: 'daily'
           });
 
@@ -249,7 +249,7 @@ class DiseaseOutbreakCacheService {
           .from('user_alert_preferences')
           .update({
             selected_state_id: stateId,
-            alerts_enabled: true,
+            alert_enabled: true,
             updated_at: new Date().toISOString()
           })
           .eq('phone_number', phoneNumber);
@@ -280,7 +280,7 @@ class DiseaseOutbreakCacheService {
         .from('user_alert_preferences')
         .select(`
           selected_state_id,
-          alerts_enabled,
+          alert_enabled,
           alert_frequency,
           indian_states (
             id,

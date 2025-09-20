@@ -87,7 +87,7 @@ ADD COLUMN IF NOT EXISTS alert_frequency VARCHAR(20) DEFAULT 'daily' CHECK (aler
 CREATE INDEX IF NOT EXISTS idx_outbreak_cache_type_state_date ON disease_outbreak_cache (cache_type, state_name, query_date);
 CREATE INDEX IF NOT EXISTS idx_outbreak_cache_updated ON disease_outbreak_cache (updated_at DESC);
 CREATE INDEX IF NOT EXISTS idx_states_name_search ON indian_states USING gin(to_tsvector('english', state_name));
-CREATE INDEX IF NOT EXISTS idx_user_alerts_state ON user_alert_preferences (selected_state_id, alerts_enabled);
+CREATE INDEX IF NOT EXISTS idx_user_alerts_state ON user_alert_preferences (selected_state_id, alert_enabled);
 
 -- 5. Cache Cleanup Function (remove old cache entries)
 CREATE OR REPLACE FUNCTION cleanup_old_disease_cache()

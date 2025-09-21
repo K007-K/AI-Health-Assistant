@@ -1158,15 +1158,42 @@ ${language} భాషలో${scriptPreference === 'transliteration' ? ' ఆం�
     try {
       const lowerMessage = message.toLowerCase();
       
-      // Define exercise-related keywords
+      // Define exercise-related keywords (comprehensive list including specific exercises)
       const exerciseKeywords = [
+        // General exercise terms
         'exercise', 'workout', 'fitness', 'gym', 'training', 'activity', 'sport',
         'walking', 'running', 'jogging', 'cycling', 'swimming', 'yoga', 'stretching',
         'muscle', 'strength', 'cardio', 'aerobic', 'weight', 'lifting', 'push-up',
         'sit-up', 'squat', 'plank', 'meditation', 'breathing', 'relaxation',
         'sleep', 'rest', 'lifestyle', 'routine', 'habit', 'daily', 'morning',
         'stress', 'mental health', 'mood', 'energy', 'fatigue', 'tired',
-        'posture', 'back', 'neck', 'shoulder', 'joint', 'flexibility'
+        'posture', 'back', 'neck', 'shoulder', 'joint', 'flexibility',
+        
+        // Specific yoga poses and exercises
+        'suryanamaskar', 'surya namaskar', 'sun salutation', 'namaste', 'asana',
+        'pranayama', 'downward dog', 'warrior pose', 'tree pose', 'cobra pose',
+        'child pose', 'mountain pose', 'triangle pose', 'bridge pose',
+        
+        // Specific exercises
+        'pushup', 'push up', 'situp', 'sit up', 'pullup', 'pull up', 'burpee',
+        'jumping jack', 'lunges', 'crunches', 'deadlift', 'bicep curl',
+        'tricep dip', 'leg raise', 'mountain climber', 'high knees',
+        
+        // Exercise equipment and methods
+        'dumbbell', 'barbell', 'treadmill', 'elliptical', 'resistance band',
+        'bodyweight', 'calisthenics', 'pilates', 'zumba', 'aerobics',
+        
+        // Hindi/Indian exercise terms
+        'व्यायाम', 'योग', 'सूर्यनमस्कार', 'प्राणायाम', 'आसन', 'ध्यान',
+        'कसरत', 'दौड़ना', 'चलना', 'तनाव', 'आराम', 'नींद',
+        
+        // Telugu exercise terms
+        'వ్యాయామం', 'యోగా', 'సూర్యనమస్కారం', 'ప్రాణాయామం', 'ఆసనం',
+        'కసరత్తు', 'నడక', 'పరుగు', 'విశ్రాంతి', 'నిద్ర',
+        
+        // Lifestyle and wellness terms
+        'wellness', 'health', 'balance', 'mindfulness', 'self-care',
+        'recovery', 'endurance', 'stamina', 'agility', 'coordination'
       ];
       
       // Define non-exercise keywords that should be redirected
@@ -1186,6 +1213,39 @@ ${language} భాషలో${scriptPreference === 'transliteration' ? ' ఆం�
         'diabetes', 'cancer', 'heart disease', 'hypertension', 'malaria', 'tuberculosis',
         'covid', 'dengue', 'typhoid', 'hepatitis', 'asthma', 'arthritis'
       ];
+      
+      // FIRST: Check if it's an exercise-related question (prioritize this)
+      if (exerciseKeywords.some(keyword => lowerMessage.includes(keyword))) {
+        console.log('🏃 Handling exercise question:', message);
+        
+        const context = await this.conversationService.getRecentContext(user.id);
+        const exerciseResponse = await this.geminiService.generateResponse(
+          message,
+          user.preferred_language,
+          user.script_preference,
+          context,
+          user.accessibility_mode,
+          3,
+          'exercise_lifestyle'
+        );
+        
+        await this.sendMessageWithTypingAndFeedback(user.phone_number, exerciseResponse);
+        
+        await this.conversationService.saveBotMessage(
+          user.id,
+          exerciseResponse,
+          'exercise_response',
+          user.preferred_language
+        );
+        
+        // Keep user in exercise conversation mode
+        await this.userService.updateUserSession(user.id, 'preventive_tips', { 
+          selectedCategory: 'exercise_lifestyle',
+          inExerciseConversation: true 
+        });
+        
+        return;
+      }
       
       // Check if it's a symptom-related question
       if (symptomKeywords.some(keyword => lowerMessage.includes(keyword))) {
@@ -1229,39 +1289,6 @@ ${language} భాషలో${scriptPreference === 'transliteration' ? ' ఆం�
           user.phone_number,
           redirectTexts[user.preferred_language] || redirectTexts.en
         );
-        return;
-      }
-      
-      // If it's an exercise-related question, provide specialized exercise response
-      if (exerciseKeywords.some(keyword => lowerMessage.includes(keyword))) {
-        console.log('🏃 Handling exercise question:', message);
-        
-        const context = await this.conversationService.getRecentContext(user.id);
-        const exerciseResponse = await this.geminiService.generateResponse(
-          message,
-          user.preferred_language,
-          user.script_preference,
-          context,
-          user.accessibility_mode,
-          3,
-          'exercise_lifestyle'
-        );
-        
-        await this.sendMessageWithTypingAndFeedback(user.phone_number, exerciseResponse);
-        
-        await this.conversationService.saveBotMessage(
-          user.id,
-          exerciseResponse,
-          'exercise_response',
-          user.preferred_language
-        );
-        
-        // Keep user in exercise conversation mode
-        await this.userService.updateUserSession(user.id, 'preventive_tips', { 
-          selectedCategory: 'exercise_lifestyle',
-          inExerciseConversation: true 
-        });
-        
         return;
       }
       

@@ -582,9 +582,12 @@ class WhatsAppService {
       // Add small delay before sending feedback buttons
       await new Promise(resolve => setTimeout(resolve, 200));
       
-      // Send inline feedback buttons without text (Meta style)
+      // Send inline feedback buttons with minimal text (Meta style)
       const feedbackButtons = this.getInlineFeedbackButtons();
-      await this.sendInteractiveButtons(to, '', feedbackButtons);
+      // Use a single space for Meta-style minimal text
+      await this.sendInteractiveButtons(to, ' ', feedbackButtons);
+      
+      console.log('✅ Sent feedback buttons to', to);
       
       return messageResponse;
     } catch (error) {

@@ -369,6 +369,44 @@ MANDATORY: Include ${state}-specific source dates and ensure all information is 
     }
   }
 
+  // Process and save national outbreak alert
+  async processNationalOutbreak(outbreakData) {
+    try {
+      if (!outbreakData.hasActiveOutbreaks) {
+        console.log('ℹ️ No active national outbreaks detected');
+        return null;
+      }
+
+      const alert = outbreakData.nationalAlert;
+      
+      const outbreakAlert = await OutbreakAlert.createAlert({
+        title: alert.title,
+        description: alert.description,
+        disease: alert.primaryDisease,
+        severity: alert.severity,
+        scope: 'national',
+        location: {
+          country: 'India'
+        },
+        affectedAreas: alert.affectedStates?.map(state => ({
+          state: state,
+          districts: [],
+          cases: 0
+        })) || [],
+        preventionTips: alert.preventionTips || [],
+        symptoms: alert.symptoms || [],
+        queryType: 'daily_national',
+        priority: this.getSeverityPriority(alert.severity)
+      });
+
+      console.log(`✅ Created national outbreak alert: ${outbreakAlert.alert_id}`);
+      return outbreakAlert;
+    } catch (error) {
+      console.error('❌ Error processing national outbreak:', error);
+      throw error;
+    }
+  }
+
   // Process and save state-specific outbreak alert
   async processStateOutbreak(stateData, state) {
     try {
@@ -400,7 +438,7 @@ MANDATORY: Include ${state}-specific source dates and ensure all information is 
         priority: this.getSeverityPriority(alert.severity)
       });
 
-      console.log(`✅ Created state outbreak alert for ${state}: ${outbreakAlert.alertId}`);
+      console.log(`✅ Created state outbreak alert for ${state}: ${outbreakAlert.alert_id}`);
       return outbreakAlert;
     } catch (error) {
       console.error(`❌ Error processing state outbreak for ${state}:`, error);

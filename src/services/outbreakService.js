@@ -5,14 +5,14 @@ const cron = require('node-cron');
 class OutbreakService {
   constructor() {
     this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    // Use Gemini Pro with grounding for real-time information
+    // Use Gemini 2.0 Flash with grounding for real-time information
     this.model = this.genAI.getGenerativeModel({ 
-      model: "gemini-1.5-pro",
+      model: "gemini-2.0-flash-exp",
       tools: [{
         googleSearchRetrieval: {
           dynamicRetrievalConfig: {
             mode: "MODE_DYNAMIC",
-            dynamicThreshold: 0.3  // Lower threshold for more aggressive grounding
+            dynamicThreshold: 0.2  // Even lower threshold for Gemini 2.0 Flash
           }
         }
       }],
@@ -20,7 +20,7 @@ class OutbreakService {
         temperature: 0.1,  // Lower temperature for more factual responses
         topP: 0.8,
         topK: 40,
-        maxOutputTokens: 2048,
+        maxOutputTokens: 4096,  // Higher token limit for Gemini 2.0 Flash
       }
     });
     this.initializeScheduler();
@@ -121,7 +121,7 @@ FOCUS ON CURRENT SEASONAL DISEASES FOR ${currentMonth}:
 MANDATORY: Include source dates and ensure all information is from ${currentMonth} or newer.`;
 
     try {
-      console.log('🔍 Requesting Gemini with grounding for latest outbreak data...');
+      console.log('🔍 Requesting Gemini 2.0 Flash with grounding for latest outbreak data...');
       const result = await this.model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
@@ -129,23 +129,24 @@ MANDATORY: Include source dates and ensure all information is from ${currentMont
       // Log if grounding was used
       const groundingMetadata = response.candidates?.[0]?.groundingMetadata;
       if (groundingMetadata) {
-        console.log('✅ Grounding tool was used successfully');
+        console.log('✅ Gemini 2.0 Flash grounding tool was used successfully');
         console.log(`🔍 Grounding sources: ${groundingMetadata.groundingChunks?.length || 0} chunks`);
+        console.log(`📊 Grounding support score: ${groundingMetadata.groundingSupport || 'N/A'}`);
       } else {
-        console.log('⚠️ Grounding tool may not have been used');
+        console.log('⚠️ Gemini 2.0 Flash grounding tool may not have been used');
       }
       
       // Extract JSON from response
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
-        throw new Error('No valid JSON found in Gemini response');
+        throw new Error('No valid JSON found in Gemini 2.0 Flash response');
       }
 
       const outbreakData = JSON.parse(jsonMatch[0]);
-      console.log('✅ Successfully fetched national outbreak data with grounding');
+      console.log('✅ Successfully fetched national outbreak data with Gemini 2.0 Flash grounding');
       return outbreakData;
     } catch (error) {
-      console.error('❌ Error fetching national outbreak data:', error);
+      console.error('❌ Error fetching national outbreak data with Gemini 2.0 Flash:', error);
       throw error;
     }
   }
@@ -230,7 +231,7 @@ FOCUS ON CURRENT SEASONAL DISEASES IN ${state} FOR ${currentMonth}:
 MANDATORY: Include ${state}-specific source dates and ensure all information is from ${currentMonth} or newer for ${state}.`;
 
     try {
-      console.log(`🔍 Requesting Gemini with grounding for latest ${state} outbreak data...`);
+      console.log(`🔍 Requesting Gemini 2.0 Flash with grounding for latest ${state} outbreak data...`);
       const result = await this.model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
@@ -238,23 +239,24 @@ MANDATORY: Include ${state}-specific source dates and ensure all information is 
       // Log if grounding was used
       const groundingMetadata = response.candidates?.[0]?.groundingMetadata;
       if (groundingMetadata) {
-        console.log(`✅ Grounding tool was used successfully for ${state}`);
+        console.log(`✅ Gemini 2.0 Flash grounding tool was used successfully for ${state}`);
         console.log(`🔍 Grounding sources for ${state}: ${groundingMetadata.groundingChunks?.length || 0} chunks`);
+        console.log(`📊 Grounding support score for ${state}: ${groundingMetadata.groundingSupport || 'N/A'}`);
       } else {
-        console.log(`⚠️ Grounding tool may not have been used for ${state}`);
+        console.log(`⚠️ Gemini 2.0 Flash grounding tool may not have been used for ${state}`);
       }
       
       // Extract JSON from response
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
-        throw new Error('No valid JSON found in Gemini response');
+        throw new Error('No valid JSON found in Gemini 2.0 Flash response');
       }
 
       const stateData = JSON.parse(jsonMatch[0]);
-      console.log(`✅ Successfully fetched outbreak data for ${state} with grounding`);
+      console.log(`✅ Successfully fetched outbreak data for ${state} with Gemini 2.0 Flash grounding`);
       return stateData;
     } catch (error) {
-      console.error(`❌ Error fetching outbreak data for ${state}:`, error);
+      console.error(`❌ Error fetching outbreak data for ${state} with Gemini 2.0 Flash:`, error);
       throw error;
     }
   }

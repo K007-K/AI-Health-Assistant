@@ -749,6 +749,21 @@ class MessageController {
           return;
         }
 
+        // Check if user input is a conversational response, not actual symptoms
+        if (this.isConversationalResponse(message)) {
+          const clarificationTexts = {
+            en: '🩺 I understand you\'re ready to share your symptoms.\n\nPlease describe what you\'re feeling, for example:\n• "I have fever and headache"\n• "My stomach hurts since yesterday"\n• "I feel dizzy and tired"\n\nWhat symptoms are you experiencing?',
+            hi: '🩺 मैं समझ गया कि आप अपने लक्षण साझा करने के लिए तैयार हैं।\n\nकृपया बताएं कि आप कैसा महसूस कर रहे हैं, उदाहरण के लिए:\n• "मुझे बुखार और सिरदर्द है"\n• "कल से मेरे पेट में दर्द है"\n• "मुझे चक्कर आ रहे हैं और थकान है"\n\nआप कौन से लक्षण महसूस कर रहे हैं?',
+            te: '🩺 మీరు మీ లక్షణాలను పంచుకోవడానికి సిద్ధంగా ఉన్నారని నేను అర్థం చేసుకున్నాను।\n\nదయచేసి మీరు ఎలా అనుభవిస్తున్నారో వివరించండి, ఉదాహరణకు:\n• "నాకు జ్వరం మరియు తలనొప్పి ఉంది"\n• "నిన్న నుండి నా కడుపు నొప్పిస్తోంది"\n• "నాకు తలతిరుగులు మరియు అలసట అనిపిస్తోంది"\n\nమీరు ఏ లక్షణాలను అనుభవిస్తున్నారు?'
+          };
+          
+          await this.whatsappService.sendMessage(
+            user.phone_number,
+            clarificationTexts[user.preferred_language] || clarificationTexts.en
+          );
+          return;
+        }
+
         // User provided symptoms - analyze with specialized symptom checker prompt
         console.log('🩺 Analyzing symptoms:', message, mediaData ? 'with image' : 'text only');
         
@@ -802,10 +817,13 @@ class MessageController {
 
 User's symptoms: "${userSymptoms}"
 
+CRITICAL: First analyze if the user input describes actual medical symptoms or health issues. If the input is vague, conversational, or doesn't describe symptoms, ask for clarification.
+
 Instructions:
-1. First, repeat the symptoms they typed.
-2. If symptoms are vague, ask clarifying questions (duration, severity, triggers, additional symptoms).
-3. For clear symptoms, provide response in BULLET POINTS (not paragraphs) with these sections:
+1. VALIDATE: Check if the input describes actual symptoms (pain, discomfort, physical sensations, health issues).
+2. If NOT symptoms (like "okay", "yes", "hello"), ask: "Please describe your actual symptoms - what physical discomfort or health issues are you experiencing?"
+3. If symptoms are vague, ask clarifying questions (duration, severity, triggers, additional symptoms).
+4. For clear symptoms, provide response in BULLET POINTS (not paragraphs) with these sections:
 
 **🔍 How it's caused:**
 • List possible causes in bullet points
@@ -829,10 +847,13 @@ Respond in ${language} language${scriptPreference === 'transliteration' ? ' usin
 
 उपयोगकर्ता के लक्षण: "${userSymptoms}"
 
+महत्वपूर्ण: पहले विश्लेषण करें कि क्या उपयोगकर्ता का इनपुट वास्तविक चिकित्सा लक्षणों या स्वास्थ्य समस्याओं का वर्णन करता है। यदि इनपुट अस्पष्ट, बातचीत संबंधी है, या लक्षणों का वर्णन नहीं करता है, तो स्पष्टीकरण मांगें।
+
 निर्देश:
-1. पहले, उनके द्वारा टाइप किए गए लक्षणों को दोहराएं।
-2. यदि लक्षण अस्पष्ट हैं, तो स्पष्टीकरण प्रश्न पूछें (अवधि, गंभीरता, ट्रिगर, अतिरिक्त लक्षण)।
-3. स्पष्ट लक्षणों के लिए, इन अनुभागों के साथ बुलेट पॉइंट्स में (पैराग्राफ में नहीं) उत्तर दें:
+1. सत्यापन: जांचें कि क्या इनपुट वास्तविक लक्षणों (दर्द, परेशानी, शारीरिक संवेदना, स्वास्थ्य समस्याएं) का वर्णन करता है।
+2. यदि लक्षण नहीं हैं (जैसे "ठीक है", "हां", "हैलो"), तो पूछें: "कृपया अपने वास्तविक लक्षणों का वर्णन करें - आप कौन सी शारीरिक परेशानी या स्वास्थ्य समस्याओं का अनुभव कर रहे हैं?"
+3. यदि लक्षण अस्पष्ट हैं, तो स्पष्टीकरण प्रश्न पूछें (अवधि, गंभीरता, ट्रिगर, अतिरिक्त लक्षण)।
+4. स्पष्ट लक्षणों के लिए, इन अनुभागों के साथ बुलेट पॉइंट्स में (पैराग्राफ में नहीं) उत्तर दें:
 
 **🔍 यह कैसे होता है:**
 • संभावित कारणों को बुलेट पॉइंट्स में सूचीबद्ध करें
@@ -1036,6 +1057,76 @@ ${language} భాషలో${scriptPreference === 'transliteration' ? ' ఆం�
       console.error('Error in handlePreventiveTips:', error);
       throw error;
     }
+  }
+
+  // Check if user input is a conversational response rather than actual symptoms
+  isConversationalResponse(message) {
+    const lowerMessage = message.toLowerCase().trim();
+    
+    // Define conversational responses that are not symptoms
+    const conversationalResponses = [
+      // Agreement/acknowledgment
+      'okay', 'ok', 'yes', 'yeah', 'yep', 'sure', 'alright', 'right', 'correct',
+      'हां', 'हाँ', 'ठीक है', 'ओके', 'सही', 'अच्छा',
+      'అవును', 'సరే', 'ఓకే', 'మంచిది',
+      'ஆம்', 'சரி', 'ஓகே', 'நல்லது',
+      'ହଁ', 'ଠିକ୍', 'ଭଲ',
+      
+      // Disagreement
+      'no', 'nope', 'not really', 'नहीं', 'नही', 'కాదు', 'இல்லை', 'ନା',
+      
+      // Greetings
+      'hello', 'hi', 'hey', 'good morning', 'good evening',
+      'नमस्ते', 'हैलो', 'हाय', 'नमस्कार',
+      'హలో', 'హాయ్', 'నమస్తే',
+      'வணக்கம்', 'ஹலோ', 'ஹாய்',
+      'ନମସ୍କାର', 'ହେଲୋ',
+      
+      // Thanks
+      'thank you', 'thanks', 'धन्यवाद', 'शुक्रिया', 'ధన్యవాదాలు', 'நன்றி', 'ଧନ୍ୟବାଦ',
+      
+      // Single word responses
+      'good', 'fine', 'great', 'अच्छा', 'ठीक', 'మంచిది', 'బాగుంది', 'நல்லது', 'ଭଲ',
+      
+      // Questions about the service
+      'what', 'how', 'when', 'where', 'why', 'क्या', 'कैसे', 'कब', 'ఎలా', 'ఎప్పుడు', 'எப்படி', 'எப்போது',
+      
+      // Menu navigation
+      'menu', 'back', 'home', 'मेनू', 'वापस', 'మెనూ', 'వెనుకకు', 'மெனு', 'பின்னால்', 'ମେନୁ',
+      
+      // Very short responses (likely not symptoms)
+      'hmm', 'umm', 'oh', 'ah', 'uh'
+    ];
+    
+    // Check if the message is exactly one of these conversational responses
+    if (conversationalResponses.includes(lowerMessage)) {
+      return true;
+    }
+    
+    // Check for very short messages (1-2 characters) that are likely not symptoms
+    if (lowerMessage.length <= 2) {
+      return true;
+    }
+    
+    // Check for messages that are just punctuation or numbers
+    if (/^[.,!?;:\-\s\d]+$/.test(lowerMessage)) {
+      return true;
+    }
+    
+    // Check for common non-symptom phrases
+    const nonSymptomPhrases = [
+      'i am fine', 'i am good', 'i am okay', 'nothing wrong', 'no problem',
+      'मैं ठीक हूं', 'मैं अच्छा हूं', 'कोई समस्या नहीं',
+      'నేను బాగున్నాను', 'ఎటువంటి సమస్య లేదు',
+      'நான் நலமாக இருக்கிறேன்', 'எந்த பிரச்சனையும் இல்லை',
+      'ମୁଁ ଭଲ ଅଛି', 'କୌଣସି ସମସ୍ୟା ନାହିଁ'
+    ];
+    
+    if (nonSymptomPhrases.some(phrase => lowerMessage.includes(phrase))) {
+      return true;
+    }
+    
+    return false;
   }
 
   // Handle nutrition-specific questions with proper categorization and redirects

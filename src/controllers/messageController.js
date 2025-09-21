@@ -148,8 +148,9 @@ class MessageController {
         return;
       }
 
-      // Handle STOP ALERTS command
+      // Handle STOP ALERTS command - also delete preferences
       if (lowerContent === 'stop alerts' || lowerContent === 'unsubscribe') {
+        console.log(`🛑 STOP ALERTS command received from: ${user.phone_number}`);
         await this.handleTurnOffAlerts(user);
         return;
       }
@@ -2238,12 +2239,34 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
         return;
       }
 
-      // Disable disease outbreak alerts
+      // Disable disease outbreak alerts and delete alert preferences
       await dbUser.disableDiseaseAlerts();
+      
+      // Also delete any related alert preferences/data from other tables
+      try {
+        const { supabase } = require('../config/database');
+        
+        // Delete user's alert preferences from disease_outbreak_cache if any
+        await supabase
+          .from('disease_outbreak_cache')
+          .delete()
+          .contains('sent_to_users', [{ phoneNumber: user.phone_number }]);
+        
+        // Delete user's location preferences for alerts if they exist
+        await supabase
+          .from('user_disease_alert_preferences')
+          .delete()
+          .eq('phone_number', user.phone_number);
+          
+        console.log(`🗑️ Deleted all alert preferences for user: ${user.phone_number}`);
+      } catch (deleteError) {
+        console.error('⚠️ Error deleting alert preferences (non-critical):', deleteError);
+        // Continue with the flow even if deletion fails
+      }
 
       const successMessages = {
-        en: `🔕 *Disease Outbreak Alerts Disabled*\n\n✅ You have successfully unsubscribed from disease outbreak alerts.\n\n❌ **You will no longer receive:**\n• Daily national outbreak updates\n• Emergency outbreak notifications\n• Real-time health advisories\n\n💡 You can re-enable alerts anytime by visiting the Disease Alerts menu.\n\n📞 Emergency: 108`,
-        hi: `🔕 *रोग प्रकोप अलर्ट अक्षम*\n\n✅ आपने सफलतापूर्वक रोग प्रकोप अलर्ट की सदस्यता रद्द कर दी है।\n\n❌ **आपको अब नहीं मिलेगा:**\n• दैनिक राष्ट्रीय प्रकोप अपडेट\n• आपातकालीन प्रकोप सूचनाएं\n• रियल-टाइम स्वास्थ्य सलाह\n\n💡 आप रोग अलर्ट मेनू पर जाकर कभी भी अलर्ट फिर से सक्षम कर सकते हैं।\n\n📞 आपातकाल: 108`
+        en: `🔕 *Disease Outbreak Alerts Disabled*\n\n✅ You have successfully unsubscribed from disease outbreak alerts.\n\n🗑️ **All your alert preferences have been deleted:**\n• Subscription status removed\n• Location preferences cleared\n• Alert history cleaned\n\n❌ **You will no longer receive:**\n• Daily national outbreak updates\n• Emergency outbreak notifications\n• Real-time health advisories\n\n💡 You can re-enable alerts anytime by visiting the Disease Alerts menu.\n\n📞 Emergency: 108`,
+        hi: `🔕 *रोग प्रकोप अलर्ट अक्षम*\n\n✅ आपने सफलतापूर्वक रोग प्रकोप अलर्ट की सदस्यता रद्द कर दी है।\n\n🗑️ **आपकी सभी अलर्ट प्राथमिकताएं हटा दी गई हैं:**\n• सदस्यता स्थिति हटाई गई\n• स्थान प्राथमिकताएं साफ की गईं\n• अलर्ट इतिहास साफ किया गया\n\n❌ **आपको अब नहीं मिलेगा:**\n• दैनिक राष्ट्रीय प्रकोप अपडेट\n• आपातकालीन प्रकोप सूचनाएं\n• रियल-टाइम स्वास्थ्य सलाह\n\n💡 आप रोग अलर्ट मेनू पर जाकर कभी भी अलर्ट फिर से सक्षम कर सकते हैं।\n\n📞 आपातकाल: 108`
       };
 
       await this.whatsappService.sendMessage(

@@ -5,13 +5,11 @@ const compression = require('compression');
 const config = require('./config/environment');
 const { testConnection } = require('./config/database');
 const WebhookController = require('./controllers/webhookController');
-const DiseaseMonitoringJobs = require('./jobs/diseaseMonitoringJobs');
 const schedulerService = require('./services/schedulerService');
 
 // Initialize Express app
 const app = express();
 const webhookController = new WebhookController();
-const diseaseMonitoringJobs = new DiseaseMonitoringJobs();
 
 // Security middleware
 app.use(helmet());
@@ -163,10 +161,9 @@ async function startServer() {
 💬 WhatsApp: ${config.whatsapp.accessToken ? 'Connected' : 'Not configured'}
 ====================================`);
 
-      // Start disease monitoring background jobs
-      console.log('\n🦠 Starting disease monitoring system...');
-      diseaseMonitoringJobs.startJobs();
-      console.log('✅ Disease monitoring system started');
+      // Disease monitoring system simplified - using on-demand generation
+      console.log('\n🦠 Disease monitoring system ready (on-demand generation)');
+      console.log('✅ Simplified disease monitoring system active');
 
       // Initialize outbreak scheduler
       console.log('\n📅 Initializing outbreak scheduler...');
@@ -201,15 +198,13 @@ async function startServer() {
 // Graceful shutdown
 process.on('SIGINT', () => {
   console.log('\n🛑 Shutting down server gracefully...');
-  diseaseMonitoringJobs.stopJobs();
-  console.log('✅ Disease monitoring jobs stopped');
+  console.log('✅ Simplified system - no background jobs to stop');
   process.exit(0);
 });
 
 process.on('SIGTERM', () => {
   console.log('\n🛑 Shutting down server gracefully...');
-  diseaseMonitoringJobs.stopJobs();
-  console.log('✅ Disease monitoring jobs stopped');
+  console.log('✅ Simplified system - no background jobs to stop');
   process.exit(0);
 });
 

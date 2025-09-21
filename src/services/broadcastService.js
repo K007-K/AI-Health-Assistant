@@ -1,12 +1,13 @@
 const User = require('../models/User');
 const OutbreakAlert = require('../models/OutbreakAlert');
-const { sendMessage } = require('./whatsappService');
+const WhatsAppService = require('./whatsappService');
 
 class BroadcastService {
   constructor() {
     this.isProcessing = false;
     this.batchSize = 50; // Send messages in batches to avoid rate limits
     this.delayBetweenBatches = 2000; // 2 seconds delay between batches
+    this.whatsappService = new WhatsAppService();
   }
 
   // Broadcast national outbreak alert to all users
@@ -46,7 +47,7 @@ class BroadcastService {
             const formattedAlert = alert.getFormattedAlert(language);
             
             // Send WhatsApp message
-            await sendMessage(user.phone_number, formattedAlert);
+            await this.whatsappService.sendMessage(user.phone_number, formattedAlert);
             
             // Also check for state-specific alerts for this user
             await this.sendStateSpecificAlert(user);
@@ -112,7 +113,7 @@ class BroadcastService {
         const stateMessage = (stateHeader[language] || stateHeader.en) + formattedStateAlert;
         
         // Send state-specific alert
-        await sendMessage(user.phone_number, stateMessage);
+        await this.whatsappService.sendMessage(user.phone_number, stateMessage);
         
         console.log(`🏛️ Sent cached state alert for ${userState} to ${user.phone_number}`);
       } else {
@@ -134,7 +135,7 @@ class BroadcastService {
       // Add broadcast header
       const broadcastMessage = `🚨 *HEALTH ALERT BROADCAST*\n\n${formattedMessage}\n\n_This is an automated health alert. Reply 'STOP ALERTS' to unsubscribe._`;
 
-      await sendMessage(user.phoneNumber, broadcastMessage);
+      await this.whatsappService.sendMessage(user.phoneNumber, broadcastMessage);
       return true;
     } catch (error) {
       console.error(`❌ Failed to send alert to ${user.phoneNumber}:`, error);
@@ -150,7 +151,7 @@ class BroadcastService {
       // Add state-specific header
       const stateMessage = `🏛️ *STATE HEALTH ALERT*\n\n${formattedMessage}\n\n_This information is specific to your state. For national alerts, they are sent daily at 10 AM._`;
 
-      await sendMessage(phoneNumber, stateMessage);
+      await this.whatsappService.sendMessage(phoneNumber, stateMessage);
       
       // Mark as sent
       await alert.markAsSent(phoneNumber);
@@ -220,7 +221,7 @@ You have been unsubscribed from health alerts.
 
 _You can still use all other bot features normally._`;
 
-      await sendMessage(phoneNumber, unsubscribeMessage);
+      await this.whatsappService.sendMessage(phoneNumber, unsubscribeMessage);
       console.log(`✅ User ${phoneNumber} unsubscribed from alerts`);
     } catch (error) {
       console.error(`❌ Error unsubscribing ${phoneNumber}:`, error);
@@ -248,7 +249,7 @@ You are now subscribed to daily health alerts!
 
 _Welcome back to health alerts!_`;
 
-      await sendMessage(phoneNumber, resubscribeMessage);
+      await this.whatsappService.sendMessage(phoneNumber, resubscribeMessage);
       console.log(`✅ User ${phoneNumber} resubscribed to alerts`);
     } catch (error) {
       console.error(`❌ Error resubscribing ${phoneNumber}:`, error);

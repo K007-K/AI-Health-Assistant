@@ -230,14 +230,11 @@ class MessageController {
           break;
 
         case 'outbreak_alerts':
-          await this.handleOutbreakAlerts(user);
-          break;
-
-        // Removed old feedback handling - now using inline feedback buttons
-
         case 'disease_alerts':
           await this.handleDiseaseAlerts(user);
           break;
+
+        // Removed old feedback handling - now using inline feedback buttons
 
         case 'view_active_diseases':
           await this.handleViewActiveDiseases(user);

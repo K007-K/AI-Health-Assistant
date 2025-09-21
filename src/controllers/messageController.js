@@ -2164,7 +2164,7 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
         
         await this.whatsappService.sendMessage(
           user.phone_number,
-          '🦠 *Current Disease Outbreaks in India*\n\n• Seasonal flu cases reported in multiple states\n• Dengue cases increasing in urban areas\n• Maintain hygiene and seek medical help if needed\n\n🛡️ Stay safe and healthy!'
+          await this.getCurrentDiseaseOutbreaksFromAI()
         );
         
         await this.whatsappService.sendMessage(user.phone_number, fallbackPrevention);
@@ -2617,14 +2617,13 @@ Reply "STOP ALERTS" anytime to unsubscribe.`;
           const symptoms = diseaseInfo.symptoms || 'Consult healthcare provider for symptoms';
           const prevention = diseaseInfo.prevention || 'Follow health department guidelines';
           
-          // Determine risk level based on disease type
+          // Dynamic risk assessment from AI data
           let risk = 'MEDIUM';
-          const diseaseKey = disease.toLowerCase();
-          if (diseaseKey.includes('brain-eating') || diseaseKey.includes('naegleria') || diseaseKey.includes('meningoencephalitis') || diseaseKey.includes('nipah')) {
+          if (diseaseInfo.severity) {
+            risk = diseaseInfo.severity.toUpperCase();
+          } else if (diseaseInfo.cases && diseaseInfo.cases.toLowerCase().includes('death')) {
             risk = 'CRITICAL';
-          } else if (diseaseKey.includes('h5n1') || diseaseKey.includes('h1n1') || diseaseKey.includes('melioidosis')) {
-            risk = 'HIGH';
-          } else if (diseaseKey.includes('dengue') || diseaseKey.includes('malaria') || diseaseKey.includes('chikungunya')) {
+          } else if (diseaseInfo.cases && (diseaseInfo.cases.includes('emergency') || diseaseInfo.cases.includes('outbreak'))) {
             risk = 'HIGH';
           }
           
@@ -2667,6 +2666,92 @@ Reply "STOP ALERTS" anytime to unsubscribe.`;
     }
     
     return diseases.slice(0, 3); // Return top 3
+  }
+
+  // Get current disease outbreaks directly formatted using AI
+  async getCurrentDiseaseOutbreaksFromAI(userLocation = null) {
+    try {
+      const GeminiService = require('../services/geminiService');
+      const geminiService = new GeminiService();
+      const currentDate = new Date().toLocaleDateString('en-IN');
+      
+      if (userLocation?.state) {
+        // State-specific template
+        const statePrompt = `Search for current disease outbreaks in ${userLocation.state} as of ${currentDate}.
+        
+        Return in this exact format:
+        
+        📢 Public Health Alert - ${currentDate} 📢
+        *📍 Location: ${userLocation.state}
+        *🦠 Health Concerns Overview
+        As of ${currentDate}, ${userLocation.state} is managing health concerns. [Add current outbreak details from search]
+        *🗺️ Affected Areas:
+         * [Area 1]: [Details]
+         * [Area 2]: [Details]
+        *🩺 Symptoms to Watch For:
+        If you experience any of the following, seek medical advice:
+         * [Symptoms from search results]
+        *🛡️ Prevention & Safety Measures:
+         * [Prevention measures from search]
+        *📞 Emergency Contact: 108
+        *🕐 Last Updated: ${currentDate}
+        
+        Use real current data from search results.`;
+        
+        const response = await geminiService.generateResponseWithGrounding(
+          statePrompt,
+          'en',
+          3
+        );
+        
+        return response;
+        
+      } else {
+        // National template
+        const nationalPrompt = `Search for current disease outbreaks in India as of ${currentDate}.
+        
+        Return in this exact format:
+        
+        📢 Public Health Alert - ${currentDate} 📢
+        A state-wise summary of ongoing health advisories.
+        
+        🇮🇳 [State Name]
+        🦠 Key Diseases:
+         - [Disease Name]: [Brief description with case numbers]
+         - [Disease Name]: [Brief description with case numbers]
+        
+        🩺 Symptoms to Watch For:
+        If you experience any of these symptoms, seek immediate medical attention:
+         - [Symptom 1] • [Symptom 2] • [Symptom 3]
+        
+        🛡️ Prevention & Advisory:
+         - [Prevention tip 1]
+         - [Prevention tip 2]
+         - [Prevention tip 3]
+        
+        🔗 Official Source: [Source name]
+        
+        Repeat for each affected state. Use real current data from search results.`;
+        
+        const response = await geminiService.generateResponseWithGrounding(
+          nationalPrompt,
+          'en',
+          3
+        );
+        
+        return response;
+      }
+      
+    } catch (error) {
+      console.error('Error getting AI disease outbreaks:', error);
+      return `📢 Public Health Alert - ${new Date().toLocaleDateString('en-IN')} 📢
+
+🦠 Health Monitoring Active
+Current disease surveillance is ongoing across India.
+
+📞 Emergency: 108 for medical assistance
+🔗 Official Source: Health Ministry India`;
+    }
   }
 
   // Format real-time disease information as news reports

@@ -56,68 +56,30 @@ class AIDiseaseMonitorService {
       }
     }
     
-    const prompt = `Search for HEALTH EMERGENCIES and RARE DISEASE ALERTS in ${locationQuery} as of ${currentDate}. 
+    const prompt = `Search for current disease outbreaks in ${locationQuery} as of ${currentDate}.
     
-    SEARCH TERMS TO USE:
-    - "health emergency declared India ${currentDate.split('/')[2]}"
-    - "rare disease alert India ${currentDate.split('/')[2]}"
-    - "brain eating amoeba Kerala ${currentDate.split('/')[2]}"
-    - "nipah virus outbreak India ${currentDate.split('/')[2]}"
-    - "melioidosis cases India ${currentDate.split('/')[2]}"
-    - "unusual infection India ${currentDate.split('/')[2]}"
+    Return the results in this template format:
     
-    CRITICAL: If you find dengue, malaria, diarrhoea, hepatitis, or chikungunya, REPLACE them with:
-    - Primary Amoebic Meningoencephalitis (if found)
-    - Nipah Virus (if found)  
-    - Melioidosis (if found)
-    - Guillain-Barré Syndrome (if found)
-    - Any other rare/unusual diseases
+    📢 Public Health Alert - ${currentDate} 📢
+    A state-wise summary of ongoing health advisories.
     
-    Focus ONLY on diseases that would make national news headlines due to their rarity or severity
+    🇮🇳 [State Name]
+    🦠 Key Diseases:
+     - [Disease Name]: [Brief description with case numbers]
+     - [Disease Name]: [Brief description with case numbers]
     
-    Provide information about the 4 most UNUSUAL current disease outbreaks in this EXACT format:
+    🩺 Symptoms to Watch For:
+    If you experience any of these symptoms, seek immediate medical attention:
+     - [Symptom 1] • [Symptom 2] • [Symptom 3]
     
-    DISEASE 1: [Disease Name]
-    LOCATION: [Specific location - districts/cities/states affected]
-    CASES: [Latest case numbers with date if available]
-    SYMPTOMS: [Main symptoms]
-    PREVENTION: [Key prevention measures]
-    RELEVANCE: [LOCAL/STATE/NEARBY/NATIONAL]
+    🛡️ Prevention & Advisory:
+     - [Prevention tip 1]
+     - [Prevention tip 2]
+     - [Prevention tip 3]
     
-    DISEASE 2: [Disease Name]
-    LOCATION: [Specific location - districts/cities/states affected]
-    CASES: [Latest case numbers with date if available]
-    SYMPTOMS: [Main symptoms]
-    PREVENTION: [Key prevention measures]
-    RELEVANCE: [LOCAL/STATE/NEARBY/NATIONAL]
+    🔗 Official Source: [Source name]
     
-    DISEASE 3: [Disease Name]
-    LOCATION: [Specific location - districts/cities/states affected]
-    CASES: [Latest case numbers with date if available]
-    SYMPTOMS: [Main symptoms]
-    PREVENTION: [Key prevention measures]
-    RELEVANCE: [LOCAL/STATE/NEARBY/NATIONAL]
-    
-    DISEASE 4: [Disease Name]
-    LOCATION: [Specific location - districts/cities/states affected]
-    CASES: [Latest case numbers with date if available]
-    SYMPTOMS: [Main symptoms]
-    PREVENTION: [Key prevention measures]
-    RELEVANCE: [LOCAL/STATE/NEARBY/NATIONAL]
-    
-    Search for any current disease outbreaks, health alerts, or surveillance reports happening right now. Use Google Search to find the most recent news and health department reports from ${currentDate}. 
-    
-    IMPORTANT: Only return diseases with:
-    - Active outbreaks with rising case numbers
-    - Official health emergency declarations
-    - Recent health advisories (within last 30 days)
-    
-    EXCLUDE routine monitoring diseases like:
-    - COVID-19 (unless major new outbreak)
-    - Seasonal flu (unless unusual surge)
-    - Common endemic diseases without recent surge
-    
-    Focus on NEW, EMERGING, or SIGNIFICANTLY INCREASED disease activity only.`;
+    Repeat for each affected state. Use real current data from search results.`;
 
     try {
       const response = await this.geminiService.generateResponseWithGrounding(

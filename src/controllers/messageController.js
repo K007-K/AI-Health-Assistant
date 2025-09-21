@@ -2027,7 +2027,7 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
 
       if (showedRich) {
         // Check if user is already subscribed to alerts
-        const isSubscribed = user.disease_alerts_enabled === true;
+        const isSubscribed = user.consent_outbreak_alerts === true;
         
         // Provide quick follow-up actions and exit
         const followUpButtons = [
@@ -2106,7 +2106,7 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
         }
         
         // Generate disease-specific prevention recommendations
-        const isSubscribed = user.disease_alerts_enabled === true;
+        const isSubscribed = user.consent_outbreak_alerts === true;
         const specificPrevention = this.generateDiseaseSpecificPrevention(relevantDiseases, user.preferred_language, user.script_preference, isSubscribed);
         
         await this.whatsappService.sendMessage(user.phone_number, specificPrevention);

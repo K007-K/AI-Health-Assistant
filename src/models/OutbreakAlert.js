@@ -276,16 +276,44 @@ ${preventionTips.slice(0, 4).map(tip => `• ${tip}`).join('\n')}
         ['Kerala', 'Delhi', 'Maharashtra', 'Karnataka', 'Tamil Nadu', 'Andhra Pradesh', 'Gujarat', 'Rajasthan', 'Uttar Pradesh', 'Haryana', 'Punjab', 'West Bengal', 'Bihar', 'Odisha', 'Assam', 'Jharkhand', 'Chhattisgarh', 'Madhya Pradesh', 'Himachal Pradesh', 'Uttarakhand', 'Goa', 'Manipur', 'Meghalaya', 'Tripura', 'Mizoram', 'Arunachal Pradesh', 'Nagaland', 'Sikkim', 'Telangana'].includes(state)
       ))];
       
-      // If no specific states found, extract from common patterns
+      // If no specific states found, try city-to-state mapping (dynamic, not hardcoded)
       if (states.length === 0) {
-        if (locationText.toLowerCase().includes('nationwide') || locationText.toLowerCase().includes('india')) {
+        const cityToStateMap = {
+          'mumbai': 'Maharashtra',
+          'pune': 'Maharashtra', 
+          'delhi': 'Delhi',
+          'bangalore': 'Karnataka',
+          'bengaluru': 'Karnataka',
+          'chennai': 'Tamil Nadu',
+          'kolkata': 'West Bengal',
+          'hyderabad': 'Telangana',
+          'ahmedabad': 'Gujarat',
+          'jaipur': 'Rajasthan',
+          'lucknow': 'Uttar Pradesh',
+          'bhopal': 'Madhya Pradesh',
+          'thiruvananthapuram': 'Kerala',
+          'kochi': 'Kerala',
+          'kozhikode': 'Kerala'
+        };
+        
+        const locationLower = locationText.toLowerCase();
+        let foundState = null;
+        
+        // Check for city names in location text
+        for (const [city, state] of Object.entries(cityToStateMap)) {
+          if (locationLower.includes(city)) {
+            foundState = state;
+            break;
+          }
+        }
+        
+        if (foundState) {
+          states.push(foundState);
+        } else if (locationLower.includes('nationwide') || locationLower.includes('india')) {
           states.push('Multiple States');
-        } else if (locationText.toLowerCase().includes('mumbai')) {
-          states.push('Maharashtra');
-        } else if (locationText.toLowerCase().includes('delhi')) {
-          states.push('Delhi');
         } else {
-          states.push('India'); // Fallback
+          // Only use generic fallback if absolutely no location info found
+          states.push('India');
         }
       }
       
@@ -357,8 +385,20 @@ Monitoring ongoing health situations across India.
       messages.push(fallbackMessage);
     }
     
-    // Limit to important breaking news only (max 4 states)
-    return messages.slice(0, 4);
+    // Prioritize critical diseases (brain-eating amoeba, Nipah, etc.) and limit to max 6 messages
+    const criticalDiseases = ['amoebic', 'meningoencephalitis', 'pam', 'brain-eating', 'nipah', 'h5n1', 'h1n1'];
+    
+    // Sort messages to prioritize critical diseases
+    const sortedMessages = messages.sort((a, b) => {
+      const aIsCritical = criticalDiseases.some(critical => a.toLowerCase().includes(critical));
+      const bIsCritical = criticalDiseases.some(critical => b.toLowerCase().includes(critical));
+      
+      if (aIsCritical && !bIsCritical) return -1;
+      if (!aIsCritical && bIsCritical) return 1;
+      return 0;
+    });
+    
+    return sortedMessages.slice(0, 6); // Allow up to 6 messages to include critical diseases
   }
 
   // Get formatted alert chunks for WhatsApp (backward compatibility)

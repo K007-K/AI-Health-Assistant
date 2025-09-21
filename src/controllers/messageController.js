@@ -2597,41 +2597,73 @@ Reply "STOP ALERTS" anytime to unsubscribe.`;
   }
 
   // Get current disease outbreaks formatted as news reports
-  getCurrentDiseaseOutbreaks(userLocation = null) {
+  async getCurrentDiseaseOutbreaks(userLocation = null) {
     const diseases = [];
     
-    // Dengue Outbreak - News Format
-    diseases.push({
-      name: 'Dengue',
-      risk: 'HIGH',
-      message: `🦠 *Dengue Outbreak Spreads Across India*\n\n• Health authorities report surge in dengue cases nationwide\n• Symptoms include high fever, severe headache, and joint pain\n• Mosquito breeding sites increase during monsoon season\n• Hospitals advise using repellents and wearing full-sleeve clothes\n• Cases rising in urban areas with stagnant water`
-    });
-    
-    // Seasonal Flu - News Format
-    diseases.push({
-      name: 'Seasonal Flu',
-      risk: 'MEDIUM', 
-      message: `🤒 *Seasonal Flu Cases Rise with Weather Change*\n\n• Doctors report increased flu cases across multiple states\n• Common symptoms: fever, cough, and body aches\n• Elderly and children most vulnerable to complications\n• Health experts recommend wearing masks in crowded places\n• Vaccination available at government health centers`
-    });
-    
-    // Add location-specific diseases if user location is available
-    if (userLocation) {
-      if (userLocation.state?.toLowerCase().includes('andhra') || 
-          userLocation.state?.toLowerCase().includes('telangana')) {
-        diseases.push({
-          name: 'Viral Fever',
-          risk: 'MEDIUM',
-          message: `🌡️ *Viral Fever Cases Reported in ${userLocation.state}*\n\n• Local hospitals see increase in viral fever patients\n• Symptoms include high fever, fatigue, and headache\n• Health department attributes rise to seasonal changes\n• Doctors advise staying hydrated and taking adequate rest\n• Most cases recover within 3-5 days with proper care`
+    // Get REAL current disease data instead of hardcoded diseases
+    try {
+      const OutbreakAlert = require('../models/OutbreakAlert');
+      
+      // Get real current national alerts
+      const todaysNational = await OutbreakAlert.getTodaysNationalAlert();
+      
+      if (todaysNational && todaysNational.parsed_diseases?.additionalDiseases) {
+        console.log('📊 Using REAL current disease data for getCurrentDiseaseOutbreaks');
+        
+        todaysNational.parsed_diseases.additionalDiseases.forEach(diseaseInfo => {
+          const disease = diseaseInfo.name || diseaseInfo.disease || 'Health Alert';
+          const location = diseaseInfo.location || 'Various locations';
+          const cases = diseaseInfo.cases || 'Cases reported';
+          const symptoms = diseaseInfo.symptoms || 'Consult healthcare provider for symptoms';
+          const prevention = diseaseInfo.prevention || 'Follow health department guidelines';
+          
+          // Determine risk level based on disease type
+          let risk = 'MEDIUM';
+          const diseaseKey = disease.toLowerCase();
+          if (diseaseKey.includes('brain-eating') || diseaseKey.includes('naegleria') || diseaseKey.includes('meningoencephalitis') || diseaseKey.includes('nipah')) {
+            risk = 'CRITICAL';
+          } else if (diseaseKey.includes('h5n1') || diseaseKey.includes('h1n1') || diseaseKey.includes('melioidosis')) {
+            risk = 'HIGH';
+          } else if (diseaseKey.includes('dengue') || diseaseKey.includes('malaria') || diseaseKey.includes('chikungunya')) {
+            risk = 'HIGH';
+          }
+          
+          diseases.push({
+            name: disease,
+            risk: risk,
+            message: `🦠 *${disease} - Current Outbreak*\n\n• Location: ${location}\n• Cases: ${cases}\n• Symptoms: ${symptoms}\n• Prevention: ${prevention}\n• Emergency: Call 108 for medical assistance`
+          });
         });
       }
       
-      if (userLocation.state?.toLowerCase().includes('kerala')) {
-        diseases.push({
-          name: 'Nipah Virus', 
-          risk: 'HIGH',
-          message: `⚠️ *Kerala on High Alert for Nipah Virus*\n\n• State health department issues Nipah virus warning\n• Symptoms include fever, headache, and breathing difficulties\n• Authorities investigating suspected cases in Kozhikode district\n• Public advised to avoid contact with bats and sick animals\n• Isolation wards prepared in major hospitals as precaution`
-        });
+      // Get user's state-specific data if available
+      if (userLocation?.state) {
+        const stateAlert = await OutbreakAlert.getStateAlert(userLocation.state);
+        if (stateAlert && stateAlert.parsed_diseases?.additionalDiseases) {
+          console.log(`📍 Adding ${userLocation.state} specific disease data`);
+          
+          stateAlert.parsed_diseases.additionalDiseases.forEach(diseaseInfo => {
+            const disease = diseaseInfo.name || diseaseInfo.disease || 'Health Alert';
+            const cases = diseaseInfo.cases || 'Cases reported';
+            
+            diseases.push({
+              name: `${disease} (${userLocation.state})`,
+              risk: 'HIGH',
+              message: `🏛️ *${disease} Alert in ${userLocation.state}*\n\n• State-specific outbreak monitoring\n• Cases: ${cases}\n• Local health authorities are monitoring the situation\n• Follow state health department guidelines\n• Emergency: Call 108 for medical assistance`
+            });
+          });
+        }
       }
+      
+    } catch (error) {
+      console.error('Error fetching real disease data:', error);
+      
+      // Only use fallback if real data fetch fails
+      diseases.push({
+        name: 'Health Monitoring',
+        risk: 'MEDIUM',
+        message: `🏥 *Health Monitoring Active*\n\n• Disease surveillance systems are operational\n• Health authorities monitoring for outbreaks\n• Report any unusual symptoms to healthcare providers\n• Emergency: Call 108 for medical assistance\n• Stay updated with official health advisories`
+      });
     }
     
     return diseases.slice(0, 3); // Return top 3

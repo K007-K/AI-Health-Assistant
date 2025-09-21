@@ -90,10 +90,10 @@ class SchedulerService {
     console.log('🧹 Cleanup job scheduled for 2:00 AM IST');
   }
 
-  // Schedule test alert for 5:19 PM TODAY (for testing purposes)
+  // Schedule test alert for 5:25 PM TODAY (for testing purposes)
   scheduleTestAlert() {
-    cron.schedule('19 17 * * *', async () => {
-      console.log('🧪 TEST ALERT: Starting outbreak broadcast at 5:19 PM IST');
+    cron.schedule('25 17 * * *', async () => {
+      console.log('🧪 TEST ALERT: Starting outbreak broadcast at 5:25 PM IST');
       
       try {
         // Fetch and create national outbreak alert
@@ -104,23 +104,22 @@ class SchedulerService {
           
           // Broadcast to all users
           await broadcastService.broadcastNationalAlert(nationalAlert);
-          
-          console.log('✅ TEST ALERT: Outbreak broadcast completed successfully at 5:19 PM');
+          console.log('✅ TEST ALERT: Demo alert broadcast completed at 5:25 PM');
         } else {
-          console.log('ℹ️ TEST ALERT: No national outbreak alert to broadcast at 5:19 PM');
+          console.log('ℹ️ TEST ALERT: No national outbreak alert to broadcast at 5:25 PM');
         }
         
       } catch (error) {
-        console.error('❌ Error in 5:19 PM test outbreak broadcast:', error);
+        console.error('❌ Error in 5:25 PM test outbreak broadcast:', error);
         
         // Send error notification to admin (if configured)
-        await this.notifyAdminOfError('5:19 PM Test Outbreak Broadcast Failed', error);
+        await this.notifyAdminOfError('5:25 PM Test Outbreak Broadcast Failed', error);
       }
     }, {
       timezone: "Asia/Kolkata"
     });
 
-    console.log('🧪 TEST ALERT: Outbreak broadcast scheduled for 5:19 PM IST TODAY');
+    console.log('🧪 TEST ALERT: Outbreak broadcast scheduled for 5:25 PM IST TODAY');
   }
 
   // Create a test alert for demonstration purposes
@@ -203,9 +202,9 @@ class SchedulerService {
           description: 'Daily outbreak broadcast at 10:00 AM IST'
         },
         testAlert: {
-          schedule: '19 17 * * *',
-          description: 'TEST ALERT: Outbreak broadcast at 5:19 PM IST TODAY',
-          status: 'ACTIVE - Will trigger in 3 minutes!'
+          schedule: '25 17 * * *',
+          description: 'TEST ALERT: Outbreak broadcast at 5:25 PM IST TODAY',
+          status: 'ACTIVE - Will trigger in 5 minutes!'
         },
         cleanup: {
           schedule: '0 2 * * *',

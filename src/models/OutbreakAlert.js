@@ -275,17 +275,21 @@ ${preventionTips.slice(0, 4).map(tip => `• ${tip}`).join('\n')}
       let stateMessage = `${urgencyEmoji[news.urgency]} *BREAKING: ${news.state} Health Alert* ${urgencyEmoji[news.urgency]}
 _${currentDate} Update_
 
-🇮🇳 *${news.state} - ${news.disease}*
-*📊 Status:* ${news.status}
+*🏛️ State:* ${news.state}
 
-*🔍 Situation Overview:*
+*📋 Overview:*
 ${news.overview}
 
-*🩺 Key Symptoms:*
+*🩺 Symptoms:*
 ${news.symptoms.slice(0, 4).map(s => `• ${s}`).join('\n')}
 
-*🛡️ Immediate Prevention:*
+*🛡️ Prevention Tips:*
 ${news.prevention.slice(0, 3).map(p => `• ${p}`).join('\n')}
+
+*⚠️ Seriousness:* ${news.urgency} - ${news.disease}
+
+*📊 Situation/Cases:*
+${news.status}
 
 *📞 Emergency:* 108 | *🔗 Source:* Health Ministry India
 *🕐 Updated:* ${currentDate}`;

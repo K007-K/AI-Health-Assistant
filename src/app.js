@@ -5,7 +5,7 @@ const compression = require('compression');
 const config = require('./config/environment');
 const { testConnection } = require('./config/database');
 const WebhookController = require('./controllers/webhookController');
-const schedulerService = require('./services/schedulerService');
+// Scheduler service removed - using simplified on-demand system
 
 // Initialize Express app
 const app = express();
@@ -165,10 +165,9 @@ async function startServer() {
       console.log('\n🦠 Disease monitoring system ready (on-demand generation)');
       console.log('✅ Simplified disease monitoring system active');
 
-      // Initialize outbreak scheduler
-      console.log('\n📅 Initializing outbreak scheduler...');
-      schedulerService.initialize();
-      console.log('✅ Outbreak scheduler initialized');
+      // Simplified system - no scheduler needed (on-demand generation)
+      console.log('\n📅 Simplified system - no scheduled jobs needed');
+      console.log('✅ On-demand disease outbreak generation ready');
 
       console.log(`
 ====================================

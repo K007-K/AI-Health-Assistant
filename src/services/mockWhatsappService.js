@@ -122,8 +122,7 @@ class MockWhatsAppService {
             { id: 'symptom_check', title: '🩺 Check Symptoms', description: 'Analyze symptoms & get recommendations' },
             { id: 'preventive_tips', title: '🌱 Health Tips', description: 'Learn about diseases, nutrition & lifestyle' },
             { id: 'disease_alerts', title: '🦠 Disease Outbreak Alerts', description: 'View active diseases & manage alerts' },
-            { id: 'change_language', title: '🌐 Change Language', description: 'Switch to different language' },
-            { id: 'feedback', title: '📊 Feedback & Accuracy', description: 'Rate responses & help improve accuracy' }
+            { id: 'change_language', title: '🌐 Change Language', description: 'Switch to different language' }
           ]
         }]
       },
@@ -165,11 +164,11 @@ class MockWhatsAppService {
     return { success: true };
   }
 
-  // Mock send message with inline feedback buttons
+  // Mock send message with inline feedback buttons (Meta style)
   async sendMessageWithFeedback(to, text, messageId = null) {
     console.log(`📱 MOCK: Sending message with feedback to ${to}`);
     console.log(`💬 Message: ${text.substring(0, 100)}...`);
-    console.log(`👍👎 Feedback buttons: Thumbs up/down`);
+    console.log(`👍👎 Feedback buttons: Meta style (no text, just icons)`);
     return { success: true, messageId: `mock_${Date.now()}` };
   }
 

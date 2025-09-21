@@ -341,8 +341,7 @@ class WhatsAppService {
             { id: 'symptom_check', title: '🩺 Check Symptoms', description: 'Analyze symptoms & get recommendations' },
             { id: 'preventive_tips', title: '🌱 Health Tips', description: 'Learn about diseases, nutrition & lifestyle' },
             { id: 'disease_alerts', title: '🦠 Disease Outbreak Alerts', description: 'View active diseases & manage alerts' },
-            { id: 'change_language', title: '🌐 Change Language', description: 'Switch to different language' },
-            { id: 'feedback', title: '📊 Feedback & Accuracy', description: 'Rate responses & help improve accuracy' }
+            { id: 'change_language', title: '🌐 Change Language', description: 'Switch to different language' }
           ]
         }]
       },
@@ -354,8 +353,7 @@ class WhatsAppService {
             { id: 'symptom_check', title: '🩺 लक्षण जांचें', description: 'लक्षणों का विश्लेषण करें और सिफारिशें पाएं' },
             { id: 'preventive_tips', title: '🌱 स्वास्थ्य सुझाव', description: 'बीमारियों, पोषण और जीवनशैली के बारे में जानें' },
             { id: 'disease_alerts', title: '🦠 रोग प्रकोप अलर्ट', description: 'सक्रिय रोग देखें और अलर्ट प्रबंधित करें' },
-            { id: 'change_language', title: '🌐 भाषा बदलें', description: 'अलग भाषा में बदलें' },
-            { id: 'feedback', title: '📊 फीडबैक और सटीकता', description: 'प्रतिक्रियाओं को रेट करें और सटीकता सुधारने में मदद करें' }
+            { id: 'change_language', title: '🌐 भाषा बदलें', description: 'अलग भाषा में बदलें' }
           ]
         }]
       },
@@ -367,8 +365,7 @@ class WhatsAppService {
             { id: 'symptom_check', title: '🩺 లక్షణాలు తనిఖీ చేయండి', description: 'లక్షణాలను విశ్లేషించి సిఫార్సులు పొందండి' },
             { id: 'preventive_tips', title: '🌱 ఆరోగ్య చిట్కాలు', description: 'వ్యాధులు, పోషణ & జీవనశైలి గురించి తెలుసుకోండి' },
             { id: 'disease_alerts', title: '🦠 వ్యాధి వ్యాప్తి హెచ్చరికలు', description: 'చురుకైన వ్యాధులను చూడండి & హెచ్చరికలను నిర్వహించండి' },
-            { id: 'change_language', title: '🌐 భాష మార్చండి', description: 'వేరే భాషకు మార్చండి' },
-            { id: 'feedback', title: '📊 ఫీడ్బ్యాక్ & ఖచ్చితత్వం', description: 'స్పందనలను రేట్ చేయండి & ఖచ్చితత్వం మెరుగుపరచడంలో సహాయపడండి' }
+            { id: 'change_language', title: '🌐 భాష మార్చండి', description: 'వేరే భాషకు మార్చండి' }
           ]
         }]
       },
@@ -380,8 +377,7 @@ class WhatsAppService {
             { id: 'symptom_check', title: '🩺 அறிகுறி சரிபார்', description: 'அறிகுறிகளை பகுப்பாய்வு செய்து பரிந்துரைகளை பெறுங்கள்' },
             { id: 'preventive_tips', title: '🌱 ஆரோக்கிய குறிப்புகள்', description: 'நோய்கள், ஊட்டச்சத்து & வாழ்க்கை முறை பற்றி அறியுங்கள்' },
             { id: 'disease_alerts', title: '🦠 நோய் விரிவு எச்சரிக்கைகள்', description: 'தற்போதைய நோய்களை பார்க்கவும் & எச்சரிக்கைகளை நிர்வகிக்கவும்' },
-            { id: 'change_language', title: '🌐 மொழி மாற்று', description: 'வேறு மொழிக்கு மாற்றவும்' },
-            { id: 'feedback', title: '📊 கருத்து', description: 'பதில்களை மதிப்பிடுங்கள் & துல்லியத்தை மேம்படுத்த உதவுங்கள்' }
+            { id: 'change_language', title: '🌐 மொழி மாற்று', description: 'வேறு மொழிக்கு மாற்றவும்' }
           ]
         }]
       },
@@ -393,8 +389,7 @@ class WhatsAppService {
             { id: 'symptom_check', title: '🩺 ଲକ୍ଷଣ ଯାଞ୍ଚ କରନ୍ତୁ', description: 'ଲକ୍ଷଣ ବିଶ୍ଳେଷଣ କରନ୍ତୁ ଏବଂ ସୁପାରିଶ ପାଆନ୍ତୁ' },
             { id: 'preventive_tips', title: '🌱 ସ୍ୱାସ୍ଥ୍ଯ ଟିପସ', description: 'ରୋଗ, ପୋଷଣ ଏବଂ ଜୀବନଶୈଳୀ ବିଷୟରେ ଜାଣନ୍ତୁ' },
             { id: 'disease_alerts', title: '🦠 ରୋଗ ପ୍ରସାର ସଚେତନା', description: 'ସକ୍ରିୟ ରୋଗ ଦେଖନ୍ତୁ ଏବଂ ସଚେତନା ପ୍ରବନ୍ଧନ କରନ୍ତୁ' },
-            { id: 'change_language', title: '🌐 ଭାଷା ବଦଳାନ୍ତୁ', description: 'ଅନ୍ଯ ଭାଷାରେ ବଦଳାନ୍ତୁ' },
-            { id: 'feedback', title: '📊 ମତାମତ ଏବଂ ସଠିକତା', description: 'ପ୍ରତିକ୍ରିଯାକୁ ମୂଲ୍ଯାଙ୍କନ କରନ୍ତୁ ଏବଂ ସଠିକତା ଉନ୍ନତି କରିବାରେ ସାହାଯ୍ଯ କରନ୍ତୁ' }
+            { id: 'change_language', title: '🌐 ଭାଷା ବଦଳାନ୍ତୁ', description: 'ଅନ୍ଯ ଭାଷାରେ ବଦଳାନ୍ତୁ' }
           ]
         }]
       },
@@ -575,18 +570,18 @@ class WhatsAppService {
     }
   }
 
-  // Send message with inline feedback buttons
+  // Send message with inline feedback buttons (Meta style)
   async sendMessageWithFeedback(to, text, messageId = null) {
     try {
       // Send the main message first
       const messageResponse = await this.sendMessage(to, text);
       
       // Add small delay before sending feedback buttons
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise(resolve => setTimeout(resolve, 200));
       
-      // Send inline feedback buttons with a simple prompt
+      // Send inline feedback buttons without text (Meta style)
       const feedbackButtons = this.getInlineFeedbackButtons();
-      await this.sendInteractiveButtons(to, 'Was this helpful?', feedbackButtons);
+      await this.sendInteractiveButtons(to, '', feedbackButtons);
       
       return messageResponse;
     } catch (error) {

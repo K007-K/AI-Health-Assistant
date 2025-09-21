@@ -145,6 +145,34 @@ class MockWhatsAppService {
     return menus[language] || menus.en;
   }
 
+  // Get inline feedback buttons (thumbs up/down)
+  getInlineFeedbackButtons(language = 'en') {
+    return [
+      { id: 'feedback_good', title: '👍' },
+      { id: 'feedback_bad', title: '👎' }
+    ];
+  }
+
+  // Mock typing indicator
+  async sendTypingIndicator(to) {
+    console.log(`⌨️ MOCK: Typing indicator ON for ${to}`);
+    return { success: true };
+  }
+
+  // Mock stop typing indicator
+  async stopTypingIndicator(to) {
+    console.log(`⌨️ MOCK: Typing indicator OFF for ${to}`);
+    return { success: true };
+  }
+
+  // Mock send message with inline feedback buttons
+  async sendMessageWithFeedback(to, text, messageId = null) {
+    console.log(`📱 MOCK: Sending message with feedback to ${to}`);
+    console.log(`💬 Message: ${text.substring(0, 100)}...`);
+    console.log(`👍👎 Feedback buttons: Thumbs up/down`);
+    return { success: true, messageId: `mock_${Date.now()}` };
+  }
+
   // Get main menu buttons (same as real service)
   getMainMenuButtons(language = 'en', scriptType = 'native') {
     const buttons = {

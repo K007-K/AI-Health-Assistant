@@ -21,6 +21,70 @@ class MessageController {
     this.aiDiseaseMonitorService = new AIDiseaseMonitorService();
   }
 
+  // Send message with typing indicator and inline feedback buttons
+  async sendMessageWithTypingAndFeedback(phoneNumber, message, showFeedback = true) {
+    try {
+      // Show typing indicator
+      await this.whatsappService.sendTypingIndicator(phoneNumber);
+      
+      // Simulate typing time based on message length (realistic timing)
+      const typingDelay = Math.min(Math.max(message.length * 30, 1000), 3000); // 1-3 seconds
+      await new Promise(resolve => setTimeout(resolve, typingDelay));
+      
+      // Stop typing indicator
+      await this.whatsappService.stopTypingIndicator(phoneNumber);
+      
+      if (showFeedback) {
+        // Send message with inline feedback buttons
+        return await this.whatsappService.sendMessageWithFeedback(phoneNumber, message);
+      } else {
+        // Send regular message without feedback
+        return await this.whatsappService.sendMessage(phoneNumber, message);
+      }
+    } catch (error) {
+      console.error('Error sending message with typing and feedback:', error);
+      // Fallback to regular message
+      return await this.whatsappService.sendMessage(phoneNumber, message);
+    }
+  }
+
+  // Handle inline feedback (thumbs up/down)
+  async handleInlineFeedback(user, feedbackType, messageId) {
+    try {
+      console.log(`👍👎 Inline feedback received: ${feedbackType} from ${user.phone_number}`);
+      
+      // Save feedback to database
+      await this.userFeedbackService.saveFeedback(user.id, {
+        type: feedbackType === 'feedback_good' ? 'positive' : 'negative',
+        rating: feedbackType === 'feedback_good' ? 5 : 1,
+        messageId: messageId,
+        timestamp: new Date(),
+        source: 'inline_buttons'
+      });
+      
+      // Send confirmation message (like Meta's "Feedback submitted to Helic")
+      const confirmationMessages = {
+        en: 'Feedback submitted to Helic',
+        hi: 'फीडबैक हेलिक को भेजा गया',
+        te: 'ఫీడ్‌బ్యాక్ హెలిక్‌కు పంపబడింది',
+        ta: 'கருத்து ஹெலிக்கிற்கு அனுப்பப்பட்டது',
+        or: 'ମତାମତ ହେଲିକକୁ ପଠାଗଲା'
+      };
+      
+      const confirmationText = confirmationMessages[user.preferred_language] || confirmationMessages.en;
+      
+      // Send confirmation without feedback buttons
+      await this.whatsappService.sendMessage(user.phone_number, confirmationText);
+      
+      console.log(`✅ Feedback confirmation sent to ${user.phone_number}`);
+      
+    } catch (error) {
+      console.error('Error handling inline feedback:', error);
+      // Send generic confirmation even if saving fails
+      await this.whatsappService.sendMessage(user.phone_number, 'Thank you for your feedback!');
+    }
+  }
+
   // Main message handler - routes messages to appropriate handlers
   async handleMessage(messageData) {
     try {
@@ -89,6 +153,12 @@ class MessageController {
         return;
       }
 
+      // Handle inline feedback buttons (thumbs up/down)
+      if (content === 'feedback_good' || content === 'feedback_bad') {
+        await this.handleInlineFeedback(user, content, messageId);
+        return;
+      }
+
       // Route to specific handlers based on intent and current state
       switch (intent) {
         case 'greeting':
@@ -139,12 +209,7 @@ class MessageController {
           await this.handleOutbreakAlerts(user);
           break;
 
-        case 'feedback':
-        case 'feedback_button':
-        case 'accuracy_report':
-        case 'data_accuracy':
-          await this.handleFeedback(user, content, messageId);
-          break;
+        // Removed old feedback handling - now using inline feedback buttons
 
         case 'disease_alerts':
           await this.handleDiseaseAlerts(user);
@@ -580,8 +645,8 @@ class MessageController {
         console.log('🔍 DEBUG handleAIChat - AI response preview:', aiResponse.substring(0, 50) + '...');
       }
 
-      // Send response without menu options (continuous chat)
-      await this.whatsappService.sendMessage(user.phone_number, aiResponse);
+      // Send response with typing indicator and feedback buttons
+      await this.sendMessageWithTypingAndFeedback(user.phone_number, aiResponse, true);
 
       // Save bot response
       await this.conversationService.saveBotMessage(
@@ -632,7 +697,7 @@ class MessageController {
               'symptom_check'
             );
         
-        await this.whatsappService.sendMessage(user.phone_number, analysis);
+        await this.sendMessageWithTypingAndFeedback(user.phone_number, analysis, true);
         
         await this.conversationService.saveBotMessage(
           user.id,
@@ -764,7 +829,7 @@ class MessageController {
         console.log('🌱 Generating preventive tips for:', category, specificTopic ? `(${specificTopic})` : '');
         const tips = await this.geminiService.getPreventiveTips(category, userProfile, specificTopic);
         
-        await this.whatsappService.sendMessage(user.phone_number, tips);
+        await this.sendMessageWithTypingAndFeedback(user.phone_number, tips, true);
         
         await this.conversationService.saveBotMessage(
           user.id,
@@ -1045,7 +1110,7 @@ Type your message below:`;
         });
       }
 
-      await this.whatsappService.sendMessage(user.phone_number, response);
+      await this.sendMessageWithTypingAndFeedback(user.phone_number, response, true);
       
       await this.conversationService.saveBotMessage(
         user.id,
@@ -1073,7 +1138,7 @@ Type your message below:`;
         user.accessibility_mode
       );
 
-      await this.whatsappService.sendMessage(user.phone_number, aiResponse);
+      await this.sendMessageWithTypingAndFeedback(user.phone_number, aiResponse, true);
       
       await this.conversationService.saveBotMessage(
         user.id,

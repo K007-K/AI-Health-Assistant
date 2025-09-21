@@ -509,37 +509,125 @@ class WhatsAppService {
     ]
   };
 
-  // Get more options menu buttons (3-button limit)
+  // Get more options menu buttons (3-button limit) - Removed feedback
   getMoreOptionsButtons(language = 'en') {
     const buttons = {
       en: [
         { id: 'change_language', title: '🌐 Change Language' },
         { id: 'outbreak_alerts', title: '🚨 Outbreak Alerts' },
-        { id: 'feedback', title: '📊 Feedback' }
+        { id: 'preventive_tips', title: '🛡️ Health Tips' }
       ],
       hi: [
         { id: 'change_language', title: '🌐 भाषा बदलें' },
         { id: 'outbreak_alerts', title: '🚨 बीमारी अलर्ट' },
-        { id: 'feedback', title: '📊 फीडबैक' }
+        { id: 'preventive_tips', title: '🛡️ स्वास्थ्य सुझाव' }
       ],
       te: [
         { id: 'change_language', title: '🌐 భాష మార్చండి' },
         { id: 'outbreak_alerts', title: '🚨 వ్యాధి హెచ్చరికలు' },
-        { id: 'feedback', title: '📊 ఫీడ్‌బ్యాక్' }
+        { id: 'preventive_tips', title: '🛡️ ఆరోగ్య చిట్కాలు' }
       ],
       ta: [
         { id: 'change_language', title: '🌐 மொழி மாற்று' },
         { id: 'outbreak_alerts', title: '🚨 தொற்றுநோய் எச்சரிக்கைகள்' },
-        { id: 'feedback', title: '📊 கருத்து' }
+        { id: 'preventive_tips', title: '🛡️ சுகாதார குறிப்புகள்' }
       ],
       or: [
         { id: 'change_language', title: '🌐 ଭାଷା ବଦଳାନ୍ତୁ' },
         { id: 'outbreak_alerts', title: '🚨 ବ୍ୟାଧି ସତର୍କତା' },
-        { id: 'feedback', title: '📊 ମତାମତ' }
+        { id: 'preventive_tips', title: '🛡️ ସ୍ୱାସ୍ଥ୍ୟ ପରାମର୍ଶ' }
       ]
     };
     return buttons[language] || buttons.en;
   }
+
+  // Get inline feedback buttons (thumbs up/down)
+  getInlineFeedbackButtons(language = 'en') {
+    return [
+      { id: 'feedback_good', title: '👍' },
+      { id: 'feedback_bad', title: '👎' }
+    ];
+  }
+
+  // Send typing indicator (three dots animation)
+  async sendTypingIndicator(to) {
+    try {
+      const payload = {
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to: to,
+        type: 'typing_on'
+      };
+
+      const response = await axios.post(
+        `${this.baseURL}/${this.phoneNumberId}/messages`,
+        payload,
+        {
+          headers: {
+            'Authorization': `Bearer ${this.accessToken}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      console.log('✅ Typing indicator sent');
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error sending typing indicator:', error.response?.data || error.message);
+      // Don't throw error - typing indicator is not critical
+      return null;
+    }
+  }
+
+  // Stop typing indicator
+  async stopTypingIndicator(to) {
+    try {
+      const payload = {
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to: to,
+        type: 'typing_off'
+      };
+
+      await axios.post(
+        `${this.baseURL}/${this.phoneNumberId}/messages`,
+        payload,
+        {
+          headers: {
+            'Authorization': `Bearer ${this.accessToken}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      console.log('✅ Typing indicator stopped');
+    } catch (error) {
+      console.error('❌ Error stopping typing indicator:', error.response?.data || error.message);
+      // Don't throw error - typing indicator is not critical
+    }
+  }
+
+  // Send message with inline feedback buttons
+  async sendMessageWithFeedback(to, text, messageId = null) {
+    try {
+      // Send the main message first
+      const messageResponse = await this.sendMessage(to, text);
+      
+      // Add small delay before sending feedback buttons
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Send inline feedback buttons
+      const feedbackButtons = this.getInlineFeedbackButtons();
+      await this.sendInteractiveButtons(to, '', feedbackButtons);
+      
+      return messageResponse;
+    } catch (error) {
+      console.error('❌ Error sending message with feedback:', error);
+      // Fallback to regular message if feedback buttons fail
+      return await this.sendMessage(to, text);
+    }
+  }
+
   getScriptPreferenceButtons(language) {
     const scripts = {
       hi: ['🇮🇳 हिंदी script', '🔤 English letters'],

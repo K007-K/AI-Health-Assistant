@@ -1004,11 +1004,35 @@ ${language} భాషలో${scriptPreference === 'transliteration' ? ' ఆం�
           return;
         } else if (message === 'exercise_lifestyle') {
           category = 'exercise and lifestyle';
+          // Send initial exercise guidance and set session for continuous exercise conversation
+          const exerciseIntroTexts = {
+            en: '🏃 *Exercise & Lifestyle*\n\nI can help you with:\n• Exercise routines and physical activities\n• Fitness tips for different age groups\n• Daily lifestyle habits\n• Sleep and rest guidance\n• Mental health and stress management\n\nWhat specific exercise or lifestyle question do you have?',
+            hi: '🏃 *व्यायाम और जीवनशैली*\n\nमैं आपकी इनमें मदद कर सकता हूं:\n• व्यायाम दिनचर्या और शारीरिक गतिविधियां\n• विभिन्न आयु समूहों के लिए फिटनेस टिप्स\n• दैनिक जीवनशैली की आदतें\n• नींद और आराम मार्गदर्शन\n• मानसिक स्वास्थ्य और तनाव प्रबंधन\n\nआपका कोई विशिष्ट व्यायाम या जीवनशैली प्रश्न क्या है?',
+            te: '🏃 *వ్యాయామం మరియు జీవనశైలి*\n\nనేను మీకు వీటిలో సహాయం చేయగలను:\n• వ్యాయామ దినచర్యలు మరియు శారీరక కార్యకలాపాలు\n• వివిధ వయస్సు గ్రూపులకు ఫిట్‌నెస్ చిట్కాలు\n• రోజువారీ జీవనశైలి అలవాట్లు\n• నిద్ర మరియు విశ్రాంతి మార్గదర్శనం\n• మానసిక ఆరోగ్యం మరియు ఒత్తిడి నిర్వహణ\n\nమీకు ఏదైనా నిర్దిష్ట వ్యాయామం లేదా జీవనశైలి ప్రశ్న ఉందా?'
+          };
+          
+          await this.whatsappService.sendMessage(
+            user.phone_number, 
+            exerciseIntroTexts[user.preferred_language] || exerciseIntroTexts.en
+          );
+          
+          // Set session to exercise conversation mode
+          await this.userService.updateUserSession(user.id, 'preventive_tips', { 
+            selectedCategory: 'exercise_lifestyle',
+            inExerciseConversation: true 
+          });
+          return;
         } 
         // Check if user is in nutrition conversation mode
         else if (sessionData.inNutritionConversation || sessionData.selectedCategory === 'nutrition_hygiene') {
           // User is asking a follow-up nutrition question
           await this.handleNutritionQuestion(user, message);
+          return;
+        }
+        // Check if user is in exercise conversation mode
+        else if (sessionData.inExerciseConversation || sessionData.selectedCategory === 'exercise_lifestyle') {
+          // User is asking a follow-up exercise question
+          await this.handleExerciseQuestion(user, message);
           return;
         }
         // Check for text-based selections
@@ -1127,6 +1151,136 @@ ${language} భాషలో${scriptPreference === 'transliteration' ? ' ఆం�
     }
     
     return false;
+  }
+
+  // Handle exercise-specific questions with proper categorization and redirects
+  async handleExerciseQuestion(user, message) {
+    try {
+      const lowerMessage = message.toLowerCase();
+      
+      // Define exercise-related keywords
+      const exerciseKeywords = [
+        'exercise', 'workout', 'fitness', 'gym', 'training', 'activity', 'sport',
+        'walking', 'running', 'jogging', 'cycling', 'swimming', 'yoga', 'stretching',
+        'muscle', 'strength', 'cardio', 'aerobic', 'weight', 'lifting', 'push-up',
+        'sit-up', 'squat', 'plank', 'meditation', 'breathing', 'relaxation',
+        'sleep', 'rest', 'lifestyle', 'routine', 'habit', 'daily', 'morning',
+        'stress', 'mental health', 'mood', 'energy', 'fatigue', 'tired',
+        'posture', 'back', 'neck', 'shoulder', 'joint', 'flexibility'
+      ];
+      
+      // Define non-exercise keywords that should be redirected
+      const symptomKeywords = [
+        'pain', 'ache', 'hurt', 'fever', 'cough', 'cold', 'headache', 'stomach ache',
+        'nausea', 'vomit', 'diarrhea', 'constipation', 'dizzy', 'weak',
+        'rash', 'itch', 'swelling', 'bleeding', 'breathe', 'chest', 'heart attack'
+      ];
+      
+      const nutritionKeywords = [
+        'eat', 'eating', 'food', 'diet', 'nutrition', 'meal', 'cooking',
+        'chicken', 'fish', 'meat', 'vegetable', 'fruit', 'rice', 'milk',
+        'protein', 'vitamin', 'calcium', 'recipe', 'ingredient'
+      ];
+      
+      const diseaseKeywords = [
+        'diabetes', 'cancer', 'heart disease', 'hypertension', 'malaria', 'tuberculosis',
+        'covid', 'dengue', 'typhoid', 'hepatitis', 'asthma', 'arthritis'
+      ];
+      
+      // Check if it's a symptom-related question
+      if (symptomKeywords.some(keyword => lowerMessage.includes(keyword))) {
+        const redirectTexts = {
+          en: '🩺 Your question seems to be about symptoms or health issues. For symptom analysis and health concerns, please use the *Check Symptoms* feature.\n\n🏃 For exercise and lifestyle questions, ask about workouts, fitness routines, or healthy habits.',
+          hi: '🩺 आपका प्रश्न लक्षणों या स्वास्थ्य समस्याओं के बारे में लगता है। लक्षण विश्लेषण और स्वास्थ्य चिंताओं के लिए, कृपया *लक्षण जांचें* सुविधा का उपयोग करें।\n\n🏃 व्यायाम और जीवनशैली प्रश्नों के लिए, वर्कआउट, फिटनेस दिनचर्या, या स्वस्थ आदतों के बारे में पूछें।',
+          te: '🩺 మీ ప్రశ్న లక్షణాలు లేదా ఆరోగ్య సమస్యల గురించి అనిపిస్తుంది। లక్షణ విశ్లేషణ మరియు ఆరోగ్య ఆందోళనల కోసం, దయచేసి *లక్షణాలను తనిఖీ చేయండి* ఫీచర్‌ను ఉపయోగించండి।\n\n🏃 వ్యాయామం మరియు జీవనశైలి ప్రశ్నల కోసం, వర్కౌట్‌లు, ఫిట్‌నెస్ రొటీన్‌లు లేదా ఆరోగ్యకరమైన అలవాట్ల గురించి అడగండి।'
+        };
+        
+        await this.whatsappService.sendMessage(
+          user.phone_number,
+          redirectTexts[user.preferred_language] || redirectTexts.en
+        );
+        return;
+      }
+      
+      // Check if it's a nutrition-related question
+      if (nutritionKeywords.some(keyword => lowerMessage.includes(keyword))) {
+        const redirectTexts = {
+          en: '🥗 Your question is about nutrition and food. For detailed nutrition guidance, please use the *Nutrition & Hygiene* option in Health Tips.\n\n🏃 For exercise questions, ask about workouts, fitness routines, or physical activities.',
+          hi: '🥗 आपका प्रश्न पोषण और भोजन के बारे में है। विस्तृत पोषण मार्गदर्शन के लिए, कृपया स्वास्थ्य टिप्स में *पोषण और स्वच्छता* विकल्प का उपयोग करें।\n\n🏃 व्यायाम प्रश्नों के लिए, वर्कआउट, फिटनेस दिनचर्या, या शारीरिक गतिविधियों के बारे में पूछें।',
+          te: '🥗 మీ ప్రశ్న పోషణ మరియు ఆహారం గురించి. వివరణాత్మక పోషణ మార్గదర్శనం కోసం, దయచేసి హెల్త్ టిప్స్‌లో *పోషణ & పరిశుభ్రత* ఎంపికను ఉపయోగించండి।\n\n🏃 వ్యాయామ ప్రశ్నల కోసం, వర్కౌట్‌లు, ఫిట్‌నెస్ రొటీన్‌లు లేదా శారీరక కార్యకలాపాల గురించి అడగండి।'
+        };
+        
+        await this.whatsappService.sendMessage(
+          user.phone_number,
+          redirectTexts[user.preferred_language] || redirectTexts.en
+        );
+        return;
+      }
+      
+      // Check if it's a disease-related question
+      if (diseaseKeywords.some(keyword => lowerMessage.includes(keyword))) {
+        const redirectTexts = {
+          en: '🦠 Your question is about diseases. For detailed disease information, please use the *Learn about Diseases* option in Health Tips.\n\n🏃 For exercise questions, ask about fitness routines, workouts, or healthy lifestyle habits.',
+          hi: '🦠 आपका प्रश्न बीमारियों के बारे में है। विस्तृत बीमारी जानकारी के लिए, कृपया स्वास्थ्य टिप्स में *बीमारियों के बारे में जानें* विकल्प का उपयोग करें।\n\n🏃 व्यायाम प्रश्नों के लिए, फिटनेस दिनचर्या, वर्कआउट, या स्वस्थ जीवनशैली की आदतों के बारे में पूछें।',
+          te: '🦠 మీ ప్రశ్న వ్యాధుల గురించి. వివరణాత్మక వ్యాధి సమాచారం కోసం, దయచేసి హెల్త్ టిప్స్‌లో *వ్యాధుల గురించి తెలుసుకోండి* ఎంపికను ఉపయోగించండి।\n\n🏃 వ్యాయామ ప్రశ్నల కోసం, ఫిట్‌నెస్ రొటీన్‌లు, వర్కౌట్‌లు లేదా ఆరోగ్యకరమైన జీవనశైలి అలవాట్ల గురించి అడగండి।'
+        };
+        
+        await this.whatsappService.sendMessage(
+          user.phone_number,
+          redirectTexts[user.preferred_language] || redirectTexts.en
+        );
+        return;
+      }
+      
+      // If it's an exercise-related question, provide specialized exercise response
+      if (exerciseKeywords.some(keyword => lowerMessage.includes(keyword))) {
+        console.log('🏃 Handling exercise question:', message);
+        
+        const context = await this.conversationService.getRecentContext(user.id);
+        const exerciseResponse = await this.geminiService.generateResponse(
+          message,
+          user.preferred_language,
+          user.script_preference,
+          context,
+          user.accessibility_mode,
+          3,
+          'exercise_lifestyle'
+        );
+        
+        await this.sendMessageWithTypingAndFeedback(user.phone_number, exerciseResponse);
+        
+        await this.conversationService.saveBotMessage(
+          user.id,
+          exerciseResponse,
+          'exercise_response',
+          user.preferred_language
+        );
+        
+        // Keep user in exercise conversation mode
+        await this.userService.updateUserSession(user.id, 'preventive_tips', { 
+          selectedCategory: 'exercise_lifestyle',
+          inExerciseConversation: true 
+        });
+        
+        return;
+      }
+      
+      // For general/unclear questions, provide guidance
+      const guidanceTexts = {
+        en: '🏃 I specialize in exercise and lifestyle guidance. Please ask about:\n\n• Exercise routines (e.g., "What exercises for beginners?")\n• Fitness tips and workouts\n• Daily lifestyle habits\n• Sleep and rest guidance\n• Stress management and mental health\n• Physical activities for different ages\n\nWhat specific exercise or lifestyle topic would you like to know about?',
+        hi: '🏃 मैं व्यायाम और जीवनशैली मार्गदर्शन में विशेषज्ञ हूं। कृपया इनके बारे में पूछें:\n\n• व्यायाम दिनचर्या (जैसे, "शुरुआती लोगों के लिए कौन से व्यायाम?")\n• फिटनेस टिप्स और वर्कआउट\n• दैनिक जीवनशैली की आदतें\n• नींद और आराम मार्गदर्शन\n• तनाव प्रबंधन और मानसिक स्वास्थ्य\n• विभिन्न आयु के लिए शारीरिक गतिविधियां\n\nआप किस विशिष्ट व्यायाम या जीवनशैली विषय के बारे में जानना चाहेंगे?',
+        te: '🏃 నేను వ్యాయామం మరియు జీవనశైలి మార్గదర్శనంలో నిపుణుడిని. దయచేసి వీటి గురించి అడగండి:\n\n• వ్యాయామ దినచర్యలు (ఉదా., "ప్రారంభకులకు ఏ వ్యాయామాలు?")\n• ఫిట్‌నెస్ చిట్కాలు మరియు వర్కౌట్‌లు\n• రోజువారీ జీవనశైలి అలవాట్లు\n• నిద్ర మరియు విశ్రాంతి మార్గదర్శనం\n• ఒత్తిడి నిర్వహణ మరియు మానసిక ఆరోగ్యం\n• వివిధ వయస్సులకు శారీరక కార్యకలాపాలు\n\nమీరు ఏ నిర్దిష్ట వ్యాయామం లేదా జీవనశైలి అంశం గురించి తెలుసుకోవాలనుకుంటున్నారు?'
+      };
+      
+      await this.whatsappService.sendMessage(
+        user.phone_number,
+        guidanceTexts[user.preferred_language] || guidanceTexts.en
+      );
+      
+    } catch (error) {
+      console.error('Error in handleExerciseQuestion:', error);
+      throw error;
+    }
   }
 
   // Handle nutrition-specific questions with proper categorization and redirects

@@ -5,7 +5,18 @@ const cron = require('node-cron');
 class OutbreakService {
   constructor() {
     this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    this.model = this.genAI.getGenerativeModel({ model: "gemini-pro" });
+    // Use Gemini Pro with grounding for real-time information
+    this.model = this.genAI.getGenerativeModel({ 
+      model: "gemini-pro",
+      tools: [{
+        googleSearchRetrieval: {
+          dynamicRetrievalConfig: {
+            mode: "MODE_DYNAMIC",
+            dynamicThreshold: 0.7
+          }
+        }
+      }]
+    });
     this.initializeScheduler();
   }
 
@@ -26,49 +37,59 @@ class OutbreakService {
     console.log('⏰ Daily outbreak scheduler initialized for 10:00 AM IST');
   }
 
-  // Fetch latest national outbreak data from Gemini
+  // Fetch latest national outbreak data from Gemini with grounding
   async fetchNationalOutbreakData() {
-    const prompt = `You are a disease outbreak monitoring system for India. Provide the latest disease outbreak information for India as of today's date.
+    const prompt = `You are a disease outbreak monitoring system for India. Using the latest real-time information available, provide current disease outbreak information for India as of today's date.
 
 CRITICAL INSTRUCTIONS:
-1. Focus on ACTIVE, CURRENT outbreaks happening NOW in India
-2. Include only diseases with significant public health impact
-3. Provide accurate, factual information from reliable sources
-4. If no major outbreaks are currently active, mention seasonal diseases to watch for
+1. Use REAL-TIME DATA and latest news sources to identify ACTIVE, CURRENT outbreaks happening NOW in India
+2. Search for recent health ministry announcements, WHO reports, and news about disease outbreaks
+3. Include only diseases with significant public health impact based on current reports
+4. Provide accurate, factual information from reliable sources like Ministry of Health, WHO, ICMR
+5. If no major outbreaks are currently active based on latest news, mention seasonal diseases to watch for
+
+SEARCH FOR LATEST INFORMATION ON:
+- Recent disease outbreak reports in India
+- Ministry of Health and Family Welfare announcements
+- WHO India health alerts
+- State health department notifications
+- Current epidemiological surveillance data
+- Recent news about infectious disease outbreaks
 
 Required JSON Response Format:
 {
   "hasActiveOutbreaks": true/false,
   "nationalAlert": {
-    "title": "Disease Outbreak Alert - [Date]",
-    "description": "Brief overview of current outbreak situation in India",
-    "primaryDisease": "Main disease of concern",
+    "title": "Disease Outbreak Alert - [Current Date]",
+    "description": "Brief overview of current outbreak situation in India based on latest reports",
+    "primaryDisease": "Main disease of concern from recent data",
     "severity": "low/medium/high/critical",
     "affectedStates": ["State1", "State2"],
     "symptoms": ["symptom1", "symptom2", "symptom3"],
     "preventionTips": ["tip1", "tip2", "tip3", "tip4"],
-    "estimatedCases": "approximate number or range",
-    "lastUpdated": "current date"
+    "estimatedCases": "approximate number or range from latest reports",
+    "lastUpdated": "current date",
+    "sources": ["source1", "source2"]
   },
   "additionalDiseases": [
     {
       "disease": "Disease name",
       "severity": "low/medium/high",
       "affectedAreas": ["areas"],
-      "briefDescription": "short description"
+      "briefDescription": "short description based on latest data"
     }
   ]
 }
 
-Focus on diseases like:
-- Dengue, Chikungunya, Malaria (monsoon season)
-- H1N1, COVID-19 variants
-- Seasonal flu outbreaks
-- Food poisoning outbreaks
-- Water-borne diseases
-- Any emerging infectious diseases
+Focus on current reports about:
+- Dengue, Chikungunya, Malaria outbreaks
+- H1N1, COVID-19 variants, respiratory infections
+- Seasonal flu and viral fever outbreaks
+- Food poisoning and water-borne disease clusters
+- Any emerging infectious diseases in the news
+- Vector-borne diseases during current season
 
-Provide current, actionable health information for Indian citizens.`;
+Use real-time search to provide the most current, actionable health information for Indian citizens.`;
 
     try {
       const result = await this.model.generateContent(prompt);
@@ -90,49 +111,59 @@ Provide current, actionable health information for Indian citizens.`;
     }
   }
 
-  // Fetch state-specific outbreak data from Gemini
+  // Fetch state-specific outbreak data from Gemini with grounding
   async fetchStateOutbreakData(state) {
-    const prompt = `You are a disease outbreak monitoring system for India. Provide the latest disease outbreak information specifically for ${state} state as of today's date.
+    const prompt = `You are a disease outbreak monitoring system for India. Using the latest real-time information available, provide current disease outbreak information specifically for ${state} state as of today's date.
 
 CRITICAL INSTRUCTIONS:
-1. Focus ONLY on ${state} state
-2. Include active outbreaks, seasonal diseases, and health advisories for ${state}
-3. Provide state-specific prevention tips and local health contacts
-4. Include district-wise information if available
+1. Use REAL-TIME DATA and latest news sources to identify ACTIVE, CURRENT outbreaks happening NOW in ${state} state
+2. Search for recent ${state} health department announcements, local news, and state-specific health alerts
+3. Focus ONLY on ${state} state - include active outbreaks, seasonal diseases, and health advisories
+4. Provide state-specific prevention tips and local health contacts based on current information
+5. Include district-wise information if available from recent reports
+
+SEARCH FOR LATEST INFORMATION ON:
+- Recent disease outbreak reports in ${state} state
+- ${state} Health Department announcements and notifications
+- Local news about infectious disease outbreaks in ${state}
+- District-wise health surveillance data for ${state}
+- Current epidemiological situation in ${state}
+- State-specific health advisories and alerts
 
 Required JSON Response Format:
 {
   "hasStateOutbreaks": true/false,
   "stateAlert": {
-    "title": "${state} Disease Outbreak Update - [Date]",
-    "description": "Current disease outbreak situation in ${state}",
-    "primaryDisease": "Main disease of concern in ${state}",
+    "title": "${state} Disease Outbreak Update - [Current Date]",
+    "description": "Current disease outbreak situation in ${state} based on latest reports",
+    "primaryDisease": "Main disease of concern in ${state} from recent data",
     "severity": "low/medium/high/critical",
     "affectedDistricts": ["District1", "District2"],
     "symptoms": ["symptom1", "symptom2", "symptom3"],
     "preventionTips": ["state-specific tip1", "tip2", "tip3", "tip4"],
-    "estimatedCases": "approximate number in ${state}",
+    "estimatedCases": "approximate number in ${state} from latest reports",
     "stateHealthDepartmentContact": "contact info",
-    "lastUpdated": "current date"
+    "lastUpdated": "current date",
+    "sources": ["source1", "source2"]
   },
   "seasonalDiseases": [
     {
       "disease": "Disease name",
       "riskLevel": "low/medium/high",
       "affectedDistricts": ["districts"],
-      "briefDescription": "description for ${state}"
+      "briefDescription": "description for ${state} based on current data"
     }
   ]
 }
 
-Consider ${state}-specific factors:
-- Climate and seasonal patterns
-- Common diseases in ${state}
-- Local health infrastructure
-- Cultural and geographical factors
-- Recent health department advisories
+Consider current ${state}-specific factors:
+- Climate and seasonal patterns affecting ${state}
+- Common diseases currently reported in ${state}
+- Local health infrastructure and response in ${state}
+- Cultural and geographical factors specific to ${state}
+- Recent health department advisories for ${state}
 
-Provide actionable information for ${state} residents.`;
+Use real-time search to provide the most current, actionable information for ${state} residents.`;
 
     try {
       const result = await this.model.generateContent(prompt);

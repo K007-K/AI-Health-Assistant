@@ -58,23 +58,23 @@ In the **Environment** section, add all your environment variables:
 
 #### Required Variables:
 ```
-WHATSAPP_ACCESS_TOKEN=EAAbYQFp8ZBZCYBPaKOeiN3n8hbthTx0VSCtx44wOnZBd5wSZAvWFZCZCCb5tKPyoZBZAAHSB50bnB6XZCgiCAZBm2voa1xtFeBhD5pqZAy84WVAT5LBTj2ZB2NvY8869nyZAg6LWkWE3fdioNZBEBWJ45LqU8umXBYaLYdRdj5SjN7OncCNZA4phc3wdVaduXzhC2NmvkCeL2alHMSdraLoLSWb4QzJhlbpV0mhIlseqQ0WdL2LjA4UTAZDZD
+WHATSAPP_ACCESS_TOKEN=your_whatsapp_access_token_here
 
-WHATSAPP_PHONE_NUMBER_ID=796180340242168
+WHATSAPP_PHONE_NUMBER_ID=your_phone_number_id_here
 
-WHATSAPP_WEBHOOK_VERIFY_TOKEN=3732299207071787
+WHATSAPP_WEBHOOK_VERIFY_TOKEN=your_webhook_verify_token_here
 
-CLIENT_ID=1926620767910902
+CLIENT_ID=your_client_id_here
 
-CLIENT_SECRET=a1142b16578f238c338f46e173e7d9a1
+CLIENT_SECRET=your_client_secret_here
 
-SUPABASE_URL=https://vfcalzbjezbtgwwvytns.supabase.co
+SUPABASE_URL=https://your-project.supabase.co
 
-SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmY2FsemJqZXpidGd3d3Z5dG5zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NjY1OTksImV4cCI6MjA3MzQ0MjU5OX0.OuQa3lU10ccIAZzFLwtN2CT9GChP4t4L3BPhNLqxVrw
+SUPABASE_ANON_KEY=your_supabase_anon_key_here
 
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmY2FsemJqZXpidGd3d3Z5dG5zIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1Nzg2NjU5OSwiZXhwIjoyMDczNDQyNTk5fQ.-SQdGli2K4JgVwLC5f0y0armOdCiiouac82x7htXe6c
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key_here
 
-GEMINI_API_KEY=AIzaSyA2iPTK78EkG4Q9twOwhsKhWKpwrOsr0ko
+GEMINI_API_KEY=your_gemini_api_key_here
 
 PORT=3000
 
@@ -88,7 +88,7 @@ DEFAULT_LANGUAGE=en
 
 MAX_CONVERSATION_HISTORY=10
 
-WEBHOOK_VERIFY_TOKEN=3732299207071787
+WEBHOOK_VERIFY_TOKEN=your_webhook_verify_token_here
 ```
 
 ### Step 5: Advanced Settings (Optional)
@@ -119,7 +119,7 @@ Once deployed, you'll get a URL like: `https://whatsapp-healthcare-bot.onrender.
 2. Select your WhatsApp Business App
 3. Go to **WhatsApp → Configuration**
 4. Set Webhook URL: `https://your-app-name.onrender.com/webhook`
-5. Set Verify Token: `3732299207071787`
+5. Set Verify Token: `your_webhook_verify_token_here`
 6. Subscribe to **messages** and **message_status** webhooks
 
 ### Test Webhook:
@@ -236,7 +236,7 @@ curl https://your-app-name.onrender.com/
 curl https://your-app-name.onrender.com/health
 
 # Test webhook endpoint
-curl -X GET "https://your-app-name.onrender.com/webhook?hub.mode=subscribe&hub.verify_token=3732299207071787&hub.challenge=test123"
+curl -X GET "https://your-app-name.onrender.com/webhook?hub.mode=subscribe&hub.verify_token=your_webhook_verify_token_here&hub.challenge=test123"
 ```
 
 ## 🔄 Updates and Maintenance

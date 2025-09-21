@@ -93,7 +93,7 @@ class AIDiseaseMonitorService {
     PREVENTION: [Key prevention measures]
     RELEVANCE: [LOCAL/STATE/NEARBY/NATIONAL]
     
-    Search for recent outbreaks like Dengue, Chikungunya, H1N1, H3N2, Nipah virus, viral fever, malaria, typhoid, hepatitis, or any other current health alerts. Use Google Search to find the most recent news and health department reports from ${currentDate}.`;
+    Search for any current disease outbreaks, health alerts, or surveillance reports. Focus on vector-borne diseases, respiratory infections, water-borne diseases, viral outbreaks, or any emerging health threats. Use Google Search to find the most recent news and health department reports from ${currentDate}.`;
 
     try {
       const response = await this.geminiService.generateResponseWithGrounding(
@@ -244,22 +244,7 @@ class AIDiseaseMonitorService {
       // Return fallback data if everything fails
       return {
         stateSpecific: [],
-        nationwide: [
-          {
-            name: 'Seasonal Flu Outbreak',
-            location: 'Multiple states across India',
-            cases: 'Cases reported nationwide',
-            symptoms: 'fever, cough, body aches',
-            prevention: 'wear masks, maintain hygiene'
-          },
-          {
-            name: 'Dengue Cases',
-            location: 'Urban areas nationwide',
-            cases: 'Increasing cases in cities',
-            symptoms: 'high fever, headache, joint pain',
-            prevention: 'eliminate stagnant water, use repellents'
-          }
-        ],
+        diseases: [],
         timestamp: new Date(),
         userState: userState
       };
@@ -294,7 +279,7 @@ class AIDiseaseMonitorService {
         SYMPTOMS: [Main symptoms]
         PREVENTION: [Key prevention measure]
         
-        Focus on recent outbreaks like Nipah virus, H1N1, Dengue, Chikungunya, viral fever, malaria, or any other current health alerts specifically in ${stateName} state.`,
+        Focus on any current disease outbreaks, health alerts, or surveillance reports specifically in ${stateName} state. Include vector-borne, respiratory, water-borne, or emerging infectious diseases.`,
         'en',
         3
       );
@@ -343,7 +328,7 @@ class AIDiseaseMonitorService {
         SYMPTOMS: [Main symptoms]
         PREVENTION: [Key prevention measure]
         
-        Focus on major nationwide outbreaks like Nipah virus, H1N1, Dengue, Chikungunya, viral fever, malaria, or any other current health alerts affecting multiple Indian states.`,
+        Focus on major nationwide outbreaks, health alerts, or surveillance reports affecting multiple Indian states. Include any vector-borne, respiratory, water-borne, or emerging infectious diseases.`,
         'en',
         4
       );
@@ -601,47 +586,17 @@ class AIDiseaseMonitorService {
     }
   }
 
-  // Get fallback disease data if AI fails
+  // Get fallback disease data if AI fails (NO HARDCODED DISEASES)
   getFallbackDiseaseData() {
+    console.log('⚠️ AI service failed - returning empty result instead of hardcoded fallback');
+    
+    // Return empty result instead of hardcoded diseases
+    // This prevents showing fake/outdated information
     return {
-      diseases: [
-        {
-          name: 'Dengue',
-          type: 'viral',
-          risk_level: 'high',
-          symptoms: ['High fever', 'Severe headache', 'Joint pain', 'Skin rash'],
-          safety_measures: ['Use mosquito repellents', 'Wear full-sleeve clothes', 'Use mosquito nets'],
-          prevention: ['Eliminate standing water', 'Keep surroundings clean', 'Use mosquito nets'],
-          transmission: 'Mosquito-borne (Aedes mosquito)',
-          affected_locations: [
-            {
-              state: 'Delhi',
-              districts: ['New Delhi', 'North Delhi'],
-              estimated_cases: 500,
-              trend: 'increasing'
-            }
-          ]
-        },
-        {
-          name: 'Seasonal Flu',
-          type: 'viral',
-          risk_level: 'medium',
-          symptoms: ['Fever', 'Cough', 'Body aches', 'Fatigue'],
-          safety_measures: ['Wear masks', 'Maintain hygiene', 'Avoid crowded places'],
-          prevention: ['Get vaccinated', 'Wash hands frequently', 'Boost immunity'],
-          transmission: 'Airborne',
-          affected_locations: [
-            {
-              state: 'Maharashtra',
-              districts: ['Mumbai', 'Pune'],
-              estimated_cases: 1000,
-              trend: 'stable'
-            }
-          ]
-        }
-      ],
+      diseases: [], // Empty - no hardcoded diseases
       data_date: new Date().toISOString().split('T')[0],
-      sources: ['Fallback data']
+      sources: ['AI service temporarily unavailable'],
+      message: 'Disease monitoring service is temporarily unavailable. Please try again later.'
     };
   }
 

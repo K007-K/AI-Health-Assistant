@@ -2012,11 +2012,12 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
       await this.whatsappService.sendMessage(user.phone_number, headerText);
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      // Always try to show alerts - prioritize national alerts for all users
+      // Separate user state alerts from national breaking news
       let showedAlerts = false;
       
-      // Show state alert first if user has a state and alert exists
+      // 1. Show USER'S STATE alert first (personalized based on user location)
       if (todaysState && userStateName) {
+        console.log(`📍 Showing ${userStateName} state alert to user`);
         const stateChunks = todaysState.getFormattedAlertChunks(user.preferred_language || 'en');
         for (const chunk of stateChunks) {
           await this.whatsappService.sendMessage(user.phone_number, chunk);
@@ -2025,11 +2026,14 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
         showedAlerts = true;
       }
       
-      // Always show national alert if it exists
+      // 2. Show NATIONAL BREAKING NEWS (independent of user state preferences)
       if (todaysNational) {
-        const nationalChunks = todaysNational.getFormattedAlertChunks(user.preferred_language || 'en');
-        for (const chunk of nationalChunks) {
-          await this.whatsappService.sendMessage(user.phone_number, chunk);
+        console.log('🚨 Showing national breaking news alerts (independent of user state)');
+        const nationalBreakingNews = todaysNational.getStateBasedAlertMessages(user.preferred_language || 'en');
+        
+        // Send each breaking news state alert individually
+        for (const breakingNewsAlert of nationalBreakingNews) {
+          await this.whatsappService.sendMessage(user.phone_number, breakingNewsAlert);
           await new Promise(resolve => setTimeout(resolve, 800));
         }
         showedAlerts = true;

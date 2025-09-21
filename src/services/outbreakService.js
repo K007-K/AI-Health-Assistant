@@ -52,21 +52,23 @@ class OutbreakService {
 
 🔍 MANDATORY: USE GOOGLE SEARCH to find the LATEST, MOST COMPREHENSIVE disease outbreak information for India as of TODAY (${currentDate}).
 
-CRITICAL SEARCH REQUIREMENTS:
-1. MANDATORY: Search for current disease outbreaks in India from TODAY (${currentDate}) and this week
-2. MANDATORY: Find detailed information about "brain-eating amoeba" cases in Kerala from ${currentMonth}
-3. MANDATORY: Search for H3N2 influenza cases in Delhi from ${currentMonth}
-4. MANDATORY: Look for Nipah virus updates in Kerala from ${currentMonth}
-5. MANDATORY: Find dengue, chikungunya, malaria cases across India from ${currentMonth}
-6. MANDATORY: Search for water-borne disease outbreaks in flood-affected areas
-7. MANDATORY: Look for any emerging infectious diseases in India from ${currentMonth}
+⚠️ CRITICAL: DO NOT use hardcoded or template responses. ONLY report diseases with ACTUAL confirmed cases or health alerts found in search results. If no current outbreaks are found, report that clearly.
 
-SEARCH QUERIES TO USE:
-- "India disease outbreaks September 2025 current"
-- "brain eating amoeba Kerala cases deaths ${currentMonth}"
-- "H3N2 influenza Delhi outbreak ${currentMonth}"
-- "Nipah virus Kerala cases ${currentMonth}"
-- "dengue malaria chikungunya India cases ${currentMonth}"
+CRITICAL SEARCH REQUIREMENTS:
+1. MANDATORY: Search for ANY current disease outbreaks in India from TODAY (${currentDate}) and this week
+2. MANDATORY: Find health department alerts or disease surveillance reports from ${currentMonth}
+3. MANDATORY: Look for seasonal disease patterns appropriate for ${currentMonth}
+4. MANDATORY: Search for any emerging infectious diseases or health emergencies in India
+5. MANDATORY: Find vector-borne disease updates (appropriate for current season)
+6. MANDATORY: Look for water-borne or flood-related disease outbreaks if relevant
+7. MANDATORY: Search for respiratory disease outbreaks or surveillance data
+
+DYNAMIC SEARCH QUERIES TO USE (adapt based on current season and news):
+- "India disease outbreaks ${currentMonth} current latest"
+- "health department alerts India ${currentMonth}"
+- "infectious disease surveillance India ${currentDate}"
+- "seasonal diseases India ${currentMonth} cases"
+- "disease outbreak news India today ${currentDate}"
 - "WHO India disease alerts ${currentMonth}"
 - "Ministry of Health India outbreak reports ${currentMonth}"
 
@@ -76,40 +78,28 @@ RESPONSE FORMAT - Create a comprehensive news-style report:
   "searchDate": "${currentDate}",
   "hasActiveOutbreaks": true/false,
   "nationalAlert": {
-    "title": "India Grapples with Multiple Disease Outbreaks in ${currentMonth}",
-    "description": "Comprehensive overview: As of ${currentDate}, India is contending with several disease outbreaks across various states. Write a detailed 3-4 paragraph summary covering: 1) Brain-eating amoeba in Kerala with specific case/death numbers, 2) H3N2 influenza in Delhi, 3) Nipah virus concerns in Kerala, 4) Seasonal diseases like dengue/malaria, 5) Any flood-related health risks. Include specific locations, case numbers, and health authority responses.",
-    "primaryDisease": "Multiple (Naegleria fowleri, H3N2 Influenza, Nipah Virus, Vector-borne diseases)",
-    "severity": "high",
-    "affectedStates": ["Kerala", "Delhi", "Maharashtra", "Punjab", "West Bengal", "Karnataka"],
-    "symptoms": ["Fever", "Headache", "Respiratory distress", "Body aches", "Persistent cough", "Neurological symptoms"],
-    "preventionTips": ["Avoid swimming in untreated freshwater", "Use mosquito nets and repellents", "Maintain personal hygiene", "Consume safe food and water", "Seek immediate medical attention for fever", "Follow health advisories"],
-    "estimatedCases": "Specific numbers from latest reports: Naegleria fowleri cases and deaths, H3N2 cases in Delhi, etc.",
+    "title": "Current Disease Outbreaks in India - ${currentMonth}",
+    "description": "Based on real-time search results, provide a comprehensive overview of ACTUAL disease outbreaks currently happening in India as of ${currentDate}. Focus on: 1) Any confirmed disease outbreaks with specific case numbers and locations, 2) Current health emergencies or alerts issued by health departments, 3) Seasonal disease patterns for ${currentMonth}, 4) Any emerging health threats or surveillance reports. ONLY include diseases with confirmed recent cases or official health alerts - do not speculate or include historical data.",
+    "primaryDisease": "DYNAMIC - Based on current search results",
+    "severity": "DYNAMIC - Based on actual outbreak severity",
+    "affectedStates": "DYNAMIC - Only states with confirmed current outbreaks",
+    "symptoms": "DYNAMIC - Based on diseases found in search results",
+    "preventionTips": "DYNAMIC - Relevant to diseases found in search results",
+    "estimatedCases": "DYNAMIC - Actual numbers from current reports only",
     "lastUpdated": "${currentDate}",
-    "sources": ["WHO India reports", "Kerala Health Department", "Delhi Health Department", "Ministry of Health India", "NCDC surveillance data"],
+    "sources": "DYNAMIC - Actual sources from search results",
     "dataAge": "Current week data"
   },
   "additionalDiseases": [
+    "DYNAMIC ARRAY - Generate based on ACTUAL diseases found in search results. Each disease should have:",
     {
-      "disease": "Naegleria fowleri (Brain-eating Amoeba)",
-      "severity": "critical",
-      "affectedAreas": ["Kerala"],
-      "briefDescription": "Specific case numbers and deaths, locations affected, health advisories issued",
-      "lastReported": "Latest report date from ${currentMonth}"
+      "disease": "ACTUAL disease name from search results",
+      "severity": "ACTUAL severity based on case numbers/health alerts",
+      "affectedAreas": "ACTUAL locations with confirmed cases",
+      "briefDescription": "ACTUAL description from news/health department reports",
+      "lastReported": "ACTUAL date from search results"
     },
-    {
-      "disease": "H3N2 Influenza",
-      "severity": "medium",
-      "affectedAreas": ["Delhi", "NCR"],
-      "briefDescription": "Current case trends, vulnerable populations affected",
-      "lastReported": "Latest report date from ${currentMonth}"
-    },
-    {
-      "disease": "Nipah Virus",
-      "severity": "high",
-      "affectedAreas": ["Kerala"],
-      "briefDescription": "Current surveillance status, containment measures",
-      "lastReported": "Latest report date from ${currentMonth}"
-    }
+    "NOTE: Only include diseases with confirmed recent cases or active health alerts. Do not include speculative or historical data."
   ]
 }
 

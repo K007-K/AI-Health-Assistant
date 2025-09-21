@@ -56,14 +56,26 @@ class AIDiseaseMonitorService {
       }
     }
     
-    const prompt = `Search the web for the LATEST disease outbreaks and health alerts in ${locationQuery} as of ${currentDate}. 
+    const prompt = `Search for HEALTH EMERGENCIES and RARE DISEASE ALERTS in ${locationQuery} as of ${currentDate}. 
     
-    PRIORITY ORDER:
-    1. First search for diseases specifically in ${locationQuery}
-    2. Then search for diseases in nearby regions
-    3. Finally include major nationwide outbreaks
+    SEARCH TERMS TO USE:
+    - "health emergency declared India ${currentDate.split('/')[2]}"
+    - "rare disease alert India ${currentDate.split('/')[2]}"
+    - "brain eating amoeba Kerala ${currentDate.split('/')[2]}"
+    - "nipah virus outbreak India ${currentDate.split('/')[2]}"
+    - "melioidosis cases India ${currentDate.split('/')[2]}"
+    - "unusual infection India ${currentDate.split('/')[2]}"
     
-    Provide information about the 4 most relevant current disease outbreaks in this EXACT format:
+    CRITICAL: If you find dengue, malaria, diarrhoea, hepatitis, or chikungunya, REPLACE them with:
+    - Primary Amoebic Meningoencephalitis (if found)
+    - Nipah Virus (if found)  
+    - Melioidosis (if found)
+    - Guillain-Barré Syndrome (if found)
+    - Any other rare/unusual diseases
+    
+    Focus ONLY on diseases that would make national news headlines due to their rarity or severity
+    
+    Provide information about the 4 most UNUSUAL current disease outbreaks in this EXACT format:
     
     DISEASE 1: [Disease Name]
     LOCATION: [Specific location - districts/cities/states affected]
@@ -93,7 +105,19 @@ class AIDiseaseMonitorService {
     PREVENTION: [Key prevention measures]
     RELEVANCE: [LOCAL/STATE/NEARBY/NATIONAL]
     
-    Search for any current disease outbreaks, health alerts, or surveillance reports. Focus on vector-borne diseases, respiratory infections, water-borne diseases, viral outbreaks, or any emerging health threats. Use Google Search to find the most recent news and health department reports from ${currentDate}.`;
+    Search for any current disease outbreaks, health alerts, or surveillance reports happening right now. Use Google Search to find the most recent news and health department reports from ${currentDate}. 
+    
+    IMPORTANT: Only return diseases with:
+    - Active outbreaks with rising case numbers
+    - Official health emergency declarations
+    - Recent health advisories (within last 30 days)
+    
+    EXCLUDE routine monitoring diseases like:
+    - COVID-19 (unless major new outbreak)
+    - Seasonal flu (unless unusual surge)
+    - Common endemic diseases without recent surge
+    
+    Focus on NEW, EMERGING, or SIGNIFICANTLY INCREASED disease activity only.`;
 
     try {
       const response = await this.geminiService.generateResponseWithGrounding(

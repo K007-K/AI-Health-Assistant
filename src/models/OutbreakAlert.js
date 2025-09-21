@@ -215,29 +215,41 @@ _Nationwide health advisory summary_
       return messageEn;
 
     } else {
-      // Concise state-based alert format
+      // State-specific alert format using your template
       const stateName = location?.state || 'State';
       const primaryDisease = disease.split(',')[0].trim();
       
       const primaryArea = affectedAreas?.[0];
       const primaryLocation = primaryArea?.districts?.[0] || primaryArea?.state || `${stateName} districts`;
 
-      // Create concise description
-      const alertType = description.includes('emergency') ? 'Health Emergency' : 'Health Advisory';
+      // Get additional diseases from parsed data
+      const additionalDiseases = this.parsed_diseases?.additionalDiseases || [];
+      const stateSpecificDiseases = additionalDiseases.filter(d => {
+        const locationText = d.location || '';
+        return locationText.toLowerCase().includes(stateName.toLowerCase());
+      });
       
-      const messageEn = `📢 *${alertType} - ${currentDate}* 📢
+      const messageEn = `📢 Public Health Alert - ${currentDate} 📢
 
-*📍 ${stateName}* - ${primaryDisease}
-*🗺️ Area:* ${primaryLocation}${estimatedCases ? ` (${estimatedCases})` : ''}
+*📍 Location:* ${stateName}
 
-*🩺 Key Symptoms:*
-${symptoms.slice(0, 5).map(s => `• ${s}`).join('\n')}
+*🦠 Health Concerns Overview*
+As of ${currentDate}, ${stateName} is managing health concerns related to ${primaryDisease}${primaryLocation ? ` in ${primaryLocation}` : ''}. Health authorities are monitoring the situation and providing necessary guidance.
 
-*🛡️ Prevention:*
-${preventionTips.slice(0, 4).map(tip => `• ${tip}`).join('\n')}
+*🗺️ Affected Areas:*
+ - ${primaryLocation}${estimatedCases ? `: ${estimatedCases}` : ''}
+${stateSpecificDiseases.length > 1 ? stateSpecificDiseases.slice(1).map(d => ` - ${d.location || 'Other areas'}: ${d.name || 'Health monitoring'}`).join('\n') : ''}
 
-*📞 Emergency:* 108 | *🔗 Source:* ${sources?.[0] || 'Health Dept'}
-*🕐 Updated:* ${currentDate}`;
+*🩺 Symptoms to Watch For:*
+If you experience any of the following, seek medical advice:
+${symptoms.slice(0, 6).map(s => ` - ${s}`).join('\n')}
+
+*🛡️ Prevention & Safety Measures:*
+${preventionTips.slice(0, 4).map(tip => ` - ${tip}`).join('\n')}
+ - Practice good hygiene and seek early medical attention
+
+*📞 Emergency Contact:* 108
+*🕐 Last Updated:* ${currentDate}`;
 
       return messageEn;
     }
@@ -302,31 +314,158 @@ ${preventionTips.slice(0, 4).map(tip => `• ${tip}`).join('\n')}
       });
     });
     
-    // Split into multiple messages if too long (max 3 diseases per message)
-    const maxDiseasesPerMessage = 3;
-    for (let i = 0; i < diseaseEntries.length; i += maxDiseasesPerMessage) {
-      const chunk = diseaseEntries.slice(i, i + maxDiseasesPerMessage);
+    // Group diseases by state for the new format
+    const stateGroups = {};
+    
+    diseaseEntries.forEach(entry => {
+      // Extract state from location
+      const stateMatch = entry.location.match(/([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/);
+      const state = stateMatch ? stateMatch[0] : 'Multiple States';
       
-      let overviewMessage = `🇮🇳 *India Disease Overview* 🇮🇳
-_${currentDate} Update_
+      if (!stateGroups[state]) {
+        stateGroups[state] = [];
+      }
+      stateGroups[state].push(entry);
+    });
+    
+    // Create messages using new template format
+    let overviewMessage = `📢 Public Health Alert - ${currentDate} 📢
+A state-wise summary of ongoing health advisories.
 
 `;
 
-      chunk.forEach((entry, index) => {
-        const emoji = entry.seriousness === 'Critical' ? '🚨' : 
-                     entry.seriousness === 'High' ? '⚠️' : '📢';
+    Object.entries(stateGroups).forEach(([state, diseases]) => {
+      overviewMessage += `🇮🇳 *${state}*
+🦠 *Key Diseases:*
+`;
+      
+      diseases.forEach(disease => {
+        overviewMessage += ` - *${disease.disease}:* ${disease.cases}
+`;
+      });
+      
+      // Combine all symptoms from diseases in this state
+      const allSymptoms = diseases.map(d => d.symptoms).filter(s => s).join(', ').split(', ');
+      const uniqueSymptoms = [...new Set(allSymptoms)].slice(0, 4);
+      
+      overviewMessage += `
+🩺 *Symptoms to Watch For:*
+If you experience any of these symptoms, seek immediate medical attention:
+`;
+      uniqueSymptoms.forEach(symptom => {
+        if (symptom.trim()) {
+          overviewMessage += ` - ${symptom.trim()}
+`;
+        }
+      });
+      
+      overviewMessage += `
+🛡️ *Prevention & Advisory:*
+ - Follow health department guidelines
+ - Maintain personal hygiene
+ - Seek early medical attention for symptoms
+ - Avoid contaminated water and food
+
+🔗 *Official Source:* ${sources?.[0] || 'Health Ministry India'}
+
+`;
+    });
+    
+    overviewMessage += `📞 *Emergency:* 108`;
+    
+    // Split message if too long (WhatsApp limit)
+    if (overviewMessage.length > 3500) {
+      const states = Object.keys(stateGroups);
+      const midPoint = Math.ceil(states.length / 2);
+      
+      // First message
+      let firstMessage = `📢 Public Health Alert - ${currentDate} 📢
+A state-wise summary of ongoing health advisories.
+
+`;
+      
+      states.slice(0, midPoint).forEach(state => {
+        const diseases = stateGroups[state];
+        firstMessage += `🇮🇳 *${state}*
+🦠 *Key Diseases:*
+`;
+        diseases.forEach(disease => {
+          firstMessage += ` - *${disease.disease}:* ${disease.cases}
+`;
+        });
         
-        overviewMessage += `${emoji} *${entry.disease}*
-📍 *Places:* ${entry.location}
-🩺 *Symptoms:* ${entry.symptoms}
-⚖️ *Seriousness:* ${entry.seriousness}
-📊 *Cases:* ${entry.cases}
+        const allSymptoms = diseases.map(d => d.symptoms).filter(s => s).join(', ').split(', ');
+        const uniqueSymptoms = [...new Set(allSymptoms)].slice(0, 4);
+        
+        firstMessage += `
+🩺 *Symptoms to Watch For:*
+`;
+        uniqueSymptoms.forEach(symptom => {
+          if (symptom.trim()) {
+            firstMessage += ` - ${symptom.trim()}
+`;
+          }
+        });
+        
+        firstMessage += `
+🛡️ *Prevention & Advisory:*
+ - Follow health department guidelines
+ - Maintain personal hygiene
+ - Seek early medical attention
+
+🔗 *Official Source:* ${sources?.[0] || 'Health Ministry India'}
 
 `;
       });
       
-      overviewMessage += `*📞 Emergency:* 108 | *🔗 Source:* ${sources?.[0] || 'Health Ministry India'}`;
+      firstMessage += `📞 *Emergency:* 108`;
+      messages.push(firstMessage);
       
+      // Second message for remaining states
+      if (midPoint < states.length) {
+        let secondMessage = `📢 Public Health Alert - ${currentDate} 📢
+(Continued)
+
+`;
+        
+        states.slice(midPoint).forEach(state => {
+          const diseases = stateGroups[state];
+          secondMessage += `🇮🇳 *${state}*
+🦠 *Key Diseases:*
+`;
+          diseases.forEach(disease => {
+            secondMessage += ` - *${disease.disease}:* ${disease.cases}
+`;
+          });
+          
+          const allSymptoms = diseases.map(d => d.symptoms).filter(s => s).join(', ').split(', ');
+          const uniqueSymptoms = [...new Set(allSymptoms)].slice(0, 4);
+          
+          secondMessage += `
+🩺 *Symptoms to Watch For:*
+`;
+          uniqueSymptoms.forEach(symptom => {
+            if (symptom.trim()) {
+              secondMessage += ` - ${symptom.trim()}
+`;
+            }
+          });
+          
+          secondMessage += `
+🛡️ *Prevention & Advisory:*
+ - Follow health department guidelines
+ - Maintain personal hygiene
+ - Seek early medical attention
+
+🔗 *Official Source:* ${sources?.[0] || 'Health Ministry India'}
+
+`;
+        });
+        
+        secondMessage += `📞 *Emergency:* 108`;
+        messages.push(secondMessage);
+      }
+    } else {
       messages.push(overviewMessage);
     }
     

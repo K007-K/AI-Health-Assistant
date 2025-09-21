@@ -208,42 +208,85 @@ ${preventionTips.slice(0, 4).map(tip => `• ${tip}`).join('\n')}
     }
   }
 
-  // Get formatted alert chunks for WhatsApp (splits if over 4000 chars)
-  getFormattedAlertChunks(language = 'en') {
-    const fullMessage = this.getFormattedAlert(language);
-    const maxLength = 4000; // Leave some buffer under 4096 limit
+  // Get individual state-based alert messages for WhatsApp
+  getStateBasedAlertMessages(language = 'en') {
+    const alertData = this.parsed_diseases || this;
+    const scope = (alertData.scope || this.cache_type || 'nationwide').toLowerCase();
+    const isNationwide = scope === 'nationwide' || scope === 'national' || this.cache_type === 'nationwide';
     
-    if (fullMessage.length <= maxLength) {
-      return [fullMessage];
+    if (!isNationwide) {
+      // For state alerts, return single message
+      return [this.getFormattedAlert(language)];
     }
     
-    // If still too long, split into chunks
-    const chunks = [];
-    const lines = fullMessage.split('\n');
-    let currentChunk = '';
-    let chunkIndex = 1;
+    // For nationwide alerts, create separate messages for each state
+    const disease = alertData.disease || 'Various';
+    const symptoms = Array.isArray(alertData.symptoms) ? alertData.symptoms.slice(0, 5) : [];
+    const preventionTips = Array.isArray(alertData.preventionTips) ? alertData.preventionTips.slice(0, 4) : [];
+    const affectedAreas = Array.isArray(alertData.affectedAreas) ? alertData.affectedAreas : [];
+    const additionalDiseases = Array.isArray(alertData.additionalDiseases) ? alertData.additionalDiseases : [];
+    const sources = Array.isArray(alertData.sources) ? alertData.sources : [];
+    const lastUpdated = alertData.lastUpdated || this.query_date || this.updated_at;
+    const estimatedCases = alertData.estimatedCases;
+    const currentDate = new Date(lastUpdated).toLocaleDateString('en-IN');
     
-    for (const line of lines) {
-      const testChunk = currentChunk + (currentChunk ? '\n' : '') + line;
+    const messages = [];
+    
+    // Get top 3 affected states
+    const mainStates = affectedAreas?.map(a => a.state).filter(Boolean).slice(0, 3) || ['Kerala', 'Delhi', 'Maharashtra'];
+    
+    mainStates.forEach((state, index) => {
+      // Find state-specific disease info
+      const stateData = additionalDiseases?.find(d => 
+        d.affectedAreas?.some(area => 
+          (typeof area === 'string' ? area : area.state) === state
+        )
+      );
       
-      if (testChunk.length > maxLength && currentChunk) {
-        // Add chunk header for multi-part messages
-        const header = chunkIndex === 1 ? '' : `📢 *Health Alert (Part ${chunkIndex})* 📢\n\n`;
-        chunks.push(header + currentChunk);
-        currentChunk = line;
-        chunkIndex++;
-      } else {
-        currentChunk = testChunk;
+      const mainDisease = stateData?.disease || disease.split(',')[0].trim();
+      const stateDescription = stateData?.briefDescription || `Ongoing health monitoring for ${mainDisease}`;
+      
+      let stateMessage = `📢 *Health Alert - ${state}* 📢
+_${currentDate} Update_
+
+🇮🇳 *${state} Health Advisory*
+*🦠 Primary Concern:* ${mainDisease}
+${estimatedCases ? `*📊 Status:* ${estimatedCases}` : '*📊 Status:* Under monitoring'}
+
+*🔍 Overview:*
+${stateDescription}
+
+`;
+
+      // Add symptoms if available
+      if (symptoms.length > 0) {
+        stateMessage += `*🩺 Key Symptoms:*
+${symptoms.slice(0, 4).map(s => `• ${s}`).join('\n')}
+
+`;
       }
-    }
+
+      // Add prevention tips
+      if (preventionTips.length > 0) {
+        stateMessage += `*🛡️ Prevention:*
+${preventionTips.slice(0, 3).map(p => `• ${p}`).join('\n')}
+
+`;
+      }
+
+      stateMessage += `*📞 Emergency:* 108 | *🔗 Source:* ${sources?.[0] || 'Health Ministry'}
+*🕐 Updated:* ${currentDate}`;
+
+      messages.push(stateMessage);
+    });
     
-    // Add the last chunk
-    if (currentChunk) {
-      const header = chunkIndex === 1 ? '' : `📢 *Health Alert (Part ${chunkIndex})* 📢\n\n`;
-      chunks.push(header + currentChunk);
-    }
-    
-    return chunks;
+    return messages;
+  }
+
+  // Get formatted alert chunks for WhatsApp (backward compatibility)
+  getFormattedAlertChunks(language = 'en') {
+    // Use state-based messages for better delivery
+    return this.getStateBasedAlertMessages(language);
   }
 }
 

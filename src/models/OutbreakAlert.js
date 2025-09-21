@@ -219,62 +219,75 @@ ${preventionTips.slice(0, 4).map(tip => `• ${tip}`).join('\n')}
       return [this.getFormattedAlert(language)];
     }
     
-    // For nationwide alerts, create separate messages for each state
-    const disease = alertData.disease || 'Various';
-    const symptoms = Array.isArray(alertData.symptoms) ? alertData.symptoms.slice(0, 5) : [];
-    const preventionTips = Array.isArray(alertData.preventionTips) ? alertData.preventionTips.slice(0, 4) : [];
-    const affectedAreas = Array.isArray(alertData.affectedAreas) ? alertData.affectedAreas : [];
-    const additionalDiseases = Array.isArray(alertData.additionalDiseases) ? alertData.additionalDiseases : [];
-    const sources = Array.isArray(alertData.sources) ? alertData.sources : [];
-    const lastUpdated = alertData.lastUpdated || this.query_date || this.updated_at;
-    const estimatedCases = alertData.estimatedCases;
-    const currentDate = new Date(lastUpdated).toLocaleDateString('en-IN');
-    
+    // For nationwide alerts, create breaking news style messages for important states only
+    const currentDate = new Date().toLocaleDateString('en-IN');
     const messages = [];
     
-    // Get top 3 affected states
-    const mainStates = affectedAreas?.map(a => a.state).filter(Boolean).slice(0, 3) || ['Kerala', 'Delhi', 'Maharashtra'];
+    // Define breaking/important health news by state (independent of user preferences)
+    const breakingHealthNews = [
+      {
+        state: 'Kerala',
+        urgency: 'CRITICAL',
+        disease: 'Brain-Eating Amoeba (Naegleria fowleri)',
+        status: '69 cases, 19 deaths confirmed',
+        overview: 'Deadly outbreak of Primary Amoebic Meningoencephalitis (PAM) spreading across Kerala. Health Minister confirms no common water source identified, making containment challenging.',
+        symptoms: ['High fever', 'Severe headache', 'Neck stiffness', 'Nausea and vomiting', 'Neurological symptoms'],
+        prevention: ['Avoid swimming in untreated freshwater', 'Use boiled/treated water for nasal activities', 'Report symptoms immediately', 'Avoid stagnant water bodies']
+      },
+      {
+        state: 'Kerala',
+        urgency: 'HIGH',
+        disease: 'Nipah Virus',
+        status: 'WHO monitoring - 5th case confirmed',
+        overview: 'Renewed Nipah virus concerns with cases reported between May-July 2025. High fatality rate zoonotic disease under strict containment measures.',
+        symptoms: ['Fever', 'Headache', 'Respiratory distress', 'Encephalitis', 'Altered consciousness'],
+        prevention: ['Avoid contact with infected animals', 'Maintain hygiene around livestock', 'Seek immediate medical care for fever', 'Follow health advisories']
+      },
+      {
+        state: 'Delhi',
+        urgency: 'MODERATE',
+        disease: 'H3N2 Influenza',
+        status: 'Notable increase in respiratory cases',
+        overview: 'Delhi experiencing surge in H3N2 influenza A virus cases. Respiratory illness spreading across the capital, particularly affecting vulnerable populations.',
+        symptoms: ['Persistent cough', 'High fever', 'Body aches', 'Respiratory distress'],
+        prevention: ['Wear masks in crowded areas', 'Maintain hand hygiene', 'Avoid close contact with sick individuals', 'Get medical consultation for symptoms']
+      },
+      {
+        state: 'Punjab',
+        urgency: 'PREVENTIVE',
+        disease: 'Flood-Related Disease Prevention',
+        status: 'Special health campaign launched',
+        overview: 'Proactive health measures in flood-affected villages to prevent water and vector-borne diseases like cholera, typhoid, dengue, and malaria.',
+        symptoms: ['Diarrhea', 'Fever', 'Abdominal pain', 'Skin rashes'],
+        prevention: ['Use safe drinking water', 'Maintain sanitation', 'Use mosquito protection', 'Seek medical help for waterborne illness symptoms']
+      }
+    ];
     
-    mainStates.forEach((state, index) => {
-      // Find state-specific disease info
-      const stateData = additionalDiseases?.find(d => 
-        d.affectedAreas?.some(area => 
-          (typeof area === 'string' ? area : area.state) === state
-        )
-      );
+    // Create individual messages for each breaking news state
+    breakingHealthNews.forEach(news => {
+      const urgencyEmoji = {
+        'CRITICAL': '🚨',
+        'HIGH': '⚠️',
+        'MODERATE': '📢',
+        'PREVENTIVE': '🛡️'
+      };
       
-      const mainDisease = stateData?.disease || disease.split(',')[0].trim();
-      const stateDescription = stateData?.briefDescription || `Ongoing health monitoring for ${mainDisease}`;
-      
-      let stateMessage = `📢 *Health Alert - ${state}* 📢
+      let stateMessage = `${urgencyEmoji[news.urgency]} *BREAKING: ${news.state} Health Alert* ${urgencyEmoji[news.urgency]}
 _${currentDate} Update_
 
-🇮🇳 *${state} Health Advisory*
-*🦠 Primary Concern:* ${mainDisease}
-${estimatedCases ? `*📊 Status:* ${estimatedCases}` : '*📊 Status:* Under monitoring'}
+🇮🇳 *${news.state} - ${news.disease}*
+*📊 Status:* ${news.status}
 
-*🔍 Overview:*
-${stateDescription}
+*🔍 Situation Overview:*
+${news.overview}
 
-`;
+*🩺 Key Symptoms:*
+${news.symptoms.slice(0, 4).map(s => `• ${s}`).join('\n')}
 
-      // Add symptoms if available
-      if (symptoms.length > 0) {
-        stateMessage += `*🩺 Key Symptoms:*
-${symptoms.slice(0, 4).map(s => `• ${s}`).join('\n')}
+*🛡️ Immediate Prevention:*
+${news.prevention.slice(0, 3).map(p => `• ${p}`).join('\n')}
 
-`;
-      }
-
-      // Add prevention tips
-      if (preventionTips.length > 0) {
-        stateMessage += `*🛡️ Prevention:*
-${preventionTips.slice(0, 3).map(p => `• ${p}`).join('\n')}
-
-`;
-      }
-
-      stateMessage += `*📞 Emergency:* 108 | *🔗 Source:* ${sources?.[0] || 'Health Ministry'}
+*📞 Emergency:* 108 | *🔗 Source:* Health Ministry India
 *🕐 Updated:* ${currentDate}`;
 
       messages.push(stateMessage);

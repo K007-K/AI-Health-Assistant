@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
+const mongoose = require('mongoose');
 const config = require('./config/environment');
 const { testConnection } = require('./config/database');
 const WebhookController = require('./controllers/webhookController');
@@ -183,6 +184,11 @@ const PORT = config.port;
 
 async function startServer() {
   try {
+    // Connect to MongoDB
+    const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/whatsapp-health-bot';
+    await mongoose.connect(mongoUri);
+    console.log('✅ MongoDB connected successfully');
+
     // Test database connection on startup
     const dbConnected = await testConnection();
     const dbStatus = dbConnected ? '✅ Connected' : '❌ Disconnected';

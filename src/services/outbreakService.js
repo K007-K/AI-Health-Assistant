@@ -7,15 +7,21 @@ class OutbreakService {
     this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     // Use Gemini Pro with grounding for real-time information
     this.model = this.genAI.getGenerativeModel({ 
-      model: "gemini-pro",
+      model: "gemini-1.5-pro",
       tools: [{
         googleSearchRetrieval: {
           dynamicRetrievalConfig: {
             mode: "MODE_DYNAMIC",
-            dynamicThreshold: 0.7
+            dynamicThreshold: 0.3  // Lower threshold for more aggressive grounding
           }
         }
-      }]
+      }],
+      generationConfig: {
+        temperature: 0.1,  // Lower temperature for more factual responses
+        topP: 0.8,
+        topK: 40,
+        maxOutputTokens: 2048,
+      }
     });
     this.initializeScheduler();
   }
@@ -47,15 +53,19 @@ class OutbreakService {
     });
     const currentMonth = today.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
 
-    const prompt = `You are a real-time disease outbreak monitoring system for India. Today is ${currentDate}. Search for and provide the LATEST, MOST CURRENT disease outbreak information for India as of TODAY (${currentDate}).
+    const prompt = `You are a real-time disease outbreak monitoring system for India. Today is ${currentDate}. 
 
-CRITICAL INSTRUCTIONS FOR REAL-TIME DATA:
-1. MANDATORY: Search for news and reports from TODAY (${currentDate}) and this week
-2. MANDATORY: Use Google Search to find the latest health ministry announcements from ${currentMonth}
-3. MANDATORY: Look for current WHO India alerts and ICMR reports from this month
-4. MANDATORY: Search for recent state health department notifications from the past 7 days
-5. MANDATORY: Find current epidemiological surveillance data from Indian health authorities
-6. MANDATORY: Search for breaking news about disease outbreaks in India from today and this week
+🔍 MANDATORY: USE GOOGLE SEARCH GROUNDING TOOL to find the LATEST, MOST CURRENT disease outbreak information for India as of TODAY (${currentDate}).
+
+CRITICAL INSTRUCTIONS FOR REAL-TIME GROUNDING:
+1. MANDATORY: Use the Google Search grounding tool to search for news and reports from TODAY (${currentDate}) and this week
+2. MANDATORY: Ground your response with Google Search for the latest health ministry announcements from ${currentMonth}
+3. MANDATORY: Use grounding to look for current WHO India alerts and ICMR reports from this month
+4. MANDATORY: Ground with search for recent state health department notifications from the past 7 days
+5. MANDATORY: Use grounding tool to find current epidemiological surveillance data from Indian health authorities
+6. MANDATORY: Ground with search for breaking news about disease outbreaks in India from today and this week
+
+🔍 GROUNDING TOOL USAGE: You MUST use the Google Search grounding tool to retrieve real-time information. Do not rely on training data.
 
 DO NOT USE OUTDATED INFORMATION. Only use data from:
 - Today (${currentDate}) - HIGHEST PRIORITY
@@ -111,9 +121,19 @@ FOCUS ON CURRENT SEASONAL DISEASES FOR ${currentMonth}:
 MANDATORY: Include source dates and ensure all information is from ${currentMonth} or newer.`;
 
     try {
+      console.log('🔍 Requesting Gemini with grounding for latest outbreak data...');
       const result = await this.model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
+      
+      // Log if grounding was used
+      const groundingMetadata = response.candidates?.[0]?.groundingMetadata;
+      if (groundingMetadata) {
+        console.log('✅ Grounding tool was used successfully');
+        console.log(`🔍 Grounding sources: ${groundingMetadata.groundingChunks?.length || 0} chunks`);
+      } else {
+        console.log('⚠️ Grounding tool may not have been used');
+      }
       
       // Extract JSON from response
       const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -122,7 +142,7 @@ MANDATORY: Include source dates and ensure all information is from ${currentMont
       }
 
       const outbreakData = JSON.parse(jsonMatch[0]);
-      console.log('✅ Successfully fetched national outbreak data');
+      console.log('✅ Successfully fetched national outbreak data with grounding');
       return outbreakData;
     } catch (error) {
       console.error('❌ Error fetching national outbreak data:', error);
@@ -140,15 +160,19 @@ MANDATORY: Include source dates and ensure all information is from ${currentMont
     });
     const currentMonth = today.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
 
-    const prompt = `You are a real-time disease outbreak monitoring system for ${state} state, India. Today is ${currentDate}. Search for and provide the LATEST, MOST CURRENT disease outbreak information specifically for ${state} state as of TODAY (${currentDate}).
+    const prompt = `You are a real-time disease outbreak monitoring system for ${state} state, India. Today is ${currentDate}. 
 
-CRITICAL INSTRUCTIONS FOR REAL-TIME ${state} DATA:
-1. MANDATORY: Search for news and reports about ${state} from TODAY (${currentDate}) and this week
-2. MANDATORY: Use Google Search to find latest ${state} Health Department announcements from ${currentMonth}
-3. MANDATORY: Look for current ${state} state health alerts and district-wise reports from this month
-4. MANDATORY: Search for recent local news about disease outbreaks in ${state} from the past 7 days
-5. MANDATORY: Find current epidemiological surveillance data from ${state} health authorities
-6. MANDATORY: Search for breaking news about disease outbreaks in ${state} districts from today and this week
+🔍 MANDATORY: USE GOOGLE SEARCH GROUNDING TOOL to find the LATEST, MOST CURRENT disease outbreak information specifically for ${state} state as of TODAY (${currentDate}).
+
+CRITICAL INSTRUCTIONS FOR REAL-TIME ${state} GROUNDING:
+1. MANDATORY: Use the Google Search grounding tool to search for news and reports about ${state} from TODAY (${currentDate}) and this week
+2. MANDATORY: Ground your response with Google Search for latest ${state} Health Department announcements from ${currentMonth}
+3. MANDATORY: Use grounding to look for current ${state} state health alerts and district-wise reports from this month
+4. MANDATORY: Ground with search for recent local news about disease outbreaks in ${state} from the past 7 days
+5. MANDATORY: Use grounding tool to find current epidemiological surveillance data from ${state} health authorities
+6. MANDATORY: Ground with search for breaking news about disease outbreaks in ${state} districts from today and this week
+
+🔍 GROUNDING TOOL USAGE: You MUST use the Google Search grounding tool to retrieve real-time information about ${state}. Do not rely on training data.
 
 DO NOT USE OUTDATED INFORMATION FOR ${state}. Only use data from:
 - Today (${currentDate}) - HIGHEST PRIORITY
@@ -206,9 +230,19 @@ FOCUS ON CURRENT SEASONAL DISEASES IN ${state} FOR ${currentMonth}:
 MANDATORY: Include ${state}-specific source dates and ensure all information is from ${currentMonth} or newer for ${state}.`;
 
     try {
+      console.log(`🔍 Requesting Gemini with grounding for latest ${state} outbreak data...`);
       const result = await this.model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
+      
+      // Log if grounding was used
+      const groundingMetadata = response.candidates?.[0]?.groundingMetadata;
+      if (groundingMetadata) {
+        console.log(`✅ Grounding tool was used successfully for ${state}`);
+        console.log(`🔍 Grounding sources for ${state}: ${groundingMetadata.groundingChunks?.length || 0} chunks`);
+      } else {
+        console.log(`⚠️ Grounding tool may not have been used for ${state}`);
+      }
       
       // Extract JSON from response
       const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -217,7 +251,7 @@ MANDATORY: Include ${state}-specific source dates and ensure all information is 
       }
 
       const stateData = JSON.parse(jsonMatch[0]);
-      console.log(`✅ Successfully fetched outbreak data for ${state}`);
+      console.log(`✅ Successfully fetched outbreak data for ${state} with grounding`);
       return stateData;
     } catch (error) {
       console.error(`❌ Error fetching outbreak data for ${state}:`, error);

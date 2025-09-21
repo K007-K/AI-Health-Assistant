@@ -7,6 +7,36 @@ class WebhookController {
   constructor() {
     this.whatsappService = new WhatsAppService();
     this.messageController = new MessageController();
+    
+    // Message deduplication cache (in-memory for fast lookups)
+    this.processedMessages = new Map();
+    this.processingLocks = new Map();
+    
+    // Clean up old entries every 5 minutes
+    setInterval(() => {
+      this.cleanupOldEntries();
+    }, 5 * 60 * 1000);
+  }
+  
+  // Clean up old processed message IDs and locks
+  cleanupOldEntries() {
+    const now = Date.now();
+    const maxAge = 10 * 60 * 1000; // 10 minutes
+    
+    // Clean processed messages
+    for (const [messageId, timestamp] of this.processedMessages.entries()) {
+      if (now - timestamp > maxAge) {
+        this.processedMessages.delete(messageId);
+      }
+    }
+    
+    // Clean stale locks (should not happen in normal operation)
+    for (const [phoneNumber, lockTime] of this.processingLocks.entries()) {
+      if (now - lockTime > 30 * 1000) { // 30 seconds max lock time
+        this.processingLocks.delete(phoneNumber);
+        console.log(`🔓 Cleaned stale processing lock for ${phoneNumber}`);
+      }
+    }
   }
 
   // Verify webhook (required by WhatsApp)
@@ -85,6 +115,28 @@ class WebhookController {
       const timestamp = new Date(parseInt(message.timestamp) * 1000);
 
       console.log(`📱 Incoming message from ${phoneNumber}: ${JSON.stringify(message)}`);
+
+      // 1. Check for duplicate message processing
+      if (this.processedMessages.has(messageId)) {
+        console.log(`🔄 Duplicate message detected: ${messageId} - Skipping processing`);
+        return;
+      }
+
+      // 2. Check if user is already being processed (prevent concurrent processing)
+      if (this.processingLocks.has(phoneNumber)) {
+        console.log(`🔒 User ${phoneNumber} is already being processed - Queuing message`);
+        // Wait a bit and retry (simple queue mechanism)
+        setTimeout(() => {
+          this.handleIncomingMessage(message, metadata);
+        }, 1000);
+        return;
+      }
+
+      // 3. Set processing lock and mark message as processed
+      this.processingLocks.set(phoneNumber, Date.now());
+      this.processedMessages.set(messageId, Date.now());
+
+      console.log(`🔐 Processing lock acquired for ${phoneNumber}, message ${messageId}`);
 
       // Mark message as read
       await this.whatsappService.markAsRead(messageId);
@@ -182,6 +234,13 @@ class WebhookController {
         );
       } catch (sendError) {
         console.error('Error sending error message:', sendError);
+      }
+    } finally {
+      // Always release the processing lock
+      const phoneNumber = message.from;
+      if (this.processingLocks.has(phoneNumber)) {
+        this.processingLocks.delete(phoneNumber);
+        console.log(`🔓 Processing lock released for ${phoneNumber}`);
       }
     }
   }

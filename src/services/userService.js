@@ -2,9 +2,48 @@ const { supabase, supabaseAdmin } = require('../config/database');
 const { v4: uuidv4 } = require('uuid');
 
 class UserService {
+  constructor() {
+    // User cache for faster lookups (in-memory cache)
+    this.userCache = new Map();
+    this.sessionCache = new Map();
+    
+    // Cache cleanup every 5 minutes
+    setInterval(() => {
+      this.cleanupCache();
+    }, 5 * 60 * 1000);
+  }
+  
+  // Clean up old cache entries
+  cleanupCache() {
+    const now = Date.now();
+    const maxAge = 10 * 60 * 1000; // 10 minutes
+    
+    // Clean user cache
+    for (const [phoneNumber, userData] of this.userCache.entries()) {
+      if (now - userData.cachedAt > maxAge) {
+        this.userCache.delete(phoneNumber);
+      }
+    }
+    
+    // Clean session cache
+    for (const [userId, sessionData] of this.sessionCache.entries()) {
+      if (now - sessionData.cachedAt > maxAge) {
+        this.sessionCache.delete(userId);
+      }
+    }
+  }
   // Get or create user by phone number
   async getOrCreateUser(phoneNumber) {
     try {
+      // Check cache first for faster response
+      const cachedUser = this.userCache.get(phoneNumber);
+      if (cachedUser && (Date.now() - cachedUser.cachedAt) < 5 * 60 * 1000) { // 5 minutes cache
+        console.log(`💾 Using cached user data for ${phoneNumber}`);
+        // Still update activity but don't wait for it
+        this.updateUserActivity(cachedUser.user.id).catch(console.error);
+        return cachedUser.user;
+      }
+
       // First, try to get existing user
       const { data: existingUser, error: fetchError } = await supabase
         .from('users')
@@ -13,11 +52,16 @@ class UserService {
         .single();
 
       if (existingUser && !fetchError) {
-        // Update last active timestamp
-        await this.updateUserActivity(existingUser.id);
-        // Fetch the latest user data to ensure we have current preferences
-        const updatedUser = await this.getUserById(existingUser.id);
-        return updatedUser;
+        // Cache the user data
+        this.userCache.set(phoneNumber, {
+          user: existingUser,
+          cachedAt: Date.now()
+        });
+        
+        // Update last active timestamp (async, don't wait)
+        this.updateUserActivity(existingUser.id).catch(console.error);
+        
+        return existingUser;
       }
 
       // Create new user if doesn't exist
@@ -122,6 +166,13 @@ class UserService {
   // Get user session state
   async getUserSession(userId) {
     try {
+      // Check cache first for faster response
+      const cachedSession = this.sessionCache.get(userId);
+      if (cachedSession && (Date.now() - cachedSession.cachedAt) < 2 * 60 * 1000) { // 2 minutes cache
+        console.log(`💾 Using cached session data for user ${userId}`);
+        return cachedSession.session;
+      }
+
       const { data, error } = await supabase
         .from('user_sessions')
         .select('*')
@@ -134,6 +185,14 @@ class UserService {
       if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
         console.error('Error fetching user session:', error);
         throw error;
+      }
+
+      // Cache the session data
+      if (data) {
+        this.sessionCache.set(userId, {
+          session: data,
+          cachedAt: Date.now()
+        });
       }
 
       return data || null;
@@ -164,6 +223,10 @@ class UserService {
           .single();
 
         if (error) throw error;
+        
+        // Invalidate cache after update
+        this.sessionCache.delete(userId);
+        
         return data;
       } else {
         // Create new session
@@ -184,6 +247,13 @@ class UserService {
           .single();
 
         if (error) throw error;
+        
+        // Cache the new session
+        this.sessionCache.set(userId, {
+          session: data,
+          cachedAt: Date.now()
+        });
+        
         return data;
       }
     } catch (error) {

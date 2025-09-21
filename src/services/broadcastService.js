@@ -87,8 +87,8 @@ class BroadcastService {
   // Send state-specific alert to user if available
   async sendStateSpecificAlert(user) {
     try {
-      // Check if user has state information
-      const userState = user.disease_alert_state || user.state || user.location?.state;
+      // Check if user has state information from user_alert_preferences table
+      const userState = user.state || user.location_pincode || null;
       
       if (!userState) {
         console.log(`ℹ️ No state info for user ${user.phone_number}, skipping state alert`);

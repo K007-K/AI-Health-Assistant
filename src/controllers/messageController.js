@@ -2124,7 +2124,7 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
       const User = require('../models/User');
       const dbUser = await User.findByPhoneNumber(user.phone_number);
       
-      if (dbUser && dbUser.disease_alerts_enabled) {
+      if (dbUser && dbUser.consent_outbreak_alerts) {
         await this.whatsappService.sendMessage(
           user.phone_number,
           `✅ *Disease Outbreak Alerts Already Enabled*\n\nYou are already subscribed to receive disease outbreak alerts!\n\n📅 You will receive:\n• Daily national outbreak updates at 10:00 AM\n• Emergency outbreak notifications\n• State-specific alerts when available\n\n📞 Emergency: 108\n\nReply "STOP ALERTS" anytime to unsubscribe.`
@@ -2138,9 +2138,9 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
       } else {
         // Create new user with alerts enabled
         await User.createOrUpdateUser(user.phone_number, {
-          disease_alerts_enabled: true,
-          name: user.name || '',
-          language: user.preferred_language || 'en'
+          consent_outbreak_alerts: true,
+          first_name: user.name || '',
+          preferred_language: user.preferred_language || 'en'
         });
       }
 
@@ -2220,7 +2220,7 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
       const User = require('../models/User');
       const dbUser = await User.findByPhoneNumber(user.phone_number);
       
-      if (!dbUser || !dbUser.disease_alerts_enabled) {
+      if (!dbUser || !dbUser.consent_outbreak_alerts) {
         await this.whatsappService.sendMessage(
           user.phone_number,
           '❌ You are not currently subscribed to disease outbreak alerts.\n\nWould you like to enable disease outbreak alerts to stay informed about health emergencies?'
@@ -2246,15 +2246,9 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
       try {
         const { supabase } = require('../config/database');
         
-        // Delete user's alert preferences from disease_outbreak_cache if any
+        // Delete user's location preferences for alerts from user_alert_preferences table
         await supabase
-          .from('disease_outbreak_cache')
-          .delete()
-          .contains('sent_to_users', [{ phoneNumber: user.phone_number }]);
-        
-        // Delete user's location preferences for alerts if they exist
-        await supabase
-          .from('user_disease_alert_preferences')
+          .from('user_alert_preferences')
           .delete()
           .eq('phone_number', user.phone_number);
           

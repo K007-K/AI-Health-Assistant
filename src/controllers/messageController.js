@@ -2,8 +2,11 @@ const WhatsAppService = require('../services/whatsappService');
 const MockWhatsAppService = require('../services/mockWhatsappService');
 const UserService = require('../services/userService');
 const ConversationService = require('../services/conversationService');
-const GeminiService = require('../services/geminiService');
-const UserFeedbackService = require('../services/feedbackService');
+const User = require('../models/User');
+const geminiService = require('../services/geminiService');
+const outbreakService = require('../services/outbreakService');
+const broadcastService = require('../services/broadcastService');
+const { sendMessage, sendInteractiveButtons, sendInteractiveList } = require('../services/whatsappService');
 const { LanguageUtils } = require('../utils/languageUtils');
 const DiseaseAlertService = require('../services/diseaseAlertService');
 const AIDiseaseMonitorService = require('../services/aiDiseaseMonitorService');
@@ -1828,11 +1831,10 @@ Type your message below:`;
     }
   }
 
-  // Handle Disease Outbreak Alerts
   async handleDiseaseAlerts(user) {
     try {
       console.log('🦠 Handling disease outbreak alerts for user:', user.phone_number);
-      
+
       // Show disease alerts submenu with interactive buttons (max 3) + follow-up
       const menuTexts = {
         en: '🦠 *Disease Outbreak Alerts*\n\nStay informed about disease outbreaks in your area:',
@@ -1841,7 +1843,6 @@ Type your message below:`;
         ta: '🦠 *நோய் விரிவு எச்சரிக்கைகள்*\n\nஉங்கள் பரிசரத்தில் நோய் விரிவு குறித்து தகவல் பெறுங்கள்:',
         or: '🦠 *ରୋଗ ପ୍ରସାର ସଚେତନା*\n\nଆପଣଙ୍କ ଅଞ୍ଚଳରେ ରୋଗ ପ୍ରସାର ବିଷୟରେ ସୂଚିତ ରହନ୍ତୁ:'
       };
-
       // Use interactive buttons (WhatsApp limit: max 3 buttons)
       const buttonTexts = {
         en: [
@@ -2985,6 +2986,219 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
     if (name.includes('malaria')) return '🦟';
     if (name.includes('covid')) return '😷';
     return '🦠'; // Default
+  }
+}
+
+// Disease Alerts Handler Function
+async function handleDiseaseAlerts(phoneNumber, userMessage, language, scriptPreference, res) {
+  try {
+    console.log(`🦠 Processing disease alerts request from ${phoneNumber}`);
+
+    // Handle unsubscribe/subscribe commands
+    if (userMessage.toLowerCase().includes('stop alerts')) {
+      await broadcastService.handleUnsubscribe(phoneNumber);
+      return res.json({ success: true });
+    }
+
+    if (userMessage.toLowerCase().includes('start alerts')) {
+      await broadcastService.handleResubscribe(phoneNumber);
+      return res.json({ success: true });
+    }
+
+    // Handle button interactions
+    if (userMessage === 'view_active_diseases') {
+      return await handleViewActiveDiseases(phoneNumber, language, res);
+    }
+
+    if (userMessage === 'turn_on_alerts') {
+      await broadcastService.handleResubscribe(phoneNumber);
+      return res.json({ success: true });
+    }
+
+    if (userMessage === 'turn_off_alerts') {
+      await broadcastService.handleUnsubscribe(phoneNumber);
+      return res.json({ success: true });
+    }
+
+    // Handle state-specific requests
+    const statePattern = /(outbreak|disease|alert).*(in|for)\s+([a-zA-Z\s]+)/i;
+    const stateMatch = userMessage.match(statePattern);
+    
+    if (stateMatch) {
+      const stateName = stateMatch[3].trim();
+      return await handleStateSpecificOutbreak(phoneNumber, stateName, language, res);
+    }
+
+    // Default: Show disease alerts menu
+    return await showDiseaseAlertsMenu(phoneNumber, language, res);
+
+  } catch (error) {
+    console.error('❌ Error in handleDiseaseAlerts:', error);
+    
+    const errorMessages = {
+      en: "⚠️ Sorry, there was an error accessing disease alerts. Please try again later.",
+      hi: "⚠️ क्षमा करें, रोग अलर्ट एक्सेस करने में त्रुटि हुई। कृपया बाद में पुनः प्रयास करें।"
+    };
+
+    await sendMessage(phoneNumber, errorMessages[language] || errorMessages.en);
+    return res.json({ success: false, error: 'Disease alerts error' });
+  }
+}
+
+// Show disease alerts menu
+async function showDiseaseAlertsMenu(phoneNumber, language, res) {
+  const menuTexts = {
+    en: `🦠 *Disease Outbreak Alerts*
+
+Stay informed about disease outbreaks in your area:
+
+*📅 Daily National Alerts:* Sent every day at 10:00 AM
+*🏛️ State-Specific Alerts:* Request alerts for your state
+*🚨 Emergency Alerts:* Critical outbreak notifications
+
+Choose an option below:`,
+    hi: `🦠 *रोग प्रकोप अलर्ट*
+
+अपने क्षेत्र में रोग प्रकोप के बारे में सूचित रहें:
+
+*📅 दैनिक राष्ट्रीय अलर्ट:* प्रतिदिन सुबह 10:00 बजे भेजे जाते हैं
+*🏛️ राज्य-विशिष्ट अलर्ट:* अपने राज्य के लिए अलर्ट का अनुरोध करें
+*🚨 आपातकालीन अलर्ट:* महत्वपूर्ण प्रकोप सूचनाएं
+
+नीचे एक विकल्प चुनें:`
+  };
+
+  const buttons = [
+    { id: 'view_active_diseases', title: '🦠 View Outbreaks' },
+    { id: 'turn_on_alerts', title: '🔔 Enable Alerts' },
+    { id: 'turn_off_alerts', title: '🔕 Disable Alerts' }
+  ];
+
+  await sendInteractiveButtons(
+    phoneNumber,
+    menuTexts[language] || menuTexts.en,
+    buttons
+  );
+
+  return res.json({ success: true });
+}
+
+// Handle viewing active diseases
+async function handleViewActiveDiseases(phoneNumber, language, res) {
+  try {
+    console.log(`🔍 Fetching active diseases for ${phoneNumber}`);
+
+    // Get today's national alert
+    const nationalAlert = await outbreakService.getTodaysNationalAlert();
+    
+    if (nationalAlert) {
+      const formattedAlert = nationalAlert.getFormattedAlert(language);
+      await sendMessage(phoneNumber, formattedAlert);
+    } else {
+      // Trigger manual fetch if no alert exists
+      const newAlert = await outbreakService.triggerManualNationalFetch();
+      
+      if (newAlert) {
+        const formattedAlert = newAlert.getFormattedAlert(language);
+        await sendMessage(phoneNumber, formattedAlert);
+      } else {
+        const noAlertsMessages = {
+          en: `✅ *No Active Disease Outbreaks*
+
+_Good news! There are currently no major disease outbreaks reported in India._
+
+*🛡️ Stay Protected:*
+• Maintain good hygiene
+• Drink clean water
+• Eat fresh, cooked food
+• Get regular health checkups
+
+*📞 Emergency:* 108
+*🕐 Next Update:* Tomorrow at 10:00 AM`,
+          hi: `✅ *कोई सक्रिय रोग प्रकोप नहीं*
+
+_अच्छी खबर! वर्तमान में भारत में कोई बड़ा रोग प्रकोप रिपोर्ट नहीं किया गया है।_
+
+*🛡️ सुरक्षित रहें:*
+• अच्छी स्वच्छता बनाए रखें
+• साफ पानी पिएं
+• ताजा, पका हुआ भोजन खाएं
+• नियमित स्वास्थ्य जांच कराएं
+
+*📞 आपातकाल:* 108
+*🕐 अगला अपडेट:* कल सुबह 10:00 बजे`
+        };
+
+        await sendMessage(phoneNumber, noAlertsMessages[language] || noAlertsMessages.en);
+      }
+    }
+
+    return res.json({ success: true });
+  } catch (error) {
+    console.error('❌ Error in handleViewActiveDiseases:', error);
+    
+    const errorMessages = {
+      en: "⚠️ Unable to fetch disease outbreak information. Please try again later.",
+      hi: "⚠️ रोग प्रकोप की जानकारी प्राप्त करने में असमर्थ। कृपया बाद में पुनः प्रयास करें।"
+    };
+
+    await sendMessage(phoneNumber, errorMessages[language] || errorMessages.en);
+    return res.json({ success: false });
+  }
+}
+
+// Handle state-specific outbreak requests
+async function handleStateSpecificOutbreak(phoneNumber, stateName, language, res) {
+  try {
+    console.log(`🏛️ Fetching state outbreak for ${stateName}`);
+
+    const stateAlert = await outbreakService.getStateOutbreak(stateName);
+    
+    if (stateAlert) {
+      const formattedAlert = stateAlert.getFormattedAlert(language);
+      await broadcastService.sendStateAlertToUser(phoneNumber, stateAlert, language);
+    } else {
+      const noStateAlertsMessages = {
+        en: `✅ *No Active Outbreaks in ${stateName}*
+
+_Currently no major disease outbreaks reported in ${stateName} state._
+
+*🛡️ General Prevention Tips:*
+• Follow seasonal health guidelines
+• Maintain personal hygiene
+• Stay hydrated and eat healthy
+• Monitor local health advisories
+
+*📞 State Health Helpline:* Contact your local health department
+*🕐 Last Checked:* ${new Date().toLocaleDateString()}`,
+        hi: `✅ *${stateName} में कोई सक्रिय प्रकोप नहीं*
+
+_वर्तमान में ${stateName} राज्य में कोई बड़ा रोग प्रकोप रिपोर्ट नहीं किया गया है।_
+
+*🛡️ सामान्य बचाव के तरीके:*
+• मौसमी स्वास्थ्य दिशानिर्देशों का पालन करें
+• व्यक्तिगत स्वच्छता बनाए रखें
+• हाइड्रेटेड रहें और स्वस्थ भोजन करें
+• स्थानीय स्वास्थ्य सलाह पर नजर रखें
+
+*📞 राज्य स्वास्थ्य हेल्पलाइन:* अपने स्थानीय स्वास्थ्य विभाग से संपर्क करें
+*🕐 अंतिम जांच:* ${new Date().toLocaleDateString()}`
+      };
+
+      await sendMessage(phoneNumber, noStateAlertsMessages[language] || noStateAlertsMessages.en);
+    }
+
+    return res.json({ success: true });
+  } catch (error) {
+    console.error(`❌ Error in handleStateSpecificOutbreak for ${stateName}:`, error);
+    
+    const errorMessages = {
+      en: `⚠️ Unable to fetch outbreak information for ${stateName}. Please try again later.`,
+      hi: `⚠️ ${stateName} के लिए प्रकोप की जानकारी प्राप्त करने में असमर्थ। कृपया बाद में पुनः प्रयास करें।`
+    };
+
+    await sendMessage(phoneNumber, errorMessages[language] || errorMessages.en);
+    return res.json({ success: false });
   }
 }
 

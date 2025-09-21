@@ -6,6 +6,7 @@ const config = require('./config/environment');
 const { testConnection } = require('./config/database');
 const WebhookController = require('./controllers/webhookController');
 const DiseaseMonitoringJobs = require('./jobs/diseaseMonitoringJobs');
+const schedulerService = require('./services/schedulerService');
 
 // Initialize Express app
 const app = express();
@@ -98,6 +99,68 @@ app.get('/api/stats', async (req, res) => {
   }
 });
 
+// Manual outbreak broadcast trigger (for testing)
+app.post('/api/trigger-outbreak-broadcast', async (req, res) => {
+  try {
+    console.log('🔧 Manual outbreak broadcast triggered via API');
+    const result = await schedulerService.triggerManualBroadcast();
+    res.json(result);
+  } catch (error) {
+    console.error('❌ Error in manual outbreak broadcast:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
+// Get outbreak scheduler status
+app.get('/api/outbreak-status', (req, res) => {
+  try {
+    const status = schedulerService.getStatus();
+    res.json(status);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Immediate test alert trigger (for instant testing)
+app.post('/api/trigger-test-alert-now', async (req, res) => {
+  try {
+    console.log('🧪 IMMEDIATE TEST: Triggering test alert broadcast NOW');
+    
+    // Create and broadcast test alert immediately
+    const testAlert = await schedulerService.createTestAlert();
+    if (testAlert) {
+      const broadcastService = require('./src/services/broadcastService');
+      await broadcastService.broadcastNationalAlert(testAlert);
+      
+      res.json({
+        success: true,
+        message: 'Test alert broadcast completed immediately',
+        alert: {
+          alertId: testAlert.alertId,
+          title: testAlert.title,
+          disease: testAlert.disease,
+          severity: testAlert.severity,
+          timestamp: new Date().toISOString()
+        }
+      });
+    } else {
+      res.json({
+        success: false,
+        message: 'Failed to create test alert'
+      });
+    }
+  } catch (error) {
+    console.error('❌ Error in immediate test alert:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
 // Error handling middleware
 app.use((error, req, res, next) => {
   console.error('Unhandled error:', error);
@@ -140,6 +203,11 @@ async function startServer() {
       console.log('\n🦠 Starting disease monitoring system...');
       diseaseMonitoringJobs.startJobs();
       console.log('✅ Disease monitoring system started');
+
+      // Initialize outbreak scheduler
+      console.log('\n📅 Initializing outbreak scheduler...');
+      schedulerService.initialize();
+      console.log('✅ Outbreak scheduler initialized');
 
       console.log(`
 ====================================

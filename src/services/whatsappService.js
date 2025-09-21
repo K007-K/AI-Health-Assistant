@@ -40,8 +40,8 @@ class WhatsAppService {
   // Send interactive button message
   async sendInteractiveButtons(to, text, buttons, header = null) {
     try {
-      // For Meta-style feedback buttons (empty text), use a minimal space
-      const buttonText = text || ' ';
+      // For Meta-style feedback buttons (empty text), use minimal text
+      const buttonText = text || '.';
       
       const payload = {
         messaging_product: 'whatsapp',
@@ -582,18 +582,21 @@ class WhatsAppService {
       // Add small delay before sending feedback buttons
       await new Promise(resolve => setTimeout(resolve, 200));
       
-      // Send inline feedback buttons with minimal text (Meta style)
-      const feedbackButtons = this.getInlineFeedbackButtons();
-      // Use a single space for Meta-style minimal text
-      await this.sendInteractiveButtons(to, ' ', feedbackButtons);
-      
-      console.log('✅ Sent feedback buttons to', to);
+      try {
+        // Send inline feedback buttons with minimal text (Meta style)
+        const feedbackButtons = this.getInlineFeedbackButtons();
+        // Use a single dot for Meta-style minimal text (WhatsApp requires min 1 char)
+        await this.sendInteractiveButtons(to, '.', feedbackButtons);
+        console.log('✅ Sent feedback buttons to', to);
+      } catch (buttonError) {
+        console.error('⚠️ Feedback buttons failed, but message was sent:', buttonError.message);
+        // Don't send message again - just log the button failure
+      }
       
       return messageResponse;
     } catch (error) {
-      console.error('❌ Error sending message with feedback:', error);
-      // Fallback to regular message if feedback buttons fail
-      return await this.sendMessage(to, text);
+      console.error('❌ Error sending main message:', error);
+      throw error; // Don't send duplicate message
     }
   }
 

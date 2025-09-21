@@ -719,14 +719,17 @@ class MessageController {
 
         console.log('🩺 Analyzing symptoms:', message, mediaData ? 'with image' : 'text only');
         
-        // Use symptom_check conversation mode for better analysis
+        // Get conversation context for better understanding of pronouns and references
+        const context = await this.conversationService.getRecentContext(user.id);
+        
+        // Use symptom_check conversation mode for better analysis with context
         const analysis = mediaData 
           ? await this.geminiService.analyzeSymptoms(message, userProfile, mediaData)
           : await this.geminiService.generateResponse(
               message,
               user.preferred_language,
               user.script_preference,
-              [],
+              context, // Pass conversation context
               user.accessibility_mode,
               3,
               'symptom_check'

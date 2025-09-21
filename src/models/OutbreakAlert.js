@@ -254,122 +254,81 @@ ${preventionTips.slice(0, 4).map(tip => `• ${tip}`).join('\n')}
       return [this.getFormattedAlert(language)];
     }
     
-    // For nationwide alerts, extract real state-specific disease data
+    // For nationwide alerts, create concise overview instead of state-wise messages
     const additionalDiseases = Array.isArray(alertData.additionalDiseases) ? alertData.additionalDiseases : [];
     const sources = Array.isArray(alertData.sources) ? alertData.sources : [];
     const lastUpdated = alertData.lastUpdated || this.query_date || this.updated_at;
     const currentDate = new Date(lastUpdated).toLocaleDateString('en-IN');
     const messages = [];
     
-    // Process each disease with its specific state data (using real API data structure)
+    // Create concise disease summaries
+    const diseaseEntries = [];
+    
     additionalDiseases.forEach(diseaseInfo => {
-      // Handle real API data structure: {name, location, cases, symptoms, prevention}
       const disease = diseaseInfo.name || diseaseInfo.disease || 'Health Alert';
       const locationText = diseaseInfo.location || diseaseInfo.affectedAreas || 'Various locations';
       const cases = diseaseInfo.cases || diseaseInfo.estimatedCases || 'Under monitoring';
       const symptomsText = diseaseInfo.symptoms || diseaseInfo.briefDescription || '';
-      const preventionText = diseaseInfo.prevention || '';
       
-      // Extract state names from location text (e.g., "Kerala (Malappuram and Palakkad districts)")
-      const stateMatches = locationText.match(/([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/g) || [];
-      const states = [...new Set(stateMatches.filter(state => 
-        ['Kerala', 'Delhi', 'Maharashtra', 'Karnataka', 'Tamil Nadu', 'Andhra Pradesh', 'Gujarat', 'Rajasthan', 'Uttar Pradesh', 'Haryana', 'Punjab', 'West Bengal', 'Bihar', 'Odisha', 'Assam', 'Jharkhand', 'Chhattisgarh', 'Madhya Pradesh', 'Himachal Pradesh', 'Uttarakhand', 'Goa', 'Manipur', 'Meghalaya', 'Tripura', 'Mizoram', 'Arunachal Pradesh', 'Nagaland', 'Sikkim', 'Telangana'].includes(state)
-      ))];
-      
-      // If no specific states found, try city-to-state mapping (dynamic, not hardcoded)
-      if (states.length === 0) {
-        const cityToStateMap = {
-          'mumbai': 'Maharashtra',
-          'pune': 'Maharashtra', 
-          'delhi': 'Delhi',
-          'bangalore': 'Karnataka',
-          'bengaluru': 'Karnataka',
-          'chennai': 'Tamil Nadu',
-          'kolkata': 'West Bengal',
-          'hyderabad': 'Telangana',
-          'ahmedabad': 'Gujarat',
-          'jaipur': 'Rajasthan',
-          'lucknow': 'Uttar Pradesh',
-          'bhopal': 'Madhya Pradesh',
-          'thiruvananthapuram': 'Kerala',
-          'kochi': 'Kerala',
-          'kozhikode': 'Kerala'
-        };
-        
-        const locationLower = locationText.toLowerCase();
-        let foundState = null;
-        
-        // Check for city names in location text
-        for (const [city, state] of Object.entries(cityToStateMap)) {
-          if (locationLower.includes(city)) {
-            foundState = state;
-            break;
-          }
-        }
-        
-        if (foundState) {
-          states.push(foundState);
-        } else if (locationLower.includes('nationwide') || locationLower.includes('india')) {
-          states.push('Multiple States');
-        } else {
-          // Only use generic fallback if absolutely no location info found
-          states.push('India');
-        }
+      // Determine seriousness
+      let seriousness = 'Moderate';
+      const diseaseKey = disease.toLowerCase();
+      if (diseaseKey.includes('brain-eating') || diseaseKey.includes('naegleria') || diseaseKey.includes('meningoencephalitis')) {
+        seriousness = 'Critical';
+      } else if (diseaseKey.includes('nipah') || diseaseKey.includes('h5n1') || diseaseKey.includes('h1n1') || diseaseKey.includes('melioidosis')) {
+        seriousness = 'High';
+      } else if (diseaseKey.includes('dengue') || diseaseKey.includes('malaria') || diseaseKey.includes('chikungunya')) {
+        seriousness = 'Moderate';
       }
       
-      // Create message for each affected state
-      states.slice(0, 2).forEach(stateName => { // Limit to 2 states per disease to avoid spam
-        
-        // Parse symptoms and prevention from text
-        const symptoms = symptomsText.split(/[,;]/).map(s => s.trim()).filter(s => s.length > 3).slice(0, 4);
-        const prevention = preventionText.split(/[,;.]/).map(p => p.trim()).filter(p => p.length > 10).slice(0, 3);
-        
-        // Determine urgency based on real disease characteristics
-        let urgency = 'MODERATE';
-        const diseaseKey = disease.toLowerCase();
-        if (diseaseKey.includes('brain-eating') || diseaseKey.includes('naegleria') || diseaseKey.includes('meningoencephalitis')) {
-          urgency = 'CRITICAL';
-        } else if (diseaseKey.includes('nipah') || diseaseKey.includes('h5n1') || diseaseKey.includes('h1n1') || diseaseKey.includes('melioidosis')) {
-          urgency = 'HIGH';
-        } else if (diseaseKey.includes('dengue') || diseaseKey.includes('malaria') || diseaseKey.includes('chikungunya') || diseaseKey.includes('influenza')) {
-          urgency = 'MODERATE';
-        } else if (diseaseKey.includes('prevention') || diseaseKey.includes('campaign') || diseaseKey.includes('surveillance')) {
-          urgency = 'PREVENTIVE';
-        }
-        
-        const urgencyEmoji = {
-          'CRITICAL': '🚨',
-          'HIGH': '⚠️',
-          'MODERATE': '📢',
-          'PREVENTIVE': '🛡️'
-        };
-        
-        // Create focused state message with real data
-        let stateMessage = `${urgencyEmoji[urgency]} *BREAKING: ${stateName} Health Alert* ${urgencyEmoji[urgency]}
-_${currentDate} Update_
-
-*🏛️ State:* ${stateName}
-
-*📋 Overview:*
-${disease} outbreak in ${locationText}. Current situation requires health monitoring and preventive measures.
-
-*🩺 Symptoms:*
-${symptoms.length > 0 ? symptoms.map(s => `• ${s}`).join('\n') : '• Fever, respiratory symptoms, body aches\n• Consult healthcare provider for accurate diagnosis'}
-
-*🛡️ Prevention Tips:*
-${prevention.length > 0 ? prevention.map(p => `• ${p}`).join('\n') : '• Maintain personal hygiene\n• Avoid crowded areas if symptomatic\n• Follow health department guidelines'}
-
-*⚠️ Seriousness:* ${urgency} - ${disease}
-
-*📊 Situation/Cases:*
-${cases}
-
-*📞 Emergency:* 108 | *🔗 Source:* ${sources?.[0] || 'Health Ministry India'}
-*🕐 Updated:* ${currentDate}`;
-
-        messages.push(stateMessage);
+      // Clean up location text (remove extra words)
+      const cleanLocation = locationText.replace(/Multiple states across India, including/gi, '')
+                                       .replace(/Rising cases reported across the country, including/gi, '')
+                                       .replace(/Cases reported in/gi, '')
+                                       .trim();
+      
+      // Clean up symptoms (first 2-3 main symptoms)
+      const symptoms = symptomsText.split(/[,;]/).map(s => s.trim()).filter(s => s.length > 3).slice(0, 3).join(', ');
+      
+      // Clean up cases (keep it short)
+      const shortCases = cases.length > 80 ? cases.substring(0, 80) + '...' : cases;
+      
+      diseaseEntries.push({
+        disease,
+        location: cleanLocation,
+        cases: shortCases,
+        symptoms: symptoms || 'Fever, body aches',
+        seriousness
       });
     });
+    
+    // Split into multiple messages if too long (max 3 diseases per message)
+    const maxDiseasesPerMessage = 3;
+    for (let i = 0; i < diseaseEntries.length; i += maxDiseasesPerMessage) {
+      const chunk = diseaseEntries.slice(i, i + maxDiseasesPerMessage);
+      
+      let overviewMessage = `🇮🇳 *India Disease Overview* 🇮🇳
+_${currentDate} Update_
+
+`;
+
+      chunk.forEach((entry, index) => {
+        const emoji = entry.seriousness === 'Critical' ? '🚨' : 
+                     entry.seriousness === 'High' ? '⚠️' : '📢';
+        
+        overviewMessage += `${emoji} *${entry.disease}*
+📍 *Places:* ${entry.location}
+🩺 *Symptoms:* ${entry.symptoms}
+⚖️ *Seriousness:* ${entry.seriousness}
+📊 *Cases:* ${entry.cases}
+
+`;
+      });
+      
+      overviewMessage += `*📞 Emergency:* 108 | *🔗 Source:* ${sources?.[0] || 'Health Ministry India'}`;
+      
+      messages.push(overviewMessage);
+    }
     
     // If no messages generated, fallback to general message
     if (messages.length === 0) {

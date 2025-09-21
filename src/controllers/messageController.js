@@ -2012,28 +2012,39 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
       await this.whatsappService.sendMessage(user.phone_number, headerText);
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      // If we have today's state/national alerts, show those first and return
-      let showedRich = false;
-      if (todaysState) {
+      // Always try to show alerts - prioritize national alerts for all users
+      let showedAlerts = false;
+      
+      // Show state alert first if user has a state and alert exists
+      if (todaysState && userStateName) {
         await this.whatsappService.sendMessage(user.phone_number, todaysState.getFormattedAlert(user.preferred_language || 'en'));
         await new Promise(resolve => setTimeout(resolve, 600));
-        showedRich = true;
+        showedAlerts = true;
       }
+      
+      // Always show national alert if it exists
       if (todaysNational) {
         await this.whatsappService.sendMessage(user.phone_number, todaysNational.getFormattedAlert(user.preferred_language || 'en'));
         await new Promise(resolve => setTimeout(resolve, 600));
-        showedRich = true;
+        showedAlerts = true;
       }
 
-      if (showedRich) {
+      // If we showed any alerts, provide appropriate follow-up based on subscription status
+      if (showedAlerts) {
         // Check if user is already subscribed to alerts
         const isSubscribed = user.consent_outbreak_alerts === true;
         
-        // Provide quick follow-up actions and exit
-        const followUpButtons = [
-          { id: 'disease_alerts', title: '↩️ Back' },
-          { id: 'back_to_menu', title: '🏠 Main Menu' }
-        ];
+        // Provide appropriate follow-up actions
+        const followUpButtons = isSubscribed 
+          ? [
+              { id: 'disease_alerts', title: '↩️ Back' },
+              { id: 'back_to_menu', title: '🏠 Main Menu' }
+            ]
+          : [
+              { id: 'turn_on_alerts', title: '🔔 Get Alerts' },
+              { id: 'disease_alerts', title: '↩️ Back' },
+              { id: 'back_to_menu', title: '🏠 Main Menu' }
+            ];
         
         const followUpMessage = isSubscribed 
           ? '✅ You are receiving disease outbreak alerts. Stay informed!'
@@ -2148,16 +2159,27 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
         
         await this.whatsappService.sendMessage(user.phone_number, fallbackPrevention);
         
-        // Show follow-up options even in fallback
-        const followUpButtons = [
-          { id: 'turn_on_alerts', title: '🔔 Get Alerts' },
-          { id: 'disease_alerts', title: '↩️ Back' },
-          { id: 'back_to_menu', title: '🏠 Main Menu' }
-        ];
+        // Show follow-up options even in fallback - respect subscription status
+        const isSubscribed = user.consent_outbreak_alerts === true;
+        
+        const followUpButtons = isSubscribed 
+          ? [
+              { id: 'disease_alerts', title: '↩️ Back' },
+              { id: 'back_to_menu', title: '🏠 Main Menu' }
+            ]
+          : [
+              { id: 'turn_on_alerts', title: '🔔 Get Alerts' },
+              { id: 'disease_alerts', title: '↩️ Back' },
+              { id: 'back_to_menu', title: '🏠 Main Menu' }
+            ];
+
+        const followUpMessage = isSubscribed 
+          ? '✅ You are receiving disease outbreak alerts. Stay informed!'
+          : '📱 Want alerts for disease outbreaks in your area?';
 
         await this.whatsappService.sendInteractiveButtons(
           user.phone_number,
-          '📱 Want alerts for disease outbreaks in your area?',
+          followUpMessage,
           followUpButtons
         );
       }
@@ -2174,6 +2196,30 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
       );
       
       await this.whatsappService.sendMessage(user.phone_number, fallbackPrevention);
+      
+      // Show appropriate follow-up buttons even in error case
+      const isSubscribed = user.consent_outbreak_alerts === true;
+      
+      const followUpButtons = isSubscribed 
+        ? [
+            { id: 'disease_alerts', title: '↩️ Back' },
+            { id: 'back_to_menu', title: '🏠 Main Menu' }
+          ]
+        : [
+            { id: 'turn_on_alerts', title: '🔔 Get Alerts' },
+            { id: 'disease_alerts', title: '↩️ Back' },
+            { id: 'back_to_menu', title: '🏠 Main Menu' }
+          ];
+
+      const followUpMessage = isSubscribed 
+        ? '✅ You are receiving disease outbreak alerts. Stay informed!'
+        : '📱 Want alerts for disease outbreaks in your area?';
+
+      await this.whatsappService.sendInteractiveButtons(
+        user.phone_number,
+        followUpMessage,
+        followUpButtons
+      );
     }
   }
 

@@ -2026,14 +2026,22 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
       }
 
       if (showedRich) {
+        // Check if user is already subscribed to alerts
+        const isSubscribed = user.disease_alerts_enabled === true;
+        
         // Provide quick follow-up actions and exit
         const followUpButtons = [
           { id: 'disease_alerts', title: '↩️ Back' },
           { id: 'back_to_menu', title: '🏠 Main Menu' }
         ];
+        
+        const followUpMessage = isSubscribed 
+          ? '✅ You are receiving disease outbreak alerts. Stay informed!'
+          : '📱 Want alerts for disease outbreaks in your area?';
+          
         await this.whatsappService.sendInteractiveButtons(
           user.phone_number,
-          '📱 Want alerts for disease outbreaks in your area?',
+          followUpMessage,
           followUpButtons
         );
         return;
@@ -2098,22 +2106,32 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
         }
         
         // Generate disease-specific prevention recommendations
-        const specificPrevention = this.generateDiseaseSpecificPrevention(relevantDiseases, user.preferred_language, user.script_preference);
+        const isSubscribed = user.disease_alerts_enabled === true;
+        const specificPrevention = this.generateDiseaseSpecificPrevention(relevantDiseases, user.preferred_language, user.script_preference, isSubscribed);
         
         await this.whatsappService.sendMessage(user.phone_number, specificPrevention);
 
         // Show data source and follow-up options
         const sourceText = diseaseData.source === 'cache' ? '💾 Cached data' : '🆕 Fresh data';
         
-        const followUpButtons = [
-          { id: 'turn_on_alerts', title: '🔔 Get Alerts' },
-          { id: 'disease_alerts', title: '↩️ Back' },
-          { id: 'back_to_menu', title: '🏠 Main Menu' }
-        ];
+        const followUpButtons = isSubscribed 
+          ? [
+              { id: 'disease_alerts', title: '↩️ Back' },
+              { id: 'back_to_menu', title: '🏠 Main Menu' }
+            ]
+          : [
+              { id: 'turn_on_alerts', title: '🔔 Get Alerts' },
+              { id: 'disease_alerts', title: '↩️ Back' },
+              { id: 'back_to_menu', title: '🏠 Main Menu' }
+            ];
+
+        const followUpMessage = isSubscribed 
+          ? `✅ You are receiving disease outbreak alerts. Stay informed! ${sourceText}`
+          : `📱 Want alerts for disease outbreaks in your area? ${sourceText}`;
 
         await this.whatsappService.sendInteractiveButtons(
           user.phone_number,
-          `📱 Want alerts for disease outbreaks in your area? ${sourceText}`,
+          followUpMessage,
           followUpButtons
         );
         
@@ -2690,10 +2708,10 @@ Reply "STOP ALERTS" anytime to unsubscribe.`;
     return this.formatLocationAwareDiseaseNews(disease, userLocation);
   }
 
-  // Generate disease-specific prevention recommendations based on actual diseases shown
-  generateDiseaseSpecificPrevention(diseases, language = 'en', script = 'native') {
+  // Generate disease-specific prevention recommendations
+  generateDiseaseSpecificPrevention(diseases, language, scriptPreference, isSubscribed = false) {
     if (!diseases || diseases.length === 0) {
-      return LanguageUtils.getText('disease_prevention_summary', language, 'en', script);
+      return LanguageUtils.getText('disease_prevention_summary', language, 'en', scriptPreference);
     }
 
     // Analyze diseases to determine specific prevention measures
@@ -2832,15 +2850,21 @@ Reply "STOP ALERTS" anytime to unsubscribe.`;
       en: '🛡️ **Specific Prevention for Current Outbreaks:**',
       hi: '🛡️ **वर्तमान प्रकोप के लिए विशिष्ट बचाव:**',
       te: '🛡️ **ప్రస్తుత వ్యాప్తికి ప్రత్యేక నివారణ:**',
-      ta: '🛡️ **தற்போதைய வெடிப்புகளுக்கான குறிப्पिட்ட தடुप्पு:**',
+      ta: '🛡️ **தற்போதைய வெடிப்புகளுக்கான குறிப்பிட்ட தடுப்பு:**',
       or: '🛡️ **ବର୍ତ୍ତମାନ ପ୍ରକୋପ ପାଇଁ ବିଶେଷ ନିବାରଣ:**'
     };
 
-    const footerText = {
+    const footerText = isSubscribed ? {
+      en: '\n✅ **You are receiving disease outbreak alerts.** Stay safe!',
+      hi: '\n✅ **आप रोग प्रकोप अलर्ट प्राप्त कर रहे हैं।** सुरक्षित रहें!',
+      te: '\n✅ **మీరు వ్యాధి వ్యాప్తి హెచ్చరికలను పొందుతున్నారు।** సురక్షితంగా ఉండండి!',
+      ta: '\n✅ **நீங்கள் நோய் வெடிப்பு எச்சரிக்கைகளைப் பெற்றுவருகிறீர்கள்.** பாதுகாப்பாக இருங்கள்!',
+      or: '\n✅ **ଆପଣ ରୋଗ ପ୍ରକୋପ ଚେତାବନୀ ପାଇଛନ୍ତି।** ସୁରକ୍ଷିତ ରୁହନ୍ତୁ!'
+    } : {
       en: '\n📍 **Want location-specific alerts?** Register below:',
       hi: '\n📍 **स्थान-विशिष्ट अलर्ट चाहते हैं?** नीचे पंजीकरण करें:',
       te: '\n📍 **స్థాన-ప్రత్యేక హెచ్చరికలు కావాలా?** క్రింద నమోదు చేసుకోండి:',
-      ta: '\n📍 **இடம் சார்ந்த எச्चरிक्कैகள் वेण्டुमा?** கীழே पतिवु செய्युङ्गள्:',
+      ta: '\n📍 **இடம் சார்ந்த எச்சரிக்கைகள் வேண்டுமா?** கீழே பதிவு செய்யுங்கள்:',
       or: '\n📍 **ସ୍ଥାନ-ନିର୍ଦ୍ଦିଷ୍ଟ ଚେତାବନୀ ଚାହୁଁଛନ୍ତି?** ତଳେ ପଞ୍ଜୀକରଣ କରନ୍ତୁ:'
     };
 

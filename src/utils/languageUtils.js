@@ -484,9 +484,9 @@ Select your preferred language:`,
 
 // Emergency keywords in different languages
 const emergencyKeywords = {
-  en: ['emergency', 'severe pain', 'chest pain', 'can\'t breathe', 'heavy bleeding', 'unconscious', 'heart attack', 'stroke', 'difficulty breathing', 'help me', 'urgent', 'critical', 'dying', 'collapse'],
-  hi: ['emergency', 'आपातकाल', 'गंभीर दर्द', 'सीने में दर्द', 'सांस नहीं आ रही', 'खून बह रहा', 'बेहोश', 'दिल का दौरा', 'stroke', 'मदद चाहिए', 'तुरंत मदद', 'गंभीर स्थिति', 'मरने वाला हूं'],
-  te: ['emergency', 'అత్యవసర పరిస్థితి', 'తీవ్రమైన నొప్పి', 'ఛాతీ నొప్పి', 'ఊపిరి రాలేదు', 'రక్తస్రావం', 'అపస్మారక', 'గుండెపోటు', 'సహాయం కావాలి', 'తక్షణ సహాయం', 'తీవ్రమైన పరిస్థితి'],
+  en: ['emergency', 'severe pain', 'chest pain', 'can\'t breathe', 'heavy bleeding', 'unconscious', 'heart attack', 'stroke', 'difficulty breathing', 'urgent pain', 'critical condition', 'dying', 'collapse', 'medical emergency'],
+  hi: ['emergency', 'आपातकाल', 'गंभीर दर्द', 'सीने में दर्द', 'सांस नहीं आ रही', 'खून बह रहा', 'बेहोश', 'दिल का दौरा', 'stroke', 'तुरंत दर्द', 'गंभीर स्थिति', 'मरने वाला हूं', 'चिकित्सा आपातकाल'],
+  te: ['emergency', 'అత్యవసర పరిస్థితి', 'తీవ్రమైన నొప్పి', 'ఛాతీ నొప్పి', 'ఊపిరి రాలేదు', 'రక్తస్రావం', 'అపస్మారక', 'గుండెపోటు', 'తక్షణ నొప్పి', 'తీవ్రమైన పరిస్థితి', 'వైద్య అత్యవసర పరిస్థితి'],
   ta: ['emergency', 'அவசரநிலை', 'கடுமையான வலி', 'மார்பு வலி', 'மூச்சு விடமுடியவில்லை', 'அதிக இரத்தப்போக்கு', 'மயக்கம', 'உதவி வேண்டும்', 'உடனடி உதவி'],
   or: ['emergency', 'ଜରୁରୀ ଅବସ୍ଥା', 'ତୀବ୍ର ଯନ୍ତ୍ରଣା', 'ଛାତି ଯନ୍ତ୍ରଣା', 'ନିଶ୍ୱାସ ନେଇପାରୁନାହିଁ', 'ରକ୍ତସ୍ରାବ', 'ଚେତନାହୀନ', 'ସାହାଯ୍ୟ ଦରକାର']
 };
@@ -590,6 +590,26 @@ class LanguageUtils {
   static detectEmergency(text, language = 'en') {
     const keywords = emergencyKeywords[language] || emergencyKeywords.en;
     const lowerText = text.toLowerCase();
+    
+    // Exclude general help requests that are not emergencies
+    const generalHelpPhrases = [
+      'how can you help me',
+      'what can you help me with',
+      'how do you help',
+      'what help can you provide',
+      'can you help me with',
+      'help me understand',
+      'help me learn',
+      'आप मेरी कैसे मदद कर सकते हैं',
+      'మీరు నాకు ఎలా సహాయం చేయగలరు',
+      'நீங்கள் எனக்கு எப்படி உதவ முடியும்',
+      'ଆପଣ ମୋତେ କିପରି ସାହାଯ୍ୟ କରିପାରିବେ'
+    ];
+    
+    // If it's a general help request, don't treat as emergency
+    if (generalHelpPhrases.some(phrase => lowerText.includes(phrase))) {
+      return false;
+    }
     
     return keywords.some(keyword => lowerText.includes(keyword.toLowerCase()));
   }

@@ -175,6 +175,13 @@ class MessageController {
 
       // Check if user is in AI chat mode - handle all messages as AI chat
       if (currentState === 'ai_chat' && !content.toLowerCase().includes('menu') && !content.toLowerCase().includes('back')) {
+        // Allow greetings to reset to main menu
+        if (intent === 'greeting') {
+          console.log('🔄 Greeting detected in AI chat - resetting to main menu');
+          await this.handleGreeting(user);
+          return;
+        }
+        
         // Skip if intent is already ai_chat to avoid duplicate handling
         if (intent !== 'ai_chat' && intent !== 'ai_chat_message') {
           console.log('🤖 User in AI chat mode - routing to handleAIChat');

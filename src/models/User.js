@@ -29,13 +29,13 @@ class User {
     return data.map(user => new User(user));
   }
 
-  // Static method to get subscribed users
+  // Static method to get subscribed users (only those who enabled disease outbreak alerts)
   static async getSubscribedUsers() {
     const { data, error } = await supabase
       .from('users')
       .select('*')
       .eq('is_active', true)
-      .eq('alerts_enabled', true);
+      .eq('disease_alerts_enabled', true); // Only users who specifically enabled disease outbreak alerts
 
     if (error) throw error;
     return data.map(user => new User(user));
@@ -58,13 +58,13 @@ class User {
     return new User(data);
   }
 
-  // Enable alerts
-  async enableAlerts() {
+  // Enable disease outbreak alerts
+  async enableDiseaseAlerts() {
     const { data, error } = await supabase
       .from('users')
       .update({
-        alerts_enabled: true,
-        unsubscribed_at: null,
+        disease_alerts_enabled: true,
+        disease_alerts_unsubscribed_at: null,
         updated_at: new Date()
       })
       .eq('phone_number', this.phone_number)
@@ -76,13 +76,13 @@ class User {
     return this;
   }
 
-  // Disable alerts
-  async disableAlerts() {
+  // Disable disease outbreak alerts
+  async disableDiseaseAlerts() {
     const { data, error } = await supabase
       .from('users')
       .update({
-        alerts_enabled: false,
-        unsubscribed_at: new Date(),
+        disease_alerts_enabled: false,
+        disease_alerts_unsubscribed_at: new Date(),
         updated_at: new Date()
       })
       .eq('phone_number', this.phone_number)

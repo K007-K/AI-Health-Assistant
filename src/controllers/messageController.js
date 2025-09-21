@@ -2114,33 +2114,44 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
     }
   }
 
-  // Handle turning on alerts with interactive state selection
+  // Handle turning on alerts - simplified approach
   async handleTurnOnAlerts(user) {
     try {
-      console.log('🔔 User requesting to turn on alerts:', user.phone_number);
+      console.log('🔔 User requesting to turn on disease outbreak alerts:', user.phone_number);
       
-      // Initialize cache service for state selection
-      const DiseaseOutbreakCacheService = require('../services/diseaseOutbreakCacheService');
-      const cacheService = new DiseaseOutbreakCacheService();
+      // Get user from database
+      const User = require('../models/User');
+      const dbUser = await User.findByPhoneNumber(user.phone_number);
       
-      // Check if user already has a selected state and is properly registered
-      const existingState = await cacheService.getUserSelectedState(user.phone_number);
-      
-      // More robust check: user must exist, have alerts enabled, AND have a valid state
-      if (existingState && 
-          existingState.alert_enabled && 
-          existingState.selected_state_id && 
-          existingState.indian_states?.state_name) {
-        const stateName = existingState.indian_states?.state_name || 'your area';
+      if (dbUser && dbUser.disease_alerts_enabled) {
         await this.whatsappService.sendMessage(
           user.phone_number,
-          `✅ You are already registered for disease outbreak alerts in ${stateName}!\n\nYou will receive notifications about disease outbreaks in your area.\n\nReply "STOP ALERTS" anytime to unsubscribe.`
+          `✅ *Disease Outbreak Alerts Already Enabled*\n\nYou are already subscribed to receive disease outbreak alerts!\n\n📅 You will receive:\n• Daily national outbreak updates at 10:00 AM\n• Emergency outbreak notifications\n• State-specific alerts when available\n\n📞 Emergency: 108\n\nReply "STOP ALERTS" anytime to unsubscribe.`
         );
         return;
       }
 
-      // Show interactive state selection
-      await this.showStateSelectionMenu(user, cacheService);
+      // Enable disease outbreak alerts for the user
+      if (dbUser) {
+        await dbUser.enableDiseaseAlerts();
+      } else {
+        // Create new user with alerts enabled
+        await User.createOrUpdateUser(user.phone_number, {
+          disease_alerts_enabled: true,
+          name: user.name || '',
+          language: user.preferred_language || 'en'
+        });
+      }
+
+      const successMessages = {
+        en: `🔔 *Disease Outbreak Alerts Enabled*\n\n✅ You have successfully subscribed to disease outbreak alerts!\n\n📅 **What you'll receive:**\n• Daily national outbreak updates at 10:00 AM IST\n• Emergency outbreak notifications\n• Real-time health advisories\n• Prevention tips and safety guidelines\n\n🛡️ **Stay protected and informed!**\n\n📞 Emergency: 108\n\nReply "STOP ALERTS" anytime to unsubscribe.`,
+        hi: `🔔 *रोग प्रकोप अलर्ट सक्षम*\n\n✅ आपने सफलतापूर्वक रोग प्रकोप अलर्ट की सदस्यता ली है!\n\n📅 **आपको मिलेगा:**\n• दैनिक राष्ट्रीय प्रकोप अपडेट सुबह 10:00 बजे IST\n• आपातकालीन प्रकोप सूचनाएं\n• रियल-टाइम स्वास्थ्य सलाह\n• रोकथाम युक्तियां और सुरक्षा दिशानिर्देश\n\n🛡️ **सुरक्षित और सूचित रहें!**\n\n📞 आपातकाल: 108\n\nसदस्यता रद्द करने के लिए कभी भी "STOP ALERTS" का उत्तर दें।`
+      };
+
+      await this.whatsappService.sendMessage(
+        user.phone_number,
+        successMessages[user.preferred_language] || successMessages.en
+      );
       
     } catch (error) {
       console.error('Error in handleTurnOnAlerts:', error);
@@ -2199,26 +2210,23 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
     }
   }
 
-  // Handle turning off alerts with data deletion
+  // Handle turning off alerts - simplified approach
   async handleTurnOffAlerts(user) {
     try {
-      console.log('🔕 User requesting to turn off alerts:', user.phone_number);
+      console.log('🔕 User requesting to turn off disease outbreak alerts:', user.phone_number);
       
-      // Initialize cache service
-      const DiseaseOutbreakCacheService = require('../services/diseaseOutbreakCacheService');
-      const cacheService = new DiseaseOutbreakCacheService();
+      // Get user from database
+      const User = require('../models/User');
+      const dbUser = await User.findByPhoneNumber(user.phone_number);
       
-      // Check if registered
-      const isRegistered = await cacheService.isUserRegisteredForAlerts(user.phone_number);
-      
-      if (!isRegistered) {
+      if (!dbUser || !dbUser.disease_alerts_enabled) {
         await this.whatsappService.sendMessage(
           user.phone_number,
-          '❌ You are not registered for disease alerts.\n\nWould you like to register to receive disease outbreak alerts in your area?'
+          '❌ You are not currently subscribed to disease outbreak alerts.\n\nWould you like to enable disease outbreak alerts to stay informed about health emergencies?'
         );
         
         const buttons = [
-          { id: 'turn_on_alerts', title: '🔔 Register for Alerts' },
+          { id: 'turn_on_alerts', title: '🔔 Enable Alerts' },
           { id: 'back_to_menu', title: '↩️ Back to Menu' }
         ];
         
@@ -2230,29 +2238,17 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
         return;
       }
 
-      // Get user's current state info for confirmation
-      const userStateInfo = await cacheService.getUserSelectedState(user.phone_number);
-      const stateName = userStateInfo?.indian_states?.state_name || 'your area';
+      // Disable disease outbreak alerts
+      await dbUser.disableDiseaseAlerts();
 
-      // Ask for confirmation with options
-      const confirmButtons = [
-        { id: 'confirm_delete_alert_data', title: '🗑️ Delete All Data' },
-        { id: 'confirm_disable_alerts', title: '⏸️ Just Disable' },
-        { id: 'disease_alerts', title: '❌ Cancel' }
-      ];
-
-      const confirmationText = {
-        en: `⚠️ *Turn Off Disease Alerts*\n\nYou are currently registered for alerts in ${stateName}.\n\nChoose how you want to turn off alerts:\n\n🗑️ **Delete All Data:** Completely remove your alert preferences\n⏸️ **Just Disable:** Keep your location but stop alerts\n\nWhat would you like to do?`,
-        hi: `⚠️ *रोग अलर्ट बंद करें*\n\nआप वर्तमान में ${stateName} में अलर्ट के लिए पंजीकृत हैं।\n\nअलर्ट बंद करने का तरीका चुनें:\n\n🗑️ **सभी डेटा हटाएं:** अपनी अलर्ट प्राथमिकताएं पूरी तरह हटाएं\n⏸️ **केवल अक्षम करें:** अपना स्थान रखें लेकिन अलर्ट बंद करें\n\nआप क्या करना चाहते हैं?`,
-        te: `⚠️ *వ్యాధి హెచ్చరికలను ఆపండి*\n\nమీరు ప్రస్తుతం ${stateName}లో హెచ్చరికల కోసం నమోదు చేసుకున్నారు।\n\nహెచ్చరికలను ఆపడానికి మార్గాన్ని ఎంచుకోండి:\n\n🗑️ **అన్ని డేటాను తొలగించండి:** మీ హెచ్చరిక ప్రాధాన్యతలను పూర్తిగా తొలగించండి\n⏸️ **కేవలం నిలిపివేయండి:** మీ స్థానాన్ని ఉంచండి కానీ హెచ్చరికలను ఆపండి\n\nమీరు ఏమి చేయాలనుకుంటున్నారు?`,
-        ta: `⚠️ *நோய் எச்சரிக்கைகளை நிறுத்தவும்*\n\nநீங்கள் தற்போது ${stateName}இல் எச்சரிக்கைகளுக்கு பதிவு செய்யப்பட்டுள்ளீர்கள்.\n\nஎச்சரிக்கைகளை நிறுத்துவதற்கான வழியைத் தேர்ந்தெடுக்கவும்:\n\n🗑️ **அனைத்து தரவையும் நீக்கவும்:** உங்கள் எச்சரிக்கை விருப்பத்தேர்வுகளை முழுமையாக அகற்றவும்\n⏸️ **வெறும் முடக்கவும்:** உங்கள் இடத்தை வைத்துக்கொண்டு எச்சரிக்கைகளை நிறுத்தவும்\n\nநீங்கள் என்ன செய்ய விரும்புகிறீர்கள்?`,
-        or: `⚠️ *ରୋଗ ଚେତାବନୀ ବନ୍ଦ କରନ୍ତୁ*\n\nଆପଣ ବର୍ତ୍ତମାନ ${stateName}ରେ ଚେତାବନୀ ପାଇଁ ପଞ୍ଜୀକୃତ ଅଛନ୍ତି।\n\nଚେତାବନୀ ବନ୍ଦ କରିବାର ଉପାୟ ବାଛନ୍ତୁ:\n\n🗑️ **ସମସ୍ତ ଡାଟା ଡିଲିଟ କରନ୍ତୁ:** ଆପଣଙ୍କ ଚେତାବନୀ ପସନ୍ଦଗୁଡ଼ିକୁ ସମ୍ପୂର୍ଣ୍ଣ ଭାବେ ହଟାନ୍ତୁ\n⏸️ **କେବଳ ଅକ୍ଷମ କରନ୍ତୁ:** ଆପଣଙ୍କ ସ୍ଥାନ ରଖନ୍ତୁ କିନ୍ତୁ ଚେତାବନୀ ବନ୍ଦ କରନ୍ତୁ\n\nଆପଣ କଣ କରିବାକୁ ଚାହାଁନ୍ତି?`
+      const successMessages = {
+        en: `🔕 *Disease Outbreak Alerts Disabled*\n\n✅ You have successfully unsubscribed from disease outbreak alerts.\n\n❌ **You will no longer receive:**\n• Daily national outbreak updates\n• Emergency outbreak notifications\n• Real-time health advisories\n\n💡 You can re-enable alerts anytime by visiting the Disease Alerts menu.\n\n📞 Emergency: 108`,
+        hi: `🔕 *रोग प्रकोप अलर्ट अक्षम*\n\n✅ आपने सफलतापूर्वक रोग प्रकोप अलर्ट की सदस्यता रद्द कर दी है।\n\n❌ **आपको अब नहीं मिलेगा:**\n• दैनिक राष्ट्रीय प्रकोप अपडेट\n• आपातकालीन प्रकोप सूचनाएं\n• रियल-टाइम स्वास्थ्य सलाह\n\n💡 आप रोग अलर्ट मेनू पर जाकर कभी भी अलर्ट फिर से सक्षम कर सकते हैं।\n\n📞 आपातकाल: 108`
       };
 
-      await this.whatsappService.sendInteractiveButtons(
+      await this.whatsappService.sendMessage(
         user.phone_number,
-        confirmationText[user.preferred_language] || confirmationText.en,
-        confirmButtons
+        successMessages[user.preferred_language] || successMessages.en
       );
       
     } catch (error) {

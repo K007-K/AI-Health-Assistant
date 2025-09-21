@@ -32,7 +32,7 @@ class OutbreakAlert {
     };
 
     const { data, error } = await supabase
-      .from('outbreak_alerts')
+      .from('disease_outbreak_cache')
       .insert([alertRecord])
       .select()
       .single();
@@ -47,7 +47,7 @@ class OutbreakAlert {
     today.setHours(0, 0, 0, 0);
 
     const { data, error } = await supabase
-      .from('outbreak_alerts')
+      .from('disease_outbreak_cache')
       .select('*')
       .eq('query_type', 'daily_national')
       .eq('scope', 'national')
@@ -67,7 +67,7 @@ class OutbreakAlert {
     today.setHours(0, 0, 0, 0);
 
     const { data, error } = await supabase
-      .from('outbreak_alerts')
+      .from('disease_outbreak_cache')
       .select('*')
       .eq('query_type', 'state_specific')
       .eq('location->state', state)
@@ -90,7 +90,7 @@ class OutbreakAlert {
     });
 
     const { data, error } = await supabase
-      .from('outbreak_alerts')
+      .from('disease_outbreak_cache')
       .update({
         sent_to_users: sentUsers,
         total_recipients: (this.total_recipients || 0) + 1,

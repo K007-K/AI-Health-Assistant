@@ -4,49 +4,14 @@ const { LanguageUtils } = require('../utils/languageUtils');
 
 class GeminiService {
   constructor() {
-    // Multiple API keys for rate limit handling
-    this.apiKeys = [
-      config.gemini.apiKey,
-      'AIzaSyARvtnLIBiwbe18CH9tYLlcp0E4ruX52Ys',
-      'AIzaSyDUb0T2lN5hmNb_lUgvsz5S5ubt8iOLPH0',
-      'AIzaSyDFD0X2EVlWhutR0gDflbKo1qUObWp2v3Y'
-    ].filter(key => key && key.trim() !== '');
-    
-    this.currentKeyIndex = 0;
-    this.genAI = new GoogleGenerativeAI(this.apiKeys[this.currentKeyIndex]);
-    this.model = this.genAI.getGenerativeModel({ 
-      model: "gemini-2.0-flash-exp",
-      generationConfig: {
-        temperature: 0.7,
-        topK: 40,
-        topP: 0.95,
-        maxOutputTokens: 1024,
-      },
-      safetySettings: [
-        {
-          category: "HARM_CATEGORY_HARASSMENT",
-          threshold: "BLOCK_MEDIUM_AND_ABOVE",
-        },
-        {
-          category: "HARM_CATEGORY_HATE_SPEECH", 
-          threshold: "BLOCK_MEDIUM_AND_ABOVE",
-        },
-        {
-          category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-          threshold: "BLOCK_MEDIUM_AND_ABOVE",
-        },
-        {
-          category: "HARM_CATEGORY_DANGEROUS_CONTENT",
-          threshold: "BLOCK_MEDIUM_AND_ABOVE",
-        },
-      ],
-    });
-  }
+    // Get API key from environment variable only
+    this.apiKey = config.gemini.apiKey;
 
-  // Rotate to next API key when rate limited
-  rotateApiKey() {
-    this.currentKeyIndex = (this.currentKeyIndex + 1) % this.apiKeys.length;
-    this.genAI = new GoogleGenerativeAI(this.apiKeys[this.currentKeyIndex]);
+    if (!this.apiKey) {
+      throw new Error('GEMINI_API_KEY environment variable is required');
+    }
+
+    this.genAI = new GoogleGenerativeAI(this.apiKey);
     this.model = this.genAI.getGenerativeModel({
       model: "gemini-2.0-flash-exp",
       generationConfig: {
@@ -61,7 +26,7 @@ class GeminiService {
           threshold: "BLOCK_MEDIUM_AND_ABOVE",
         },
         {
-          category: "HARM_CATEGORY_HATE_SPEECH", 
+          category: "HARM_CATEGORY_HATE_SPEECH",
           threshold: "BLOCK_MEDIUM_AND_ABOVE",
         },
         {
@@ -74,8 +39,9 @@ class GeminiService {
         },
       ],
     });
-    console.log(`🔄 Rotated to API key ${this.currentKeyIndex + 1}/${this.apiKeys.length}`);
   }
+
+  // No API key rotation - using single key only</  // Removed rotateApiKey method
 
   // Get conversation mode specific prompts
   getConversationModePrompt(mode, language, scriptType) {
@@ -353,10 +319,9 @@ CRITICAL MEDICAL RESPONSE REQUIREMENTS:
         
         // Check if it's a rate limit error
         if (error.status === 429 && attempt < maxRetries - 1) {
-          console.log(`🔄 Rate limit hit, rotating API key...`);
-          this.rotateApiKey();
-          // Wait a bit before retrying
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          console.log(`⚠️ Rate limit hit, waiting before retry...`);
+          // Wait before retrying
+          await new Promise(resolve => setTimeout(resolve, 2000));
           continue;
         }
         
@@ -442,10 +407,9 @@ CRITICAL MEDICAL RESPONSE REQUIREMENTS:
         
         // Check if it's a rate limit error
         if (error.status === 429 && attempt < maxRetries - 1) {
-          console.log(`🔄 Rate limit hit, rotating API key...`);
-          this.rotateApiKey();
-          // Wait a bit before retrying
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          console.log(`⚠️ Rate limit hit, waiting before retry...`);
+          // Wait before retrying
+          await new Promise(resolve => setTimeout(resolve, 3000));
           continue;
         }
         
@@ -698,8 +662,7 @@ IMPORTANT: You MUST include ALL 5 sections with their exact emoji headers. Do no
       }
       
       if (error.message.includes('quota') || error.message.includes('429')) {
-        console.log('🔄 Rate limit hit during image analysis, rotating API key...');
-        this.rotateApiKey();
+        console.log('⚠️ Rate limit hit during image analysis');
       }
       
       // Fallback response

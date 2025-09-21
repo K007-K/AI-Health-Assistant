@@ -17,22 +17,22 @@ class SchedulerService {
     console.log('🚀 Initializing Disease Outbreak Scheduler...');
 
     // Daily outbreak fetch and broadcast at 10:00 AM IST
-    this.scheduleDailyOutbreakBroadcast();
+    this.scheduleDailyMorningBroadcast();
+
+    // Daily outbreak fetch and broadcast at 10:00 PM IST
+    this.scheduleDailyEveningBroadcast();
 
     // Cleanup old alerts daily at 2:00 AM IST
     this.scheduleCleanupOldAlerts();
-
-    // TEST ALERT: Schedule for 4:00 PM TODAY (for testing)
-    this.scheduleTestAlert();
 
     this.isInitialized = true;
     console.log('✅ Disease Outbreak Scheduler initialized successfully');
   }
 
-  // Schedule daily outbreak broadcast at 10:00 AM IST
-  scheduleDailyOutbreakBroadcast() {
+  // Schedule daily morning outbreak broadcast at 10:00 AM IST
+  scheduleDailyMorningBroadcast() {
     cron.schedule('0 10 * * *', async () => {
-      console.log('🕙 Starting daily outbreak broadcast at 10:00 AM IST');
+      console.log('🌅 Starting daily morning outbreak broadcast at 10:00 AM IST');
       
       try {
         // Fetch today's national outbreak data
@@ -40,27 +40,61 @@ class SchedulerService {
         
         if (nationalAlert) {
           const alertId = nationalAlert.alert_id || nationalAlert.parsed_diseases?.alertId || nationalAlert.id || 'unknown';
-          console.log(`📢 Broadcasting national alert: ${alertId}`);
+          console.log(`📢 Broadcasting morning national alert: ${alertId}`);
           
-          // Broadcast to all users
+          // Broadcast to all subscribed users
           await broadcastService.broadcastNationalAlert(nationalAlert);
           
-          console.log('✅ Daily outbreak broadcast completed successfully');
+          console.log('✅ Daily morning outbreak broadcast completed successfully');
         } else {
-          console.log('ℹ️ No national outbreak alert to broadcast today');
+          console.log('ℹ️ No national outbreak alert to broadcast this morning');
         }
         
       } catch (error) {
-        console.error('❌ Error in daily outbreak broadcast:', error);
+        console.error('❌ Error in daily morning outbreak broadcast:', error);
         
         // Send error notification to admin (if configured)
-        await this.notifyAdminOfError('Daily Outbreak Broadcast Failed', error);
+        await this.notifyAdminOfError('Daily Morning Outbreak Broadcast Failed', error);
       }
     }, {
       timezone: "Asia/Kolkata"
     });
 
-    console.log('⏰ Daily outbreak broadcast scheduled for 10:00 AM IST');
+    console.log('🌅 Daily morning outbreak broadcast scheduled for 10:00 AM IST');
+  }
+
+  // Schedule daily evening outbreak broadcast at 10:00 PM IST
+  scheduleDailyEveningBroadcast() {
+    cron.schedule('0 22 * * *', async () => {
+      console.log('🌙 Starting daily evening outbreak broadcast at 10:00 PM IST');
+      
+      try {
+        // Fetch fresh evening outbreak data (may have updates from morning)
+        const nationalAlert = await outbreakService.fetchAndBroadcastNationalOutbreaks();
+        
+        if (nationalAlert) {
+          const alertId = nationalAlert.alert_id || nationalAlert.parsed_diseases?.alertId || nationalAlert.id || 'unknown';
+          console.log(`📢 Broadcasting evening national alert: ${alertId}`);
+          
+          // Broadcast to all subscribed users
+          await broadcastService.broadcastNationalAlert(nationalAlert);
+          
+          console.log('✅ Daily evening outbreak broadcast completed successfully');
+        } else {
+          console.log('ℹ️ No national outbreak alert to broadcast this evening');
+        }
+        
+      } catch (error) {
+        console.error('❌ Error in daily evening outbreak broadcast:', error);
+        
+        // Send error notification to admin (if configured)
+        await this.notifyAdminOfError('Daily Evening Outbreak Broadcast Failed', error);
+      }
+    }, {
+      timezone: "Asia/Kolkata"
+    });
+
+    console.log('🌙 Daily evening outbreak broadcast scheduled for 10:00 PM IST');
   }
 
   // Schedule cleanup of old alerts at 2:00 AM IST
@@ -91,81 +125,7 @@ class SchedulerService {
     console.log('🧹 Cleanup job scheduled for 2:00 AM IST');
   }
 
-  // Schedule test alert for 6:28 PM TODAY (for testing purposes)
-  scheduleTestAlert() {
-    cron.schedule('28 18 * * *', async () => {
-      console.log('🧪 TEST ALERT: Starting outbreak broadcast at 6:28 PM IST');
-      
-      try {
-        // Fetch and create national outbreak alert
-        const nationalAlert = await outbreakService.fetchAndBroadcastNationalOutbreaks();
-        
-        if (nationalAlert) {
-          const alertId = nationalAlert.alert_id || nationalAlert.parsed_diseases?.alertId || nationalAlert.id || 'unknown';
-          console.log(`📢 TEST BROADCAST: Broadcasting national alert: ${alertId}`);
-          
-          // Broadcast to all users
-          await broadcastService.broadcastNationalAlert(nationalAlert);
-          console.log('✅ TEST ALERT: Demo alert broadcast completed at 6:28 PM');
-        } else {
-          console.log('ℹ️ TEST ALERT: No national outbreak alert to broadcast at 6:28 PM');
-        }
-        
-      } catch (error) {
-        console.error('❌ Error in 4:00 PM test outbreak broadcast:', error);
-        
-        // Send error notification to admin (if configured)
-        await this.notifyAdminOfError('4:00 PM Test Outbreak Broadcast Failed', error);
-      }
-    }, {
-      timezone: "Asia/Kolkata"
-    });
 
-    console.log('🧪 TEST ALERT: Outbreak broadcast scheduled for 6:28 PM IST TODAY');
-  }
-
-  // Create a test alert for demonstration purposes
-  async createTestAlert() {
-    try {
-      const OutbreakAlert = require('../models/OutbreakAlert');
-      
-      const testAlert = await OutbreakAlert.createAlert({
-        title: 'TEST: Disease Outbreak Alert - System Demo',
-        description: 'This is a test alert to demonstrate the real-time outbreak notification system. The system is working correctly and ready for production use.',
-        disease: 'System Test',
-        severity: 'medium',
-        scope: 'national',
-        location: {
-          country: 'India'
-        },
-        affectedAreas: [{
-          state: 'All States',
-          districts: ['Testing Districts'],
-          cases: 0
-        }],
-        preventionTips: [
-          'This is a system test - no action required',
-          'The outbreak alert system is functioning correctly',
-          'Real alerts will contain actual health information',
-          'Contact 108 for any medical emergencies'
-        ],
-        symptoms: [
-          'This is a test alert',
-          'No actual symptoms to report',
-          'System functioning normally'
-        ],
-        queryType: 'daily_national',
-        priority: 3
-      });
-
-      console.log(`✅ Created test alert for demonstration: ${testAlert.alertId}`);
-      return testAlert;
-      
-    } catch (error) {
-      console.error('❌ Error creating test alert:', error);
-      return null;
-    }
-  }
 
   // Manual trigger for testing
   async triggerManualBroadcast() {
@@ -199,14 +159,13 @@ class SchedulerService {
       timezone: 'Asia/Kolkata',
       currentTime: currentTime,
       jobs: {
-        dailyBroadcast: {
+        morningBroadcast: {
           schedule: '0 10 * * *',
-          description: 'Daily outbreak broadcast at 10:00 AM IST'
+          description: 'Daily morning outbreak broadcast at 10:00 AM IST'
         },
-        testAlert: {
-          schedule: '28 18 * * *',
-          description: 'TEST ALERT: Outbreak broadcast at 6:28 PM IST TODAY',
-          status: 'ACTIVE - Will trigger in 3 minutes!'
+        eveningBroadcast: {
+          schedule: '0 22 * * *',
+          description: 'Daily evening outbreak broadcast at 10:00 PM IST'
         },
         cleanup: {
           schedule: '0 2 * * *',

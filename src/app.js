@@ -124,42 +124,6 @@ app.get('/api/outbreak-status', (req, res) => {
   }
 });
 
-// Immediate test alert trigger (for instant testing)
-app.post('/api/trigger-test-alert-now', async (req, res) => {
-  try {
-    console.log('🧪 IMMEDIATE TEST: Triggering test alert broadcast NOW');
-    
-    // Create and broadcast test alert immediately
-    const testAlert = await schedulerService.createTestAlert();
-    if (testAlert) {
-      const broadcastService = require('./src/services/broadcastService');
-      await broadcastService.broadcastNationalAlert(testAlert);
-      
-      res.json({
-        success: true,
-        message: 'Test alert broadcast completed immediately',
-        alert: {
-          alertId: testAlert.alertId,
-          title: testAlert.title,
-          disease: testAlert.disease,
-          severity: testAlert.severity,
-          timestamp: new Date().toISOString()
-        }
-      });
-    } else {
-      res.json({
-        success: false,
-        message: 'Failed to create test alert'
-      });
-    }
-  } catch (error) {
-    console.error('❌ Error in immediate test alert:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
-    });
-  }
-});
 
 // Error handling middleware
 app.use((error, req, res, next) => {

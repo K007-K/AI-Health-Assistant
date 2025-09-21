@@ -963,9 +963,33 @@ ${language} భాషలో${scriptPreference === 'transliteration' ? ' ఆం�
           return;
         } else if (message === 'nutrition_hygiene') {
           category = 'nutrition and hygiene';
+          // Send initial nutrition guidance and set session for continuous nutrition conversation
+          const nutritionIntroTexts = {
+            en: '🥗 *Nutrition & Hygiene*\n\nI can help you with:\n• Food choices and balanced diet\n• Cooking and food safety\n• Personal hygiene practices\n• Water and sanitation\n\nWhat specific nutrition or hygiene question do you have?',
+            hi: '🥗 *पोषण और स्वच्छता*\n\nमैं आपकी इनमें मदद कर सकता हूं:\n• भोजन विकल्प और संतुलित आहार\n• खाना पकाना और खाद्य सुरक्षा\n• व्यक्तिगत स्वच्छता प्रथाएं\n• पानी और स्वच्छता\n\nआपका कोई विशिष्ट पोषण या स्वच्छता प्रश्न क्या है?',
+            te: '🥗 *పోషణ మరియు పరిశుభ్రత*\n\nనేను మీకు వీటిలో సహాయం చేయగలను:\n• ఆహార ఎంపికలు మరియు సమతుల్య ఆహారం\n• వంట మరియు ఆహార భద్రత\n• వ్యక్తిగత పరిశుభ్రత పద్ధతులు\n• నీరు మరియు పారిశుధ్యం\n\nమీకు ఏదైనా నిర్దిష్ట పోషణ లేదా పరిశుభ్రత ప్రశ్న ఉందా?'
+          };
+          
+          await this.whatsappService.sendMessage(
+            user.phone_number, 
+            nutritionIntroTexts[user.preferred_language] || nutritionIntroTexts.en
+          );
+          
+          // Set session to nutrition conversation mode
+          await this.userService.updateUserSession(user.id, 'preventive_tips', { 
+            selectedCategory: 'nutrition_hygiene',
+            inNutritionConversation: true 
+          });
+          return;
         } else if (message === 'exercise_lifestyle') {
           category = 'exercise and lifestyle';
         } 
+        // Check if user is in nutrition conversation mode
+        else if (sessionData.inNutritionConversation || sessionData.selectedCategory === 'nutrition_hygiene') {
+          // User is asking a follow-up nutrition question
+          await this.handleNutritionQuestion(user, message);
+          return;
+        }
         // Check for text-based selections
         else if (message.includes('🦠 Learn about Diseases') || message.toLowerCase().includes('learn about diseases')) {
           // Same as learn_diseases button
@@ -1010,6 +1034,135 @@ ${language} భాషలో${scriptPreference === 'transliteration' ? ' ఆం�
       }
     } catch (error) {
       console.error('Error in handlePreventiveTips:', error);
+      throw error;
+    }
+  }
+
+  // Handle nutrition-specific questions with proper categorization and redirects
+  async handleNutritionQuestion(user, message) {
+    try {
+      const lowerMessage = message.toLowerCase();
+      
+      // Define nutrition-related keywords
+      const nutritionKeywords = [
+        'eat', 'eating', 'food', 'diet', 'nutrition', 'meal', 'breakfast', 'lunch', 'dinner',
+        'chicken', 'fish', 'meat', 'vegetable', 'fruit', 'rice', 'wheat', 'dal', 'milk',
+        'protein', 'vitamin', 'calcium', 'iron', 'carbohydrate', 'fat', 'sugar', 'salt',
+        'cooking', 'recipe', 'ingredient', 'spice', 'oil', 'ghee', 'butter', 'cheese',
+        'water', 'drink', 'juice', 'tea', 'coffee', 'alcohol', 'beverage',
+        'weight', 'gain', 'lose', 'healthy', 'balanced', 'portion', 'calorie',
+        'hygiene', 'clean', 'wash', 'sanitize', 'soap', 'hand', 'kitchen', 'utensil'
+      ];
+      
+      // Define non-nutrition keywords that should be redirected
+      const symptomKeywords = [
+        'pain', 'ache', 'hurt', 'fever', 'cough', 'cold', 'headache', 'stomach ache',
+        'nausea', 'vomit', 'diarrhea', 'constipation', 'dizzy', 'tired', 'weak',
+        'rash', 'itch', 'swelling', 'bleeding', 'breathe', 'chest', 'heart'
+      ];
+      
+      const exerciseKeywords = [
+        'exercise', 'workout', 'gym', 'running', 'walking', 'yoga', 'fitness',
+        'muscle', 'strength', 'cardio', 'training', 'sport', 'activity'
+      ];
+      
+      const diseaseKeywords = [
+        'diabetes', 'cancer', 'heart disease', 'hypertension', 'malaria', 'tuberculosis',
+        'covid', 'dengue', 'typhoid', 'hepatitis', 'asthma', 'arthritis'
+      ];
+      
+      // Check if it's a symptom-related question
+      if (symptomKeywords.some(keyword => lowerMessage.includes(keyword))) {
+        const redirectTexts = {
+          en: '🩺 Your question seems to be about symptoms or health issues. For symptom analysis and health concerns, please use the *Check Symptoms* feature.\n\n🥗 For nutrition and hygiene questions, ask about food choices, cooking tips, or cleanliness practices.',
+          hi: '🩺 आपका प्रश्न लक्षणों या स्वास्थ्य समस्याओं के बारे में लगता है। लक्षण विश्लेषण और स्वास्थ्य चिंताओं के लिए, कृपया *लक्षण जांचें* सुविधा का उपयोग करें।\n\n🥗 पोषण और स्वच्छता प्रश्नों के लिए, भोजन विकल्प, खाना पकाने की युक्तियां, या सफाई प्रथाओं के बारे में पूछें।',
+          te: '🩺 మీ ప్రశ్న లక్షణాలు లేదా ఆరోగ్య సమస్యల గురించి అనిపిస్తుంది. లక్షణ విశ్లేషణ మరియు ఆరోగ్య ఆందోళనల కోసం, దయచేసి *లక్షణాలను తనిఖీ చేయండి* ఫీచర్‌ను ఉపయోగించండి।\n\n🥗 పోషణ మరియు పరిశుభ్రత ప్రశ్నల కోసం, ఆహార ఎంపికలు, వంట చిట్కాలు లేదా పరిశుభ్రత పద్ధతుల గురించి అడగండి।'
+        };
+        
+        await this.whatsappService.sendMessage(
+          user.phone_number,
+          redirectTexts[user.preferred_language] || redirectTexts.en
+        );
+        return;
+      }
+      
+      // Check if it's an exercise-related question
+      if (exerciseKeywords.some(keyword => lowerMessage.includes(keyword))) {
+        const redirectTexts = {
+          en: '🏃 Your question is about exercise and fitness. For detailed exercise guidance, please use the *Exercise & Lifestyle* option in Health Tips.\n\n🥗 For nutrition questions, ask about food choices, cooking methods, or dietary advice.',
+          hi: '🏃 आपका प्रश्न व्यायाम और फिटनेस के बारे में है। विस्तृत व्यायाम मार्गदर्शन के लिए, कृपया स्वास्थ्य टिप्स में *व्यायाम और जीवनशैली* विकल्प का उपयोग करें।\n\n🥗 पोषण प्रश्नों के लिए, भोजन विकल्प, खाना पकाने के तरीके, या आहार सलाह के बारे में पूछें।',
+          te: '🏃 మీ ప్రశ్న వ్యాయామం మరియు ఫిట్‌నెస్ గురించి. వివరణాత్మక వ్యాయామ మార్గదర్శనం కోసం, దయచేసి హెల్త్ టిప్స్‌లో *వ్యాయామం & జీవనశైలి* ఎంపికను ఉపయోగించండి।\n\n🥗 పోషణ ప్రశ్నల కోసం, ఆహార ఎంపికలు, వంట పద్ధతులు లేదా ఆహార సలహా గురించి అడగండి।'
+        };
+        
+        await this.whatsappService.sendMessage(
+          user.phone_number,
+          redirectTexts[user.preferred_language] || redirectTexts.en
+        );
+        return;
+      }
+      
+      // Check if it's a disease-related question
+      if (diseaseKeywords.some(keyword => lowerMessage.includes(keyword))) {
+        const redirectTexts = {
+          en: '🦠 Your question is about diseases. For detailed disease information, please use the *Learn about Diseases* option in Health Tips.\n\n🥗 For nutrition questions, ask about food choices, healthy eating, or food safety.',
+          hi: '🦠 आपका प्रश्न बीमारियों के बारे में है। विस्तृत बीमारी जानकारी के लिए, कृपया स्वास्थ्य टिप्स में *बीमारियों के बारे में जानें* विकल्प का उपयोग करें।\n\n🥗 पोषण प्रश्नों के लिए, भोजन विकल्प, स्वस्थ भोजन, या खाद्य सुरक्षा के बारे में पूछें।',
+          te: '🦠 మీ ప్రశ్న వ్యాధుల గురించి. వివరణాత్మక వ్యాధి సమాచారం కోసం, దయచేసి హెల్త్ టిప్స్‌లో *వ్యాధుల గురించి తెలుసుకోండి* ఎంపికను ఉపయోగించండి।\n\n🥗 పోషణ ప్రశ్నల కోసం, ఆహార ఎంపికలు, ఆరోగ్యకరమైన ఆహారం లేదా ఆహార భద్రత గురించి అడగండి।'
+        };
+        
+        await this.whatsappService.sendMessage(
+          user.phone_number,
+          redirectTexts[user.preferred_language] || redirectTexts.en
+        );
+        return;
+      }
+      
+      // If it's a nutrition-related question, provide specialized nutrition response
+      if (nutritionKeywords.some(keyword => lowerMessage.includes(keyword))) {
+        console.log('🥗 Handling nutrition question:', message);
+        
+        const context = await this.conversationService.getRecentContext(user.id);
+        const nutritionResponse = await this.geminiService.generateResponse(
+          message,
+          user.preferred_language,
+          user.script_preference,
+          context,
+          user.accessibility_mode,
+          3,
+          'nutrition_hygiene'
+        );
+        
+        await this.sendMessageWithTypingAndFeedback(user.phone_number, nutritionResponse);
+        
+        await this.conversationService.saveBotMessage(
+          user.id,
+          nutritionResponse,
+          'nutrition_response',
+          user.preferred_language
+        );
+        
+        // Keep user in nutrition conversation mode
+        await this.userService.updateUserSession(user.id, 'preventive_tips', { 
+          selectedCategory: 'nutrition_hygiene',
+          inNutritionConversation: true 
+        });
+        
+        return;
+      }
+      
+      // For general/unclear questions, provide guidance
+      const guidanceTexts = {
+        en: '🥗 I specialize in nutrition and hygiene guidance. Please ask about:\n\n• Food choices (e.g., "Is chicken good for health?")\n• Cooking tips and food safety\n• Personal hygiene practices\n• Water and sanitation\n• Balanced diet and meal planning\n\nWhat specific nutrition or hygiene topic would you like to know about?',
+        hi: '🥗 मैं पोषण और स्वच्छता मार्गदर्शन में विशेषज्ञ हूं। कृपया इनके बारे में पूछें:\n\n• भोजन विकल्प (जैसे, "क्या चिकन स्वास्थ्य के लिए अच्छा है?")\n• खाना पकाने की युक्तियां और खाद्य सुरक्षा\n• व्यक्तिगत स्वच्छता प्रथाएं\n• पानी और स्वच्छता\n• संतुलित आहार और भोजन योजना\n\nआप किस विशिष्ट पोषण या स्वच्छता विषय के बारे में जानना चाहेंगे?',
+        te: '🥗 నేను పోషణ మరియు పరిశుభ్రత మార్గదర్శనంలో నిపుణుడిని. దయచేసి వీటి గురించి అడగండి:\n\n• ఆహార ఎంపికలు (ఉదా., "చికెన్ ఆరోగ్యానికి మంచిదా?")\n• వంట చిట్కాలు మరియు ఆహార భద్రత\n• వ్యక్తిగత పరిశుభ్రత పద్ధతులు\n• నీరు మరియు పారిశుధ్యం\n• సమతుల్య ఆహారం మరియు భోజన ప్రణాళిక\n\nమీరు ఏ నిర్దిష్ట పోషణ లేదా పరిశుభ్రత అంశం గురించి తెలుసుకోవాలనుకుంటున్నారు?'
+      };
+      
+      await this.whatsappService.sendMessage(
+        user.phone_number,
+        guidanceTexts[user.preferred_language] || guidanceTexts.en
+      );
+      
+    } catch (error) {
+      console.error('Error in handleNutritionQuestion:', error);
       throw error;
     }
   }

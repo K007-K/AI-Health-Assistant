@@ -621,11 +621,19 @@ class MessageController {
       
       await this.userService.updateUserSession(user.id, 'ai_chat');
 
-      // If first AI message, send helpful instructions
-      if (isFirstAIMessage) {
+      // If first AI message (button click), just send instructions and return
+      if (isFirstAIMessage && (message === 'chat_ai' || message === 'ai_chat')) {
         const instructionText = LanguageUtils.getText('ai_chat_instructions', user.preferred_language, 'en', user.script_preference);
-        await this.whatsappService.sendMessage(user.phone_number, instructionText);
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Brief pause
+        await this.sendMessageWithTypingAndFeedback(user.phone_number, instructionText, false); // No feedback buttons for instructions
+        
+        await this.conversationService.saveBotMessage(
+          user.id,
+          instructionText,
+          'ai_chat_instructions',
+          user.preferred_language
+        );
+        
+        return; // Don't generate AI response for initial button click
       }
 
       // Get conversation context
@@ -643,7 +651,7 @@ class MessageController {
         );
       } else {
         // Generate AI response with better prompts
-        console.log('🔍 DEBUG handleAIChat - User script_preference:', user.script_preference);
+        console.log('🔍 DEBUG handleAIChat - User message:', message);
         console.log('🔍 DEBUG handleAIChat - User preferred_language:', user.preferred_language);
         
         aiResponse = await this.geminiService.generateResponse(

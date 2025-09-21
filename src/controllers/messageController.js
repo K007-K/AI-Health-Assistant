@@ -34,13 +34,8 @@ class MessageController {
       // Stop typing indicator
       await this.whatsappService.stopTypingIndicator(phoneNumber);
       
-      if (showFeedback) {
-        // Send message with inline feedback buttons
-        return await this.whatsappService.sendMessageWithFeedback(phoneNumber, message);
-      } else {
-        // Send regular message without feedback
-        return await this.whatsappService.sendMessage(phoneNumber, message);
-      }
+      // Always send regular message without feedback buttons (as requested by user)
+      return await this.whatsappService.sendMessage(phoneNumber, message);
     } catch (error) {
       console.error('Error sending message with typing and feedback:', error);
       // Fallback to regular message
@@ -173,7 +168,7 @@ class MessageController {
         return;
       }
 
-      // Check if user is in AI chat mode - handle all messages as AI chat
+      // Check if user is in AI chat mode - but allow menu navigation
       if (currentState === 'ai_chat' && !content.toLowerCase().includes('menu') && !content.toLowerCase().includes('back')) {
         // Allow greetings to reset to main menu
         if (intent === 'greeting') {
@@ -182,8 +177,12 @@ class MessageController {
           return;
         }
         
-        // Skip if intent is already ai_chat to avoid duplicate handling
-        if (intent !== 'ai_chat' && intent !== 'ai_chat_message') {
+        // Allow menu navigation even from AI chat mode
+        const menuIntents = ['preventive_tips', 'disease_alerts', 'symptom_check', 'view_active_diseases', 'turn_on_alerts', 'turn_off_alerts'];
+        if (menuIntents.includes(intent)) {
+          console.log(`🔄 Menu navigation detected in AI chat - switching to ${intent}`);
+          // Continue to normal intent handling below
+        } else if (intent !== 'ai_chat' && intent !== 'ai_chat_message') {
           console.log('🤖 User in AI chat mode - routing to handleAIChat');
           await this.handleAIChat(user, content, mediaData);
           return;
@@ -638,7 +637,7 @@ class MessageController {
       // If first AI message (button click), just send instructions and return
       if (isFirstAIMessage && (message === 'chat_ai' || message === 'ai_chat')) {
         const instructionText = LanguageUtils.getText('ai_chat_instructions', user.preferred_language, 'en', user.script_preference);
-        await this.sendMessageWithTypingAndFeedback(user.phone_number, instructionText, false); // No feedback buttons for instructions
+        await this.sendMessageWithTypingAndFeedback(user.phone_number, instructionText);
         
         await this.conversationService.saveBotMessage(
           user.id,
@@ -681,8 +680,8 @@ class MessageController {
         console.log('🔍 DEBUG handleAIChat - AI response preview:', aiResponse.substring(0, 50) + '...');
       }
 
-      // Send response with typing indicator and feedback buttons
-      await this.sendMessageWithTypingAndFeedback(user.phone_number, aiResponse, true);
+      // Send response with typing indicator (no feedback buttons)
+      await this.sendMessageWithTypingAndFeedback(user.phone_number, aiResponse);
 
       // Save bot response
       await this.conversationService.saveBotMessage(
@@ -733,7 +732,7 @@ class MessageController {
               'symptom_check'
             );
         
-        await this.sendMessageWithTypingAndFeedback(user.phone_number, analysis, true);
+        await this.sendMessageWithTypingAndFeedback(user.phone_number, analysis);
         
         await this.conversationService.saveBotMessage(
           user.id,
@@ -865,7 +864,7 @@ class MessageController {
         console.log('🌱 Generating preventive tips for:', category, specificTopic ? `(${specificTopic})` : '');
         const tips = await this.geminiService.getPreventiveTips(category, userProfile, specificTopic);
         
-        await this.sendMessageWithTypingAndFeedback(user.phone_number, tips, true);
+        await this.sendMessageWithTypingAndFeedback(user.phone_number, tips);
         
         await this.conversationService.saveBotMessage(
           user.id,
@@ -1146,7 +1145,7 @@ Type your message below:`;
         });
       }
 
-      await this.sendMessageWithTypingAndFeedback(user.phone_number, response, true);
+      await this.sendMessageWithTypingAndFeedback(user.phone_number, response);
       
       await this.conversationService.saveBotMessage(
         user.id,
@@ -1174,7 +1173,7 @@ Type your message below:`;
         user.accessibility_mode
       );
 
-      await this.sendMessageWithTypingAndFeedback(user.phone_number, aiResponse, true);
+      await this.sendMessageWithTypingAndFeedback(user.phone_number, aiResponse);
       
       await this.conversationService.saveBotMessage(
         user.id,

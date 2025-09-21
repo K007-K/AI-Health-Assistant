@@ -90,10 +90,10 @@ class SchedulerService {
     console.log('🧹 Cleanup job scheduled for 2:00 AM IST');
   }
 
-  // Schedule test alert for 4:50 PM TODAY (for testing purposes)
+  // Schedule test alert for 4:55 PM TODAY (for testing purposes)
   scheduleTestAlert() {
-    cron.schedule('50 16 * * *', async () => {
-      console.log('🧪 TEST ALERT: Starting outbreak broadcast at 4:50 PM IST');
+    cron.schedule('55 16 * * *', async () => {
+      console.log('🧪 TEST ALERT: Starting outbreak broadcast at 4:55 PM IST');
       
       try {
         // Fetch and create national outbreak alert
@@ -105,29 +105,29 @@ class SchedulerService {
           // Broadcast to all users
           await broadcastService.broadcastNationalAlert(nationalAlert);
           
-          console.log('✅ TEST ALERT: Outbreak broadcast completed successfully at 4:50 PM');
+          console.log('✅ TEST ALERT: Outbreak broadcast completed successfully at 4:55 PM');
         } else {
-          console.log('ℹ️ TEST ALERT: No national outbreak alert to broadcast at 4:50 PM');
+          console.log('ℹ️ TEST ALERT: No national outbreak alert to broadcast at 4:55 PM');
           
           // Create a test alert for demonstration
           const testAlert = await this.createTestAlert();
           if (testAlert) {
             await broadcastService.broadcastNationalAlert(testAlert);
-            console.log('✅ TEST ALERT: Demo alert broadcast completed at 4:50 PM');
+            console.log('✅ TEST ALERT: Demo alert broadcast completed at 4:55 PM');
           }
         }
         
       } catch (error) {
-        console.error('❌ Error in 4:50 PM test outbreak broadcast:', error);
+        console.error('❌ Error in 4:55 PM test outbreak broadcast:', error);
         
         // Send error notification to admin (if configured)
-        await this.notifyAdminOfError('4:50 PM Test Outbreak Broadcast Failed', error);
+        await this.notifyAdminOfError('4:55 PM Test Outbreak Broadcast Failed', error);
       }
     }, {
       timezone: "Asia/Kolkata"
     });
 
-    console.log('🧪 TEST ALERT: Outbreak broadcast scheduled for 4:50 PM IST TODAY');
+    console.log('🧪 TEST ALERT: Outbreak broadcast scheduled for 4:55 PM IST TODAY');
   }
 
   // Create a test alert for demonstration purposes
@@ -210,9 +210,9 @@ class SchedulerService {
           description: 'Daily outbreak broadcast at 10:00 AM IST'
         },
         testAlert: {
-          schedule: '50 16 * * *',
-          description: 'TEST ALERT: Outbreak broadcast at 4:50 PM IST TODAY',
-          status: 'ACTIVE - Will trigger in 16 minutes!'
+          schedule: '55 16 * * *',
+          description: 'TEST ALERT: Outbreak broadcast at 4:55 PM IST TODAY',
+          status: 'ACTIVE - Will trigger in 6 minutes!'
         },
         cleanup: {
           schedule: '0 2 * * *',

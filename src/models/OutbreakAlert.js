@@ -10,23 +10,26 @@ class OutbreakAlert {
   static async createAlert(alertData) {
     const alertId = `ALERT_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
+    // Map to actual disease_outbreak_cache schema
     const alertRecord = {
-      alert_id: alertId,
-      title: alertData.title,
-      description: alertData.description,
-      disease: alertData.disease,
-      severity: alertData.severity,
-      scope: alertData.scope,
-      location: alertData.location,
-      affected_areas: alertData.affectedAreas || [],
-      prevention_tips: alertData.preventionTips || [],
-      symptoms: alertData.symptoms || [],
-      query_type: alertData.queryType,
-      priority: alertData.priority || 1,
-      is_active: true,
-      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
-      sent_to_users: [],
-      total_recipients: 0,
+      cache_type: alertData.scope === 'national' ? 'nationwide' : 'state',
+      state_name: alertData.location?.state || null,
+      ai_response_text: `${alertData.title}\n\n${alertData.description}`,
+      parsed_diseases: {
+        alertId: alertId,
+        title: alertData.title,
+        description: alertData.description,
+        disease: alertData.disease,
+        severity: alertData.severity,
+        scope: alertData.scope,
+        location: alertData.location,
+        affectedAreas: alertData.affectedAreas || [],
+        preventionTips: alertData.preventionTips || [],
+        symptoms: alertData.symptoms || [],
+        priority: alertData.priority || 1,
+        queryType: alertData.queryType
+      },
+      query_date: new Date().toISOString().split('T')[0], // YYYY-MM-DD format
       created_at: new Date(),
       updated_at: new Date()
     };
@@ -38,21 +41,22 @@ class OutbreakAlert {
       .single();
 
     if (error) throw error;
-    return new OutbreakAlert(data);
+    
+    // Return with alertId from parsed_diseases
+    const result = new OutbreakAlert(data);
+    result.alert_id = alertId;
+    return result;
   }
 
   // Get today's national alert
   static async getTodaysNationalAlert() {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
 
     const { data, error } = await supabase
       .from('disease_outbreak_cache')
       .select('*')
-      .eq('query_type', 'daily_national')
-      .eq('scope', 'national')
-      .eq('is_active', true)
-      .gte('created_at', today.toISOString())
+      .eq('cache_type', 'nationwide')
+      .eq('query_date', today)
       .order('created_at', { ascending: false })
       .limit(1)
       .single();
@@ -63,16 +67,14 @@ class OutbreakAlert {
 
   // Get state alert
   static async getStateAlert(state) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
 
     const { data, error } = await supabase
       .from('disease_outbreak_cache')
       .select('*')
-      .eq('query_type', 'state_specific')
-      .eq('location->state', state)
-      .eq('is_active', true)
-      .gte('created_at', today.toISOString())
+      .eq('cache_type', 'state')
+      .eq('state_name', state)
+      .eq('query_date', today)
       .order('created_at', { ascending: false })
       .limit(1)
       .single();
@@ -83,20 +85,23 @@ class OutbreakAlert {
 
   // Mark as sent to user
   async markAsSent(phoneNumber) {
-    const sentUsers = this.sent_to_users || [];
-    sentUsers.push({
-      phoneNumber: phoneNumber,
-      sentAt: new Date()
-    });
+    // Update the parsed_diseases JSON with sent user info
+    const updatedParsedDiseases = {
+      ...this.parsed_diseases,
+      sentUsers: [...(this.parsed_diseases?.sentUsers || []), {
+        phoneNumber: phoneNumber,
+        sentAt: new Date()
+      }],
+      totalRecipients: (this.parsed_diseases?.totalRecipients || 0) + 1
+    };
 
     const { data, error } = await supabase
       .from('disease_outbreak_cache')
       .update({
-        sent_to_users: sentUsers,
-        total_recipients: (this.total_recipients || 0) + 1,
+        parsed_diseases: updatedParsedDiseases,
         updated_at: new Date()
       })
-      .eq('alert_id', this.alert_id)
+      .eq('id', this.id)
       .select()
       .single();
 
@@ -105,13 +110,17 @@ class OutbreakAlert {
     return this;
   }
 
-  // Check if expired
+  // Check if expired (using query_date)
   isExpired() {
-    return new Date() > new Date(this.expires_at);
+    const today = new Date().toISOString().split('T')[0];
+    return this.query_date < today;
   }
 
   // Get formatted alert for WhatsApp
   getFormattedAlert(language = 'en') {
+    // Get data from parsed_diseases JSON or fallback to direct properties
+    const alertData = this.parsed_diseases || this;
+    
     const severityEmojis = {
       low: '🟡',
       medium: '🟠', 
@@ -121,47 +130,57 @@ class OutbreakAlert {
 
     const scopeEmojis = {
       national: '🇮🇳',
+      nationwide: '🇮🇳',
       state: '🏛️',
       district: '🏘️'
     };
 
+    const scope = alertData.scope || this.cache_type;
+    const severity = alertData.severity || 'medium';
+    const title = alertData.title || 'Disease Outbreak Alert';
+    const description = alertData.description || this.ai_response_text;
+    const disease = alertData.disease || 'Various';
+    const symptoms = alertData.symptoms || [];
+    const preventionTips = alertData.preventionTips || [];
+    const location = alertData.location || { state: this.state_name };
+
     return {
-      en: `${severityEmojis[this.severity]} *${this.title}*
+      en: `${severityEmojis[severity]} *${title}*
 
-${scopeEmojis[this.scope]} *Scope:* ${this.scope.charAt(0).toUpperCase() + this.scope.slice(1)}
-${this.location && this.location.state ? `📍 *Location:* ${this.location.state}` : ''}
+${scopeEmojis[scope]} *Scope:* ${scope === 'nationwide' ? 'National' : scope.charAt(0).toUpperCase() + scope.slice(1)}
+${location && location.state ? `📍 *Location:* ${location.state}` : ''}
 
-*🦠 Disease:* ${this.disease}
+*🦠 Disease:* ${disease}
 
 *📋 Description:*
-_${this.description}_
+_${description}_
 
-${this.symptoms && this.symptoms.length > 0 ? `*🩺 Symptoms to Watch:*
-${this.symptoms.map(s => `• ${s}`).join('\n')}` : ''}
+${symptoms && symptoms.length > 0 ? `*🩺 Symptoms to Watch:*
+${symptoms.map(s => `• ${s}`).join('\n')}` : ''}
 
-${this.prevention_tips && this.prevention_tips.length > 0 ? `*🛡️ Prevention Tips:*
-${this.prevention_tips.map(tip => `• ${tip}`).join('\n')}` : ''}
+${preventionTips && preventionTips.length > 0 ? `*🛡️ Prevention Tips:*
+${preventionTips.map(tip => `• ${tip}`).join('\n')}` : ''}
 
 *📞 Emergency Contact:* 108
 *🕐 Last Updated:* ${new Date(this.updated_at).toLocaleDateString()}
 
 _Stay safe and follow health guidelines. For medical emergencies, contact your nearest healthcare facility._`,
 
-      hi: `${severityEmojis[this.severity]} *${this.title}*
+      hi: `${severityEmojis[severity]} *${title}*
 
-${scopeEmojis[this.scope]} *क्षेत्र:* ${this.scope === 'national' ? 'राष्ट्रीय' : this.scope === 'state' ? 'राज्य' : 'जिला'}
-${this.location && this.location.state ? `📍 *स्थान:* ${this.location.state}` : ''}
+${scopeEmojis[scope]} *क्षेत्र:* ${scope === 'nationwide' ? 'राष्ट्रीय' : scope === 'state' ? 'राज्य' : 'जिला'}
+${location && location.state ? `📍 *स्थान:* ${location.state}` : ''}
 
-*🦠 बीमारी:* ${this.disease}
+*🦠 बीमारी:* ${disease}
 
 *📋 विवरण:*
-_${this.description}_
+_${description}_
 
-${this.symptoms && this.symptoms.length > 0 ? `*🩺 लक्षण:*
-${this.symptoms.map(s => `• ${s}`).join('\n')}` : ''}
+${symptoms && symptoms.length > 0 ? `*🩺 लक्षण:*
+${symptoms.map(s => `• ${s}`).join('\n')}` : ''}
 
-${this.prevention_tips && this.prevention_tips.length > 0 ? `*🛡️ बचाव के तरीके:*
-${this.prevention_tips.map(tip => `• ${tip}`).join('\n')}` : ''}
+${preventionTips && preventionTips.length > 0 ? `*🛡️ बचाव के तरीके:*
+${preventionTips.map(tip => `• ${tip}`).join('\n')}` : ''}
 
 *📞 आपातकालीन संपर्क:* 108
 *🕐 अंतिम अपडेट:* ${new Date(this.updated_at).toLocaleDateString()}

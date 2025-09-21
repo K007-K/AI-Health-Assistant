@@ -72,10 +72,10 @@ Response Format (MANDATORY):
 • Use bullet points with • symbol
 • Keep each point short (1-2 sentences)
 • FORMATTING RULES:
-  - Use backticks for medical terms, conditions, and key information
-  - Use *bold* for headings, section titles, and sub-headings
+  - Use *bold* for headings, section titles, and ALL sub-headings (like "Symptoms:", "Treatment:", "Prevention:", etc.)
   - Use _italics_ for paragraphs and explanatory text
   - Use underscores for emphasis within sentences
+  - NO monospace/backticks - use regular text for medical terms and conditions
   - Use bullet points for lists
 • End with medical disclaimer
 
@@ -248,10 +248,10 @@ RESPONSE FORMAT FOR NUTRITION/HYGIENE QUESTIONS:
 • Include "why" it's important for health
 • Mention affordable, locally available options
 • FORMATTING RULES:
-  - Use backticks for food names, measurements, and key terms
-  - Use *bold* for headings, section titles, and sub-headings
+  - Use *bold* for headings, section titles, and ALL sub-headings (like "Nutritional Benefits:", "Preparation Tips:", etc.)
   - Use _italics_ for paragraphs and explanatory text
   - Use underscores for emphasis within sentences
+  - NO monospace/backticks - use regular text for food names and measurements
   - Use bullet points for lists
 • End with: "This is general health information. For medical conditions, consult a doctor."
 
@@ -316,10 +316,10 @@ RESPONSE FORMAT FOR EXERCISE/LIFESTYLE QUESTIONS:
 • Include safety tips and precautions
 • Mention modifications for different fitness levels
 • FORMATTING RULES:
-  - Use backticks for exercise names, steps, and key terms
-  - Use *bold* for headings, section titles, and sub-headings
+  - Use *bold* for headings, section titles, and ALL sub-headings (like "Consistent Practice:", "Mindful Movement:", etc.)
   - Use _italics_ for paragraphs and explanatory text
   - Use underscores for emphasis within sentences
+  - NO monospace/backticks - use regular text for exercise names and terms
   - Use bullet points for lists
 • End with: "This is general health information. For medical conditions, consult a doctor."
 

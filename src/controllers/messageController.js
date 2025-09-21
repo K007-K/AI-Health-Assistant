@@ -838,10 +838,10 @@ Instructions:
 • List red flag symptoms in bullet points
 
 FORMATTING RULES:
-• Use backticks for medical terms and conditions
-• Use *bold* for headings, section titles, and sub-headings
+• Use *bold* for headings, section titles, and ALL sub-headings (like "Common Causes:", "Risk Factors:", etc.)
 • Use _italics_ for paragraphs and explanatory text
 • Use underscores for emphasis within sentences
+• NO monospace/backticks - use regular text for medical terms and conditions
 • Use bullet points for lists
 
 4. Always end with: "⚠️ This is not a diagnosis. Please visit a doctor if symptoms persist or worsen."

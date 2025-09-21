@@ -839,8 +839,9 @@ Instructions:
 
 FORMATTING RULES:
 • Use backticks for medical terms and conditions
-• Use *bold* for headings and section titles
-• Use underscores for emphasis within text
+• Use *bold* for headings, section titles, and sub-headings
+• Use _italics_ for paragraphs and explanatory text
+• Use underscores for emphasis within sentences
 • Use bullet points for lists
 
 4. Always end with: "⚠️ This is not a diagnosis. Please visit a doctor if symptoms persist or worsen."

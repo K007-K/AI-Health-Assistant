@@ -146,6 +146,10 @@ class AIDiseaseMonitorService {
             disease.cases = trimmedLine.replace('CASES:', '').trim();
           }
           
+          if (trimmedLine.startsWith('SEVERITY:')) {
+            disease.severity = trimmedLine.replace('SEVERITY:', '').trim();
+          }
+          
           if (trimmedLine.startsWith('SYMPTOMS:')) {
             disease.symptoms = trimmedLine.replace('SYMPTOMS:', '').trim();
           }
@@ -243,40 +247,45 @@ class AIDiseaseMonitorService {
     
     try {
       const response = await this.geminiService.generateResponseWithGrounding(
-        `Search for current disease outbreaks specifically in ${stateName} state, India from recent news and health reports. 
+        `Search for current disease outbreaks specifically in ${stateName} state, India from recent news and health reports.
         
-        Provide information in this EXACT format:
+        Return in this EXACT format:
         
-        DISEASE 1: [Disease Name]
-        LOCATION: [Specific districts/cities in ${stateName}]
-        CASES: [Number if available, or "Cases reported"]
-        SYMPTOMS: [Main symptoms]
-        PREVENTION: [Key prevention measure]
+        📢 Public Health Alert - ${new Date().toLocaleDateString()} 📢
+        *📍 Location: ${stateName}
+        *🦠 Health Concerns Overview
+        [Brief overview of current health situation in ${stateName}]
         
-        DISEASE 2: [Disease Name]
-        LOCATION: [Specific districts/cities in ${stateName}]
-        CASES: [Number if available, or "Cases reported"]
-        SYMPTOMS: [Main symptoms]
-        PREVENTION: [Key prevention measure]
+        *🗺️ Affected Areas:
+         * [District/City 1]: [Disease and case details]
+         * [District/City 2]: [Disease and case details]
+         * [District/City 3]: [Disease and case details]
         
-        DISEASE 3: [Disease Name]
-        LOCATION: [Specific districts/cities in ${stateName}]
-        CASES: [Number if available, or "Cases reported"]
-        SYMPTOMS: [Main symptoms]
-        PREVENTION: [Key prevention measure]
+        *🩺 Symptoms to Watch For:
+        If you experience any of the following, seek medical advice:
+         * [Symptom 1]
+         * [Symptom 2]
+         * [Symptom 3]
         
-        Focus on any current disease outbreaks, health alerts, or surveillance reports specifically in ${stateName} state. Include vector-borne, respiratory, water-borne, or emerging infectious diseases.`,
+        *🛡️ Prevention & Safety Measures:
+         * [Prevention tip 1]
+         * [Prevention tip 2]
+         * [Prevention tip 3]
+        
+        *📞 Emergency Contact: 108
+        *🕐 Last Updated: ${new Date().toLocaleDateString()}
+        
+        Focus on current disease outbreaks, health alerts, or surveillance reports specifically in ${stateName} state. Use real current data from search results.`,
         'en',
         3
       );
       
-      const diseases = this.parseSimpleTextResponse(response);
-      console.log(`✅ Found ${diseases.length} diseases in ${stateName}`);
-      return diseases;
+      console.log(`✅ Generated state template for ${stateName}`);
+      return response; // Return the complete template directly
       
     } catch (error) {
       console.error(`Error fetching diseases for ${stateName}:`, error);
-      return [];
+      return `📢 Public Health Alert - ${new Date().toLocaleDateString()} 📢\n*📍 Location: ${stateName}\n*🦠 Health Concerns Overview\nNo current health alerts for ${stateName}.\n\n*📞 Emergency Contact: 108`;
     }
   }
 
@@ -288,44 +297,47 @@ class AIDiseaseMonitorService {
       const response = await this.geminiService.generateResponseWithGrounding(
         `Search for the most significant current disease outbreaks across India from recent news and health reports. Focus on national-level outbreaks affecting multiple states.
         
-        Provide information in this EXACT format:
+        Return in this EXACT format:
         
-        DISEASE 1: [Disease Name]
-        LOCATION: [Multiple states/regions affected across India]
-        CASES: [National numbers if available, or "Cases reported nationwide"]
-        SYMPTOMS: [Main symptoms]
-        PREVENTION: [Key prevention measure]
+        📢 Public Health Alert - ${new Date().toLocaleDateString()} 📢
+        A state-wise summary of ongoing health advisories.
         
-        DISEASE 2: [Disease Name]
-        LOCATION: [Multiple states/regions affected across India]
-        CASES: [National numbers if available, or "Cases reported nationwide"]
-        SYMPTOMS: [Main symptoms]
-        PREVENTION: [Key prevention measure]
+        🇮🇳 [State Name 1]
+        🦠 Key Diseases:
+         - [Disease Name]: [Brief description with case numbers]
+         - [Disease Name]: [Brief description with case numbers]
         
-        DISEASE 3: [Disease Name]
-        LOCATION: [Multiple states/regions affected across India]
-        CASES: [National numbers if available, or "Cases reported nationwide"]
-        SYMPTOMS: [Main symptoms]
-        PREVENTION: [Key prevention measure]
+        🇮🇳 [State Name 2]
+        🦠 Key Diseases:
+         - [Disease Name]: [Brief description with case numbers]
+         - [Disease Name]: [Brief description with case numbers]
         
-        DISEASE 4: [Disease Name]
-        LOCATION: [Multiple states/regions affected across India]
-        CASES: [National numbers if available, or "Cases reported nationwide"]
-        SYMPTOMS: [Main symptoms]
-        PREVENTION: [Key prevention measure]
+        🇮🇳 [State Name 3]
+        🦠 Key Diseases:
+         - [Disease Name]: [Brief description with case numbers]
         
-        Focus on major nationwide outbreaks, health alerts, or surveillance reports affecting multiple Indian states. Include any vector-borne, respiratory, water-borne, or emerging infectious diseases.`,
+        🩺 Symptoms to Watch For:
+        If you experience any of these symptoms, seek immediate medical attention:
+         - [Symptom 1] • [Symptom 2] • [Symptom 3]
+        
+        🛡️ Prevention & Advisory:
+         - [Prevention tip 1]
+         - [Prevention tip 2]
+         - [Prevention tip 3]
+        
+        🔗 Official Source: [Source name]
+        
+        Focus on major nationwide outbreaks affecting multiple Indian states. Use real current data from search results.`,
         'en',
         4
       );
       
-      const diseases = this.parseSimpleTextResponse(response);
-      console.log(`✅ Found ${diseases.length} nationwide diseases`);
-      return diseases;
+      console.log(`✅ Generated nationwide template`);
+      return response; // Return the complete template directly
       
     } catch (error) {
       console.error('Error fetching nationwide diseases:', error);
-      return [];
+      return `📢 Public Health Alert - ${new Date().toLocaleDateString()} 📢\nA state-wise summary of ongoing health advisories.\n\n🇮🇳 India\n🦠 Key Diseases:\n - No current nationwide alerts\n\n📞 Emergency Contact: 108`;
     }
   }
   
@@ -354,6 +366,10 @@ class AIDiseaseMonitorService {
           
           if (trimmedLine.startsWith('CASES:')) {
             disease.cases = trimmedLine.replace('CASES:', '').trim();
+          }
+          
+          if (trimmedLine.startsWith('SEVERITY:')) {
+            disease.severity = trimmedLine.replace('SEVERITY:', '').trim();
           }
           
           if (trimmedLine.startsWith('SYMPTOMS:')) {

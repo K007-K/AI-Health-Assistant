@@ -282,15 +282,16 @@ ${preventionTips.slice(0, 4).map(tip => ` - ${tip}`).join('\n')}
       const cases = diseaseInfo.cases || diseaseInfo.estimatedCases || 'Under monitoring';
       const symptomsText = diseaseInfo.symptoms || diseaseInfo.briefDescription || '';
       
-      // Determine seriousness
-      let seriousness = 'Moderate';
-      const diseaseKey = disease.toLowerCase();
-      if (diseaseKey.includes('brain-eating') || diseaseKey.includes('naegleria') || diseaseKey.includes('meningoencephalitis')) {
-        seriousness = 'Critical';
-      } else if (diseaseKey.includes('nipah') || diseaseKey.includes('h5n1') || diseaseKey.includes('h1n1') || diseaseKey.includes('melioidosis')) {
-        seriousness = 'High';
-      } else if (diseaseKey.includes('dengue') || diseaseKey.includes('malaria') || diseaseKey.includes('chikungunya')) {
-        seriousness = 'Moderate';
+      // Use AI-determined severity from the data
+      let seriousness = diseaseInfo.severity || diseaseInfo.seriousness || 'Moderate';
+      
+      // Clean up severity text if it contains extra words
+      seriousness = seriousness.replace(/SEVERITY:\s*/i, '').trim();
+      
+      // Ensure valid severity levels
+      const validSeverities = ['Critical', 'High', 'Moderate', 'Low'];
+      if (!validSeverities.includes(seriousness)) {
+        seriousness = 'Moderate'; // Default fallback
       }
       
       // Clean up location text (remove extra words)
@@ -312,6 +313,14 @@ ${preventionTips.slice(0, 4).map(tip => ` - ${tip}`).join('\n')}
         symptoms: symptoms || 'Fever, body aches',
         seriousness
       });
+    });
+    
+    // Sort disease entries by AI-determined severity before grouping
+    const severityOrder = { 'Critical': 0, 'High': 1, 'Moderate': 2, 'Low': 3 };
+    diseaseEntries.sort((a, b) => {
+      const aSeverity = severityOrder[a.seriousness] || 3;
+      const bSeverity = severityOrder[b.seriousness] || 3;
+      return aSeverity - bSeverity; // Critical (0) comes first, Low (3) comes last
     });
     
     // Group diseases by state for the new format
@@ -483,20 +492,8 @@ Monitoring ongoing health situations across India.
       messages.push(fallbackMessage);
     }
     
-    // Prioritize critical diseases (brain-eating amoeba, Nipah, etc.) and limit to max 6 messages
-    const criticalDiseases = ['amoebic', 'meningoencephalitis', 'pam', 'brain-eating', 'nipah', 'h5n1', 'h1n1'];
-    
-    // Sort messages to prioritize critical diseases
-    const sortedMessages = messages.sort((a, b) => {
-      const aIsCritical = criticalDiseases.some(critical => a.toLowerCase().includes(critical));
-      const bIsCritical = criticalDiseases.some(critical => b.toLowerCase().includes(critical));
-      
-      if (aIsCritical && !bIsCritical) return -1;
-      if (!aIsCritical && bIsCritical) return 1;
-      return 0;
-    });
-    
-    return sortedMessages.slice(0, 6); // Allow up to 6 messages to include critical diseases
+    // Return messages (already sorted by AI-determined severity)
+    return messages.slice(0, 6); // Allow up to 6 messages
   }
 
   // Get formatted alert chunks for WhatsApp (backward compatibility)

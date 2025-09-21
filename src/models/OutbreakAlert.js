@@ -124,7 +124,7 @@ class OutbreakAlert {
     return this.query_date < today;
   }
 
-  // Get formatted alert for WhatsApp
+  // Get formatted alert for WhatsApp (concise version under 4096 chars)
   getFormattedAlert(language = 'en') {
     // Get data from parsed_diseases JSON or fallback to direct properties
     const alertData = this.parsed_diseases || this;
@@ -134,8 +134,8 @@ class OutbreakAlert {
     const title = alertData.title || 'Disease Outbreak Alert';
     const description = alertData.description || this.ai_response_text || '';
     const disease = alertData.disease || 'Various';
-    const symptoms = Array.isArray(alertData.symptoms) ? alertData.symptoms : [];
-    const preventionTips = Array.isArray(alertData.preventionTips) ? alertData.preventionTips : [];
+    const symptoms = Array.isArray(alertData.symptoms) ? alertData.symptoms.slice(0, 5) : []; // Limit symptoms
+    const preventionTips = Array.isArray(alertData.preventionTips) ? alertData.preventionTips.slice(0, 4) : []; // Limit tips
     const location = alertData.location || { state: this.state_name };
     const affectedAreas = Array.isArray(alertData.affectedAreas) ? alertData.affectedAreas : [];
     const additionalDiseases = Array.isArray(alertData.additionalDiseases) ? alertData.additionalDiseases : [];
@@ -146,122 +146,104 @@ class OutbreakAlert {
     const currentDate = new Date(lastUpdated).toLocaleDateString('en-IN');
 
     if (isNationwide) {
-      // Nationwide alert format
+      // Concise nationwide alert format
       let messageEn = `📢 *Public Health Alert - ${currentDate}* 📢
-_A state-wise summary of ongoing health advisories._
+_Nationwide health advisory summary_
 
 `;
 
-      // Group diseases by affected states
-      const stateGroups = {};
+      // Get top 3 affected states only
+      const mainStates = affectedAreas?.map(a => a.state).filter(Boolean).slice(0, 3) || ['Kerala', 'Delhi', 'Maharashtra'];
       
-      // Process affected areas
-      if (affectedAreas && affectedAreas.length > 0) {
-        affectedAreas.forEach(area => {
-          const stateName = area.state || 'Multiple States';
-          if (!stateGroups[stateName]) {
-            stateGroups[stateName] = {
-              diseases: [],
-              symptoms: new Set(),
-              prevention: new Set()
-            };
-          }
-        });
+      // Create concise state summary
+      const statesSummary = mainStates.map(state => {
+        const stateData = additionalDiseases?.find(d => d.affectedAreas?.includes(state));
+        const mainDisease = stateData?.disease || disease.split(',')[0].trim();
+        return `🇮🇳 *${state}*: ${mainDisease}${estimatedCases ? ` (${estimatedCases})` : ''}`;
+      }).join('\n');
+
+      messageEn += statesSummary + '\n\n';
+
+      // Concise symptoms (top 5)
+      if (symptoms.length > 0) {
+        messageEn += `*🩺 Key Symptoms:*\n${symptoms.slice(0, 5).map(s => `• ${s}`).join('\n')}\n\n`;
       }
 
-      // Add main disease info
-      const mainStates = affectedAreas?.map(a => a.state).filter(Boolean) || ['Kerala', 'Delhi', 'Maharashtra'];
-      mainStates.forEach(state => {
-        if (!stateGroups[state]) {
-          stateGroups[state] = { diseases: [], symptoms: new Set(), prevention: new Set() };
-        }
-        stateGroups[state].diseases.push(`${disease}: ${estimatedCases || 'Cases under monitoring'}`);
-      });
-
-      // Add additional diseases
-      if (additionalDiseases && additionalDiseases.length > 0) {
-        additionalDiseases.forEach(addDisease => {
-          const areas = addDisease.affectedAreas || mainStates;
-          areas.forEach(area => {
-            const stateName = typeof area === 'string' ? area : area.state || 'Multiple States';
-            if (!stateGroups[stateName]) {
-              stateGroups[stateName] = { diseases: [], symptoms: new Set(), prevention: new Set() };
-            }
-            stateGroups[stateName].diseases.push(`${addDisease.disease}: ${addDisease.briefDescription || 'Ongoing surveillance'}`);
-          });
-        });
+      // Concise prevention (top 4)
+      if (preventionTips.length > 0) {
+        messageEn += `*🛡️ Prevention:*\n${preventionTips.slice(0, 4).map(p => `• ${p}`).join('\n')}\n\n`;
       }
 
-      // Add symptoms and prevention to all states
-      symptoms.forEach(symptom => {
-        Object.values(stateGroups).forEach(group => group.symptoms.add(symptom));
-      });
-      preventionTips.forEach(tip => {
-        Object.values(stateGroups).forEach(group => group.prevention.add(tip));
-      });
-
-      // Generate state-wise sections
-      Object.entries(stateGroups).forEach(([stateName, data]) => {
-        messageEn += `🇮🇳 *${stateName}*
-*🦠 Key Diseases:*
-${data.diseases.map(d => ` • ${d}`).join('\n')}
-
-*🩺 Symptoms to Watch For:*
-_If you experience any of these symptoms, seek immediate medical attention:_
-${Array.from(data.symptoms).map(s => ` • ${s}`).join('\n')}
-
-*🛡️ Prevention & Advisory:*
-${Array.from(data.prevention).map(p => ` • ${p}`).join('\n')}
-
-*🔗 Official Source:* ${sources?.[0] || 'Ministry of Health & Family Welfare'}
-
-`;
-      });
-
-      messageEn += `*📞 Emergency:* 108
-*🕐 Last Updated:* ${currentDate}`;
+      messageEn += `*📞 Emergency:* 108 | *🔗 Source:* ${sources?.[0] || 'Health Ministry'}
+*🕐 Updated:* ${currentDate}`;
 
       return messageEn;
 
     } else {
-      // State-based alert format
+      // Concise state-based alert format
       const stateName = location?.state || 'State';
       const primaryDisease = disease.split(',')[0].trim();
-      const seasonalDiseases = disease.split(',').slice(1).map(d => d.trim()).join(' and ') || 'seasonal diseases';
       
       const primaryArea = affectedAreas?.[0];
-      const primaryLocation = primaryArea ? 
-        `${primaryArea.districts?.[0] || primaryArea.state}${primaryArea.districts?.[0] ? ` (${primaryDisease})` : ''}` : 
-        `${stateName} districts`;
+      const primaryLocation = primaryArea?.districts?.[0] || primaryArea?.state || `${stateName} districts`;
 
-      const otherAreas = affectedAreas?.slice(1) || [];
-      const otherAreasText = otherAreas.length > 0 ? 
-        otherAreas.map(area => `${area.districts?.[0] || area.state} (${seasonalDiseases})`).join('\n • ') : 
-        `Other areas (${seasonalDiseases})`;
+      // Create concise description
+      const alertType = description.includes('emergency') ? 'Health Emergency' : 'Health Advisory';
+      
+      const messageEn = `📢 *${alertType} - ${currentDate}* 📢
 
-      const messageEn = `📢 *Public Health Alert - ${currentDate}* 📢
+*📍 ${stateName}* - ${primaryDisease}
+*🗺️ Area:* ${primaryLocation}${estimatedCases ? ` (${estimatedCases})` : ''}
 
-*📍 Location:* ${stateName}
+*🩺 Key Symptoms:*
+${symptoms.slice(0, 5).map(s => `• ${s}`).join('\n')}
 
-*🦠 Health Concerns Overview*
-As of ${currentDate}, health authorities in ${stateName} are managing ${description.includes('emergency') ? 'a health emergency' : 'ongoing health concerns'} due to ${primaryDisease} in affected areas. The state is also addressing seasonal diseases like ${seasonalDiseases}, especially in areas with water stagnation.
+*🛡️ Prevention:*
+${preventionTips.slice(0, 4).map(tip => `• ${tip}`).join('\n')}
 
-*🗺️ Affected Areas:*
- • ${primaryLocation}
- • ${otherAreasText}
-
-*🩺 Symptoms to Watch For:*
-_If you experience any of the following, seek medical advice:_
-${symptoms.map(s => ` • ${s}`).join('\n')}
-
-*🛡️ Prevention & Safety Measures:*
-${preventionTips.map(tip => ` • ${tip}`).join('\n')}
-
-*📞 Emergency Contact:* 108
-*🕐 Last Updated:* ${currentDate}`;
+*📞 Emergency:* 108 | *🔗 Source:* ${sources?.[0] || 'Health Dept'}
+*🕐 Updated:* ${currentDate}`;
 
       return messageEn;
     }
+  }
+
+  // Get formatted alert chunks for WhatsApp (splits if over 4000 chars)
+  getFormattedAlertChunks(language = 'en') {
+    const fullMessage = this.getFormattedAlert(language);
+    const maxLength = 4000; // Leave some buffer under 4096 limit
+    
+    if (fullMessage.length <= maxLength) {
+      return [fullMessage];
+    }
+    
+    // If still too long, split into chunks
+    const chunks = [];
+    const lines = fullMessage.split('\n');
+    let currentChunk = '';
+    let chunkIndex = 1;
+    
+    for (const line of lines) {
+      const testChunk = currentChunk + (currentChunk ? '\n' : '') + line;
+      
+      if (testChunk.length > maxLength && currentChunk) {
+        // Add chunk header for multi-part messages
+        const header = chunkIndex === 1 ? '' : `📢 *Health Alert (Part ${chunkIndex})* 📢\n\n`;
+        chunks.push(header + currentChunk);
+        currentChunk = line;
+        chunkIndex++;
+      } else {
+        currentChunk = testChunk;
+      }
+    }
+    
+    // Add the last chunk
+    if (currentChunk) {
+      const header = chunkIndex === 1 ? '' : `📢 *Health Alert (Part ${chunkIndex})* 📢\n\n`;
+      chunks.push(header + currentChunk);
+    }
+    
+    return chunks;
   }
 }
 

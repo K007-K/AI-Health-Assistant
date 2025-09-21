@@ -2017,15 +2017,21 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
       
       // Show state alert first if user has a state and alert exists
       if (todaysState && userStateName) {
-        await this.whatsappService.sendMessage(user.phone_number, todaysState.getFormattedAlert(user.preferred_language || 'en'));
-        await new Promise(resolve => setTimeout(resolve, 600));
+        const stateChunks = todaysState.getFormattedAlertChunks(user.preferred_language || 'en');
+        for (const chunk of stateChunks) {
+          await this.whatsappService.sendMessage(user.phone_number, chunk);
+          await new Promise(resolve => setTimeout(resolve, 800));
+        }
         showedAlerts = true;
       }
       
       // Always show national alert if it exists
       if (todaysNational) {
-        await this.whatsappService.sendMessage(user.phone_number, todaysNational.getFormattedAlert(user.preferred_language || 'en'));
-        await new Promise(resolve => setTimeout(resolve, 600));
+        const nationalChunks = todaysNational.getFormattedAlertChunks(user.preferred_language || 'en');
+        for (const chunk of nationalChunks) {
+          await this.whatsappService.sendMessage(user.phone_number, chunk);
+          await new Promise(resolve => setTimeout(resolve, 800));
+        }
         showedAlerts = true;
       }
 

@@ -35,7 +35,12 @@ class DiseaseOutbreakCacheService {
       
       // Add state-specific diseases (higher priority)
       if (stateData && stateData.diseases) {
-        stateData.diseases.forEach(disease => {
+        // Ensure diseases is an array
+        const diseases = Array.isArray(stateData.diseases) 
+          ? stateData.diseases 
+          : [stateData.diseases];
+          
+        diseases.forEach(disease => {
           allDiseases.push({
             ...disease,
             isState: true,
@@ -48,7 +53,12 @@ class DiseaseOutbreakCacheService {
       
       // Add nationwide diseases (lower priority)
       if (nationwideData && nationwideData.diseases) {
-        nationwideData.diseases.forEach(disease => {
+        // Ensure diseases is an array
+        const diseases = Array.isArray(nationwideData.diseases) 
+          ? nationwideData.diseases 
+          : [nationwideData.diseases];
+          
+        diseases.forEach(disease => {
           allDiseases.push({
             ...disease,
             isState: false,
@@ -93,8 +103,19 @@ class DiseaseOutbreakCacheService {
       
       if (cachedData) {
         console.log(`✅ Using cached state data for ${stateName}`);
+        // Handle different data structures from database
+        let diseases = [];
+        if (cachedData.parsed_diseases) {
+          if (Array.isArray(cachedData.parsed_diseases)) {
+            diseases = cachedData.parsed_diseases;
+          } else if (typeof cachedData.parsed_diseases === 'object') {
+            // If it's an object, try to extract diseases array or convert to array
+            diseases = cachedData.parsed_diseases.diseases || [cachedData.parsed_diseases];
+          }
+        }
+        
         return {
-          diseases: cachedData.parsed_diseases,
+          diseases: diseases,
           source: 'cache',
           cached_at: cachedData.created_at
         };
@@ -126,8 +147,19 @@ class DiseaseOutbreakCacheService {
       
       if (cachedData) {
         console.log(`✅ Using cached nationwide data`);
+        // Handle different data structures from database
+        let diseases = [];
+        if (cachedData.parsed_diseases) {
+          if (Array.isArray(cachedData.parsed_diseases)) {
+            diseases = cachedData.parsed_diseases;
+          } else if (typeof cachedData.parsed_diseases === 'object') {
+            // If it's an object, try to extract diseases array or convert to array
+            diseases = cachedData.parsed_diseases.diseases || [cachedData.parsed_diseases];
+          }
+        }
+        
         return {
-          diseases: cachedData.parsed_diseases,
+          diseases: diseases,
           source: 'cache',
           cached_at: cachedData.created_at
         };

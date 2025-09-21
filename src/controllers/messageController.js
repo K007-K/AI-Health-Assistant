@@ -1837,44 +1837,56 @@ Type your message below:`;
     try {
       console.log('🦠 Handling disease outbreak alerts for user:', user.phone_number);
 
+      // Check user's subscription status
+      const User = require('../models/User');
+      const dbUser = await User.findByPhoneNumber(user.phone_number);
+      const isSubscribed = dbUser && dbUser.consent_outbreak_alerts;
+      
+      console.log(`🔍 User ${user.phone_number} subscription status: ${isSubscribed ? 'SUBSCRIBED' : 'NOT SUBSCRIBED'}`);
+
       // Show disease alerts submenu with interactive buttons (max 3) + follow-up
       const menuTexts = {
-        en: '🦠 *Disease Outbreak Alerts*\n\nStay informed about disease outbreaks in your area:',
-        hi: '🦠 *रोग प्रकोप अलर्ट*\n\nअपने क्षेत्र में रोग प्रकोप के बारे में सूचित रहें:',
-        te: '🦠 *వ్యాధి వ్యాప్తి హెచ్చరికలు*\n\nమీ ప్రాంతంలో వ్యాధి వ్యాప్తి గురించి సూచనలు పొందండి:',
-        ta: '🦠 *நோய் விரிவு எச்சரிக்கைகள்*\n\nஉங்கள் பரிசரத்தில் நோய் விரிவு குறித்து தகவல் பெறுங்கள்:',
-        or: '🦠 *ରୋଗ ପ୍ରସାର ସଚେତନା*\n\nଆପଣଙ୍କ ଅଞ୍ଚଳରେ ରୋଗ ପ୍ରସାର ବିଷୟରେ ସୂଚିତ ରହନ୍ତୁ:'
+        en: `🦠 *Disease Outbreak Alerts*\n\nStay informed about disease outbreaks in your area:\n\n${isSubscribed ? '✅ You are currently subscribed to alerts' : '❌ You are not subscribed to alerts'}`,
+        hi: `🦠 *रोग प्रकोप अलर्ट*\n\nअपने क्षेत्र में रोग प्रकोप के बारे में सूचित रहें:\n\n${isSubscribed ? '✅ आप वर्तमान में अलर्ट की सदस्यता लिए हुए हैं' : '❌ आप अलर्ट की सदस्यता नहीं लिए हुए हैं'}`,
+        te: `🦠 *వ్యాధి వ్యాప్తి హెచ్చరికలు*\n\nమీ ప్రాంతంలో వ్యాధి వ్యాప్తి గురించి సూచనలు పొందండి:\n\n${isSubscribed ? '✅ మీరు ప్రస్తుతం అలర్ట్‌లకు సబ్‌స్క్రైబ్ చేసారు' : '❌ మీరు అలర్ట్‌లకు సబ్‌స్క్రైబ్ చేయలేదు'}`,
+        ta: `🦠 *நோய் விரிவு எச்சரிக்கைகள்*\n\nஉங்கள் பரிசரத்தில் நோய் விரிவு குறித்து தகவல் பெறுங்கள்:\n\n${isSubscribed ? '✅ நீங்கள் தற்போது எச்சரிக்கைகளுக்கு சந்தா செலுத்தியுள்ளீர்கள்' : '❌ நீங்கள் எச்சரிக்கைகளுக்கு சந்தா செலுத்தவில்லை'}`,
+        or: `🦠 *ରୋଗ ପ୍ରସାର ସଚେତନା*\n\nଆପଣଙ୍କ ଅଞ୍ଚଳରେ ରୋଗ ପ୍ରସାର ବିଷୟରେ ସୂଚିତ ରହନ୍ତୁ:\n\n${isSubscribed ? '✅ ଆପଣ ବର୍ତ୍ତମାନ ସଚେତନା ପାଇଁ ସବସ୍କ୍ରାଇବ କରିଛନ୍ତି' : '❌ ଆପଣ ସଚେତନା ପାଇଁ ସବସ୍କ୍ରାଇବ କରିନାହାଁନ୍ତି'}`
       };
-      // Use interactive buttons (WhatsApp limit: max 3 buttons)
-      const buttonTexts = {
-        en: [
-          { id: 'view_active_diseases', title: '🦠 Disease Outbreak' },
-          { id: 'turn_on_alerts', title: '🔔 Turn ON Alerts' },
-          { id: 'turn_off_alerts', title: '🔕 Turn OFF Alerts' }
-        ],
-        hi: [
-          { id: 'view_active_diseases', title: '🦠 रोग प्रकोप' },
-          { id: 'turn_on_alerts', title: '🔔 अलर्ट चालू करें' },
-          { id: 'turn_off_alerts', title: '🔕 अलर्ट बंद करें' }
-        ],
-        te: [
-          { id: 'view_active_diseases', title: '🦠 వ్యాధి వ్యాప్తి' },
-          { id: 'turn_on_alerts', title: '🔔 అలర్ట్ ఆన్ చేయండి' },
-          { id: 'turn_off_alerts', title: '🔕 అలర్ట్ ఆఫ్ చేయండి' }
-        ],
-        ta: [
-          { id: 'view_active_diseases', title: '🦠 நோய் விரிவு' },
-          { id: 'turn_on_alerts', title: '🔔 எச்சரிக்கை ஆன்' },
-          { id: 'turn_off_alerts', title: '🔕 எச்சரிக்கை ஆஃப்' }
-        ],
-        or: [
-          { id: 'view_active_diseases', title: '🦠 ରୋଗ ପ୍ରସାର' },
-          { id: 'turn_on_alerts', title: '🔔 ସଚେତନା ଚାଲୁ କରନ୍ତୁ' },
-          { id: 'turn_off_alerts', title: '🔕 ସଚେତନା ବନ୍ଦ କରନ୍ତୁ' }
-        ]
-      };
-      
-      const menuButtons = buttonTexts[user.preferred_language] || buttonTexts.en;
+
+      // Create context-aware buttons
+      const baseButtons = [
+        { 
+          en: { id: 'view_active_diseases', title: '🦠 Disease Outbreak' },
+          hi: { id: 'view_active_diseases', title: '🦠 रोग प्रकोप' },
+          te: { id: 'view_active_diseases', title: '🦠 వ్యాధి వ్యాప్తి' },
+          ta: { id: 'view_active_diseases', title: '🦠 நோய் விரிவு' },
+          or: { id: 'view_active_diseases', title: '🦠 ରୋଗ ପ୍ରସାର' }
+        }
+      ];
+
+      if (isSubscribed) {
+        baseButtons.push({
+          en: { id: 'turn_off_alerts', title: '🔕 Turn OFF Alerts' },
+          hi: { id: 'turn_off_alerts', title: '🔕 अलर्ट बंद करें' },
+          te: { id: 'turn_off_alerts', title: '🔕 అలర్ట్ ఆఫ్ చేయండి' },
+          ta: { id: 'turn_off_alerts', title: '🔕 எச்சரிக்கை ஆஃப்' },
+          or: { id: 'turn_off_alerts', title: '🔕 ସଚେତନା ବନ୍ଦ କରନ୍ତୁ' }
+        });
+        console.log('📱 Showing DISABLE button for subscribed user');
+      } else {
+        baseButtons.push({
+          en: { id: 'turn_on_alerts', title: '🔔 Turn ON Alerts' },
+          hi: { id: 'turn_on_alerts', title: '🔔 अलर्ट चालू करें' },
+          te: { id: 'turn_on_alerts', title: '🔔 అలర్ట్ ఆన్ చేయండి' },
+          ta: { id: 'turn_on_alerts', title: '🔔 எச்சரிக்கை ஆன்' },
+          or: { id: 'turn_on_alerts', title: '🔔 ସଚେତନା ଚାଲୁ କରନ୍ତୁ' }
+        });
+        console.log('📱 Showing ENABLE button for non-subscribed user');
+      }
+
+      // Convert to the format expected by the WhatsApp service
+      const language = user.preferred_language || 'en';
+      const menuButtons = baseButtons.map(buttonGroup => buttonGroup[language] || buttonGroup.en);
 
       try {
         // Send interactive buttons

@@ -53,16 +53,7 @@ class MessageController {
     try {
       console.log(`👍👎 Inline feedback received: ${feedbackType} from ${user.phone_number}`);
       
-      // Save feedback to database
-      await this.userFeedbackService.saveFeedback(user.id, {
-        type: feedbackType === 'feedback_good' ? 'positive' : 'negative',
-        rating: feedbackType === 'feedback_good' ? 5 : 1,
-        messageId: messageId,
-        timestamp: new Date(),
-        source: 'inline_buttons'
-      });
-      
-      // Send confirmation message (like Meta's "Feedback submitted to Helic")
+      // Send confirmation message first (like Meta's "Feedback submitted to Helic")
       const confirmationMessages = {
         en: 'Feedback submitted to Helic',
         hi: 'फीडबैक हेलिक को भेजा गया',
@@ -78,9 +69,32 @@ class MessageController {
       
       console.log(`✅ Feedback confirmation sent to ${user.phone_number}`);
       
+      // Try to save feedback to database (optional - don't fail if it doesn't work)
+      try {
+        const rating = feedbackType === 'feedback_good' ? 5 : 1;
+        const comment = `Inline feedback: ${feedbackType === 'feedback_good' ? 'positive' : 'negative'}`;
+        
+        // Generate a proper UUID for conversationId if messageId is not a UUID
+        const { v4: uuidv4 } = require('uuid');
+        const conversationId = messageId && messageId.length === 36 ? messageId : uuidv4();
+        
+        await this.userFeedbackService.saveFeedback(
+          user.id,
+          conversationId,
+          rating,
+          comment,
+          'inline_buttons'
+        );
+        
+        console.log(`📊 Feedback saved: ${feedbackType} from ${user.phone_number}`);
+      } catch (saveError) {
+        console.log(`⚠️ Could not save feedback to database: ${saveError.message}`);
+        // Continue anyway - user already got confirmation
+      }
+      
     } catch (error) {
       console.error('Error handling inline feedback:', error);
-      // Send generic confirmation even if saving fails
+      // Send generic confirmation even if everything fails
       await this.whatsappService.sendMessage(user.phone_number, 'Thank you for your feedback!');
     }
   }

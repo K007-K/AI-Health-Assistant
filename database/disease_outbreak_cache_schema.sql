@@ -1,4 +1,4 @@
--- Enhanced Disease Outbreak Caching System
+'-- Enhanced Disease Outbreak Caching System
 -- Eliminates redundant API queries by caching responses per state/nationwide
 
 -- 1. Cached Disease Outbreak Responses
@@ -102,3 +102,4 @@ $$ LANGUAGE plpgsql;
 -- 6. Daily Cache Cleanup Job (to be scheduled)
 -- This would be called by a cron job or background task
 -- SELECT cleanup_old_disease_cache();
+'

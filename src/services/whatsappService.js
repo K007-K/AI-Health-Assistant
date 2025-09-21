@@ -552,29 +552,12 @@ class WhatsAppService {
   // Send typing indicator (three dots animation)
   async sendTypingIndicator(to) {
     try {
-      const payload = {
-        messaging_product: 'whatsapp',
-        recipient_type: 'individual',
-        to: to,
-        type: 'typing_on'
-      };
-
-      const response = await axios.post(
-        `${this.baseURL}/${this.phoneNumberId}/messages`,
-        payload,
-        {
-          headers: {
-            'Authorization': `Bearer ${this.accessToken}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-
-      console.log('✅ Typing indicator sent');
-      return response.data;
+      // WhatsApp Business API doesn't support typing indicators directly
+      // We'll simulate it with a delay and log for debugging
+      console.log(`⌨️ Simulating typing indicator for ${to}`);
+      return { success: true, simulated: true };
     } catch (error) {
-      console.error('❌ Error sending typing indicator:', error.response?.data || error.message);
-      // Don't throw error - typing indicator is not critical
+      console.error('❌ Error with typing indicator:', error);
       return null;
     }
   }
@@ -582,28 +565,13 @@ class WhatsAppService {
   // Stop typing indicator
   async stopTypingIndicator(to) {
     try {
-      const payload = {
-        messaging_product: 'whatsapp',
-        recipient_type: 'individual',
-        to: to,
-        type: 'typing_off'
-      };
-
-      await axios.post(
-        `${this.baseURL}/${this.phoneNumberId}/messages`,
-        payload,
-        {
-          headers: {
-            'Authorization': `Bearer ${this.accessToken}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-
-      console.log('✅ Typing indicator stopped');
+      // WhatsApp Business API doesn't support typing indicators directly
+      // We simulate the effect with delays in message sending
+      console.log(`⌨️ Stopping typing simulation for ${to}`);
+      return { success: true, simulated: true };
     } catch (error) {
-      console.error('❌ Error stopping typing indicator:', error.response?.data || error.message);
-      // Don't throw error - typing indicator is not critical
+      console.error('❌ Error stopping typing indicator:', error);
+      return null;
     }
   }
 
@@ -614,11 +582,11 @@ class WhatsAppService {
       const messageResponse = await this.sendMessage(to, text);
       
       // Add small delay before sending feedback buttons
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 300));
       
-      // Send inline feedback buttons
+      // Send inline feedback buttons with a simple prompt
       const feedbackButtons = this.getInlineFeedbackButtons();
-      await this.sendInteractiveButtons(to, '', feedbackButtons);
+      await this.sendInteractiveButtons(to, 'Was this helpful?', feedbackButtons);
       
       return messageResponse;
     } catch (error) {

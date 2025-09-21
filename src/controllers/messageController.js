@@ -10,6 +10,7 @@ const { sendMessage, sendInteractiveButtons, sendInteractiveList } = require('..
 const { LanguageUtils } = require('../utils/languageUtils');
 const DiseaseAlertService = require('../services/diseaseAlertService');
 const AIDiseaseMonitorService = require('../services/aiDiseaseMonitorService');
+const UserFeedbackService = require('../services/feedbackService');
 
 class MessageController {
   constructor() {
@@ -18,7 +19,7 @@ class MessageController {
     this.whatsappService = isTestMode ? new MockWhatsAppService() : new WhatsAppService();
     this.userService = new UserService();
     this.conversationService = new ConversationService();
-    this.geminiService = new GeminiService();
+    this.geminiService = geminiService; // Use the imported service instance
     this.userFeedbackService = new UserFeedbackService();
     this.diseaseAlertService = new DiseaseAlertService();
     this.aiDiseaseMonitorService = new AIDiseaseMonitorService();

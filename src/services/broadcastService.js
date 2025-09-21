@@ -19,64 +19,106 @@ class BroadcastService {
     this.isProcessing = true;
     
     try {
-      console.log(`📢 Starting broadcast of national alert: ${alert.alertId}`);
+      console.log(`📢 Starting broadcast for alert: ${alert.alert_id}`);
       
-      // Get all active users
-      const users = await User.find({ 
-        isActive: true,
-        phoneNumber: { $exists: true, $ne: null }
-      }).select('phoneNumber language scriptPreference');
-
-      console.log(`👥 Found ${users.length} users for broadcast`);
-
-      if (users.length === 0) {
-        console.log('ℹ️ No users found for broadcast');
-        return;
+      // Get all subscribed users
+      const subscribedUsers = await User.getSubscribedUsers();
+      
+      if (subscribedUsers.length === 0) {
+        console.log('ℹ️ No subscribed users found for broadcast');
+        return { success: true, userCount: 0 };
       }
 
-      // Process users in batches
-      const batches = this.createBatches(users, this.batchSize);
-      let totalSent = 0;
-      let totalFailed = 0;
+      console.log(`👥 Broadcasting to ${subscribedUsers.length} subscribed users`);
+      
+      let successCount = 0;
+      let errorCount = 0;
 
-      for (let i = 0; i < batches.length; i++) {
-        const batch = batches[i];
-        console.log(`📤 Processing batch ${i + 1}/${batches.length} (${batch.length} users)`);
-
-        const batchPromises = batch.map(user => 
-          this.sendAlertToUser(user, alert)
-        );
-
-        const results = await Promise.allSettled(batchPromises);
+      // Process users in batches to avoid rate limits
+      const batchSize = 10;
+      for (let i = 0; i < subscribedUsers.length; i += batchSize) {
+        const batch = subscribedUsers.slice(i, i + batchSize);
         
-        // Count successes and failures
-        results.forEach((result, index) => {
-          if (result.status === 'fulfilled' && result.value) {
-            totalSent++;
-            // Mark as sent in database
-            alert.markAsSent(batch[index].phoneNumber);
-          } else {
-            totalFailed++;
-            console.error(`❌ Failed to send to ${batch[index].phoneNumber}:`, result.reason);
+        await Promise.all(batch.map(async (user) => {
+          try {
+            // Get formatted alert for user's language
+            const language = user.language || 'en';
+            const formattedAlert = alert.getFormattedAlert(language);
+            
+            // Send WhatsApp message
+            await sendMessage(user.phone_number, formattedAlert);
+            
+            // Also check for state-specific alerts for this user
+            await this.sendStateSpecificAlert(user);
+            
+            // Mark alert as sent to this user
+            await alert.markAsSent(user.phone_number);
+            
+            successCount++;
+            console.log(`✅ Sent alert to ${user.phone_number}`);
+            
+          } catch (userError) {
+            console.error(`❌ Failed to send to ${user.phone_number}:`, userError);
+            errorCount++;
           }
-        });
+        }));
 
-        // Delay between batches to respect rate limits
-        if (i < batches.length - 1) {
-          await this.delay(this.delayBetweenBatches);
+        // Add delay between batches to respect rate limits
+        if (i + batchSize < subscribedUsers.length) {
+          await new Promise(resolve => setTimeout(resolve, 2000)); // 2 second delay
         }
       }
 
-      console.log(`✅ Broadcast completed: ${totalSent} sent, ${totalFailed} failed`);
+      console.log(`📊 Broadcast completed: ${successCount} success, ${errorCount} errors`);
       
-      // Update alert statistics
-      alert.totalRecipients = totalSent;
-      await alert.save();
-
+      return {
+        success: true,
+        userCount: subscribedUsers.length,
+        successCount: successCount,
+        errorCount: errorCount
+      };
+      
     } catch (error) {
-      console.error('❌ Error in broadcast:', error);
-    } finally {
-      this.isProcessing = false;
+      console.error('❌ Error in broadcastNationalAlert:', error);
+      throw error;
+    }
+  }
+
+  // Send state-specific alert to user if available
+  async sendStateSpecificAlert(user) {
+    try {
+      // Check if user has state information
+      const userState = user.disease_alert_state || user.state || user.location?.state;
+      
+      if (!userState) {
+        console.log(`ℹ️ No state info for user ${user.phone_number}, skipping state alert`);
+        return;
+      }
+
+      // Get today's state-specific alert
+      const stateAlert = await OutbreakAlert.getStateAlert(userState);
+      
+      if (stateAlert) {
+        const language = user.language || 'en';
+        const formattedStateAlert = stateAlert.getFormattedAlert(language);
+        
+        // Add state-specific header
+        const stateHeader = {
+          en: `\n\n🏛️ *${userState} State Alert*\n\n`,
+          hi: `\n\n🏛️ *${userState} राज्य अलर्ट*\n\n`
+        };
+        
+        const stateMessage = (stateHeader[language] || stateHeader.en) + formattedStateAlert;
+        
+        // Send state-specific alert
+        await sendMessage(user.phone_number, stateMessage);
+        
+        console.log(`🏛️ Sent state alert for ${userState} to ${user.phone_number}`);
+      }
+      
+    } catch (error) {
+      console.error(`⚠️ Error sending state alert to ${user.phone_number}:`, error);
+      // Don't throw - this is supplementary to national alert
     }
   }
 

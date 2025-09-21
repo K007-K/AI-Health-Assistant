@@ -39,57 +39,76 @@ class OutbreakService {
 
   // Fetch latest national outbreak data from Gemini with grounding
   async fetchNationalOutbreakData() {
-    const prompt = `You are a disease outbreak monitoring system for India. Using the latest real-time information available, provide current disease outbreak information for India as of today's date.
+    const today = new Date();
+    const currentDate = today.toLocaleDateString('en-IN', { 
+      day: '2-digit', 
+      month: 'long', 
+      year: 'numeric' 
+    });
+    const currentMonth = today.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
 
-CRITICAL INSTRUCTIONS:
-1. Use REAL-TIME DATA and latest news sources to identify ACTIVE, CURRENT outbreaks happening NOW in India
-2. Search for recent health ministry announcements, WHO reports, and news about disease outbreaks
-3. Include only diseases with significant public health impact based on current reports
-4. Provide accurate, factual information from reliable sources like Ministry of Health, WHO, ICMR
-5. If no major outbreaks are currently active based on latest news, mention seasonal diseases to watch for
+    const prompt = `You are a real-time disease outbreak monitoring system for India. Today is ${currentDate}. Search for and provide the LATEST, MOST CURRENT disease outbreak information for India as of TODAY (${currentDate}).
 
-SEARCH FOR LATEST INFORMATION ON:
-- Recent disease outbreak reports in India
-- Ministry of Health and Family Welfare announcements
-- WHO India health alerts
-- State health department notifications
-- Current epidemiological surveillance data
-- Recent news about infectious disease outbreaks
+CRITICAL INSTRUCTIONS FOR REAL-TIME DATA:
+1. MANDATORY: Search for news and reports from TODAY (${currentDate}) and this week
+2. MANDATORY: Use Google Search to find the latest health ministry announcements from ${currentMonth}
+3. MANDATORY: Look for current WHO India alerts and ICMR reports from this month
+4. MANDATORY: Search for recent state health department notifications from the past 7 days
+5. MANDATORY: Find current epidemiological surveillance data from Indian health authorities
+6. MANDATORY: Search for breaking news about disease outbreaks in India from today and this week
+
+DO NOT USE OUTDATED INFORMATION. Only use data from:
+- Today (${currentDate}) - HIGHEST PRIORITY
+- This week (past 7 days) - HIGH PRIORITY  
+- This month (${currentMonth}) - MEDIUM PRIORITY
+- Reject any data older than 30 days
+
+SEARCH QUERIES TO USE:
+- "India disease outbreak ${currentDate}"
+- "Ministry of Health India alerts ${currentMonth}"
+- "WHO India health emergency ${currentMonth}"
+- "ICMR disease surveillance ${currentMonth}"
+- "India dengue chikungunya malaria cases ${currentMonth}"
+- "India H1N1 flu outbreak ${currentMonth}"
+- "State health department India alerts ${currentMonth}"
 
 Required JSON Response Format:
 {
+  "dataFreshness": "TODAY/THIS_WEEK/THIS_MONTH",
+  "searchDate": "${currentDate}",
   "hasActiveOutbreaks": true/false,
   "nationalAlert": {
-    "title": "Disease Outbreak Alert - [Current Date]",
-    "description": "Brief overview of current outbreak situation in India based on latest reports",
+    "title": "Disease Outbreak Alert - ${currentDate}",
+    "description": "Current outbreak situation in India based on latest reports from ${currentDate}",
     "primaryDisease": "Main disease of concern from recent data",
     "severity": "low/medium/high/critical",
     "affectedStates": ["State1", "State2"],
     "symptoms": ["symptom1", "symptom2", "symptom3"],
     "preventionTips": ["tip1", "tip2", "tip3", "tip4"],
-    "estimatedCases": "approximate number or range from latest reports",
-    "lastUpdated": "current date",
-    "sources": ["source1", "source2"]
+    "estimatedCases": "latest numbers from ${currentMonth}",
+    "lastUpdated": "${currentDate}",
+    "sources": ["Recent source 1 with date", "Recent source 2 with date"],
+    "dataAge": "hours/days old"
   },
   "additionalDiseases": [
     {
       "disease": "Disease name",
       "severity": "low/medium/high",
       "affectedAreas": ["areas"],
-      "briefDescription": "short description based on latest data"
+      "briefDescription": "description based on latest ${currentMonth} data",
+      "lastReported": "date of latest report"
     }
   ]
 }
 
-Focus on current reports about:
-- Dengue, Chikungunya, Malaria outbreaks
-- H1N1, COVID-19 variants, respiratory infections
-- Seasonal flu and viral fever outbreaks
-- Food poisoning and water-borne disease clusters
-- Any emerging infectious diseases in the news
-- Vector-borne diseases during current season
+FOCUS ON CURRENT SEASONAL DISEASES FOR ${currentMonth}:
+- Post-monsoon diseases (Dengue, Chikungunya, Malaria)
+- Respiratory infections (H1N1, seasonal flu)
+- Water-borne diseases (Diarrhea, Typhoid, Hepatitis A)
+- Vector-borne diseases appropriate for current season
+- Any emerging infectious diseases in current news
 
-Use real-time search to provide the most current, actionable health information for Indian citizens.`;
+MANDATORY: Include source dates and ensure all information is from ${currentMonth} or newer.`;
 
     try {
       const result = await this.model.generateContent(prompt);
@@ -113,57 +132,78 @@ Use real-time search to provide the most current, actionable health information 
 
   // Fetch state-specific outbreak data from Gemini with grounding
   async fetchStateOutbreakData(state) {
-    const prompt = `You are a disease outbreak monitoring system for India. Using the latest real-time information available, provide current disease outbreak information specifically for ${state} state as of today's date.
+    const today = new Date();
+    const currentDate = today.toLocaleDateString('en-IN', { 
+      day: '2-digit', 
+      month: 'long', 
+      year: 'numeric' 
+    });
+    const currentMonth = today.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
 
-CRITICAL INSTRUCTIONS:
-1. Use REAL-TIME DATA and latest news sources to identify ACTIVE, CURRENT outbreaks happening NOW in ${state} state
-2. Search for recent ${state} health department announcements, local news, and state-specific health alerts
-3. Focus ONLY on ${state} state - include active outbreaks, seasonal diseases, and health advisories
-4. Provide state-specific prevention tips and local health contacts based on current information
-5. Include district-wise information if available from recent reports
+    const prompt = `You are a real-time disease outbreak monitoring system for ${state} state, India. Today is ${currentDate}. Search for and provide the LATEST, MOST CURRENT disease outbreak information specifically for ${state} state as of TODAY (${currentDate}).
 
-SEARCH FOR LATEST INFORMATION ON:
-- Recent disease outbreak reports in ${state} state
-- ${state} Health Department announcements and notifications
-- Local news about infectious disease outbreaks in ${state}
-- District-wise health surveillance data for ${state}
-- Current epidemiological situation in ${state}
-- State-specific health advisories and alerts
+CRITICAL INSTRUCTIONS FOR REAL-TIME ${state} DATA:
+1. MANDATORY: Search for news and reports about ${state} from TODAY (${currentDate}) and this week
+2. MANDATORY: Use Google Search to find latest ${state} Health Department announcements from ${currentMonth}
+3. MANDATORY: Look for current ${state} state health alerts and district-wise reports from this month
+4. MANDATORY: Search for recent local news about disease outbreaks in ${state} from the past 7 days
+5. MANDATORY: Find current epidemiological surveillance data from ${state} health authorities
+6. MANDATORY: Search for breaking news about disease outbreaks in ${state} districts from today and this week
+
+DO NOT USE OUTDATED INFORMATION FOR ${state}. Only use data from:
+- Today (${currentDate}) - HIGHEST PRIORITY
+- This week (past 7 days) - HIGH PRIORITY  
+- This month (${currentMonth}) - MEDIUM PRIORITY
+- Reject any data older than 30 days
+
+SEARCH QUERIES TO USE FOR ${state}:
+- "${state} disease outbreak ${currentDate}"
+- "${state} Health Department alerts ${currentMonth}"
+- "${state} dengue chikungunya malaria cases ${currentMonth}"
+- "${state} district wise disease surveillance ${currentMonth}"
+- "${state} health emergency ${currentMonth}"
+- "${state} state health bulletin ${currentMonth}"
+- "Disease outbreak ${state} districts ${currentMonth}"
 
 Required JSON Response Format:
 {
+  "dataFreshness": "TODAY/THIS_WEEK/THIS_MONTH",
+  "searchDate": "${currentDate}",
+  "stateName": "${state}",
   "hasStateOutbreaks": true/false,
   "stateAlert": {
-    "title": "${state} Disease Outbreak Update - [Current Date]",
-    "description": "Current disease outbreak situation in ${state} based on latest reports",
+    "title": "${state} Disease Outbreak Update - ${currentDate}",
+    "description": "Current disease outbreak situation in ${state} based on latest reports from ${currentDate}",
     "primaryDisease": "Main disease of concern in ${state} from recent data",
     "severity": "low/medium/high/critical",
     "affectedDistricts": ["District1", "District2"],
     "symptoms": ["symptom1", "symptom2", "symptom3"],
-    "preventionTips": ["state-specific tip1", "tip2", "tip3", "tip4"],
-    "estimatedCases": "approximate number in ${state} from latest reports",
-    "stateHealthDepartmentContact": "contact info",
-    "lastUpdated": "current date",
-    "sources": ["source1", "source2"]
+    "preventionTips": ["${state}-specific tip1", "tip2", "tip3", "tip4"],
+    "estimatedCases": "latest numbers in ${state} from ${currentMonth}",
+    "stateHealthDepartmentContact": "${state} health dept contact",
+    "lastUpdated": "${currentDate}",
+    "sources": ["Recent ${state} source 1 with date", "Recent ${state} source 2 with date"],
+    "dataAge": "hours/days old"
   },
   "seasonalDiseases": [
     {
       "disease": "Disease name",
       "riskLevel": "low/medium/high",
-      "affectedDistricts": ["districts"],
-      "briefDescription": "description for ${state} based on current data"
+      "affectedDistricts": ["districts in ${state}"],
+      "briefDescription": "description for ${state} based on latest ${currentMonth} data",
+      "lastReported": "date of latest report in ${state}"
     }
   ]
 }
 
-Consider current ${state}-specific factors:
-- Climate and seasonal patterns affecting ${state}
-- Common diseases currently reported in ${state}
-- Local health infrastructure and response in ${state}
-- Cultural and geographical factors specific to ${state}
-- Recent health department advisories for ${state}
+FOCUS ON CURRENT SEASONAL DISEASES IN ${state} FOR ${currentMonth}:
+- Post-monsoon diseases common in ${state} (Dengue, Chikungunya, Malaria)
+- Respiratory infections in ${state} (H1N1, seasonal flu)
+- Water-borne diseases in ${state} (Diarrhea, Typhoid, Hepatitis A)
+- Vector-borne diseases specific to ${state}'s climate
+- Any emerging infectious diseases in ${state} from current news
 
-Use real-time search to provide the most current, actionable information for ${state} residents.`;
+MANDATORY: Include ${state}-specific source dates and ensure all information is from ${currentMonth} or newer for ${state}.`;
 
     try {
       const result = await this.model.generateContent(prompt);
@@ -185,41 +225,108 @@ Use real-time search to provide the most current, actionable information for ${s
     }
   }
 
-  // Process and save national outbreak alert
-  async processNationalOutbreak(outbreakData) {
+  // Fetch and broadcast national outbreaks
+  async fetchAndBroadcastNationalOutbreaks() {
     try {
-      if (!outbreakData.hasActiveOutbreaks) {
-        console.log('ℹ️ No active national outbreaks detected');
+      console.log('🔄 Starting daily national outbreak fetch...');
+      
+      // Fetch latest outbreak data from Gemini
+      const outbreakData = await this.fetchNationalOutbreakData();
+      
+      if (outbreakData.hasActiveOutbreaks && outbreakData.nationalAlert) {
+        // Create outbreak alert in database
+        const alert = await OutbreakAlert.createAlert({
+          title: outbreakData.nationalAlert.title,
+          description: outbreakData.nationalAlert.description,
+          disease: outbreakData.nationalAlert.primaryDisease,
+          severity: outbreakData.nationalAlert.severity,
+          scope: 'national',
+          location: { country: 'India' },
+          affectedAreas: outbreakData.nationalAlert.affectedStates?.map(state => ({
+            state: state,
+            districts: [],
+            cases: 0
+          })) || [],
+          preventionTips: outbreakData.nationalAlert.preventionTips || [],
+          symptoms: outbreakData.nationalAlert.symptoms || [],
+          queryType: 'daily_national',
+          priority: outbreakData.nationalAlert.severity === 'critical' ? 1 : 
+                   outbreakData.nationalAlert.severity === 'high' ? 2 : 3
+        });
+
+        console.log(`✅ Created national outbreak alert: ${alert.alert_id}`);
+        
+        // Also fetch state-specific alerts for affected states
+        if (outbreakData.nationalAlert.affectedStates && outbreakData.nationalAlert.affectedStates.length > 0) {
+          console.log('🏛️ Fetching state-specific alerts for affected states...');
+          await this.fetchStateSpecificAlerts(outbreakData.nationalAlert.affectedStates);
+        }
+        
+        return alert;
+      } else {
+        console.log('ℹ️ No active national outbreaks found');
         return null;
       }
-
-      const alert = outbreakData.nationalAlert;
-      
-      const outbreakAlert = await OutbreakAlert.createAlert({
-        title: alert.title,
-        description: alert.description,
-        disease: alert.primaryDisease,
-        severity: alert.severity,
-        scope: 'national',
-        location: {
-          country: 'India'
-        },
-        affectedAreas: alert.affectedStates?.map(state => ({
-          state: state,
-          districts: [],
-          cases: 0
-        })) || [],
-        preventionTips: alert.preventionTips || [],
-        symptoms: alert.symptoms || [],
-        queryType: 'daily_national',
-        priority: this.getSeverityPriority(alert.severity)
-      });
-
-      console.log(`✅ Created national outbreak alert: ${outbreakAlert.alertId}`);
-      return outbreakAlert;
     } catch (error) {
-      console.error('❌ Error processing national outbreak:', error);
+      console.error('❌ Error in fetchAndBroadcastNationalOutbreaks:', error);
       throw error;
+    }
+  }
+
+  // Fetch state-specific alerts for multiple states
+  async fetchStateSpecificAlerts(states) {
+    try {
+      console.log(`🔍 Fetching state-specific alerts for: ${states.join(', ')}`);
+      
+      const stateAlerts = [];
+      
+      // Fetch alerts for each state (limit to top 5 to avoid rate limits)
+      const statesToProcess = states.slice(0, 5);
+      
+      for (const state of statesToProcess) {
+        try {
+          console.log(`📍 Fetching alert for ${state}...`);
+          const stateData = await this.fetchStateOutbreakData(state);
+          
+          if (stateData.hasStateOutbreaks && stateData.stateAlert) {
+            // Create state-specific alert
+            const stateAlert = await OutbreakAlert.createAlert({
+              title: stateData.stateAlert.title,
+              description: stateData.stateAlert.description,
+              disease: stateData.stateAlert.primaryDisease,
+              severity: stateData.stateAlert.severity,
+              scope: 'state',
+              location: { 
+                country: 'India',
+                state: state
+              },
+              affectedAreas: stateData.stateAlert.affectedDistricts?.map(district => ({
+                state: state,
+                districts: [district],
+                cases: 0
+              })) || [],
+              preventionTips: stateData.stateAlert.preventionTips || [],
+              symptoms: stateData.stateAlert.symptoms || [],
+              queryType: 'state_specific',
+              priority: stateData.stateAlert.severity === 'critical' ? 1 : 
+                       stateData.stateAlert.severity === 'high' ? 2 : 3
+            });
+
+            stateAlerts.push(stateAlert);
+            console.log(`✅ Created state alert for ${state}: ${stateAlert.alert_id}`);
+          }
+        } catch (stateError) {
+          console.error(`⚠️ Error fetching alert for ${state}:`, stateError);
+          // Continue with other states
+        }
+      }
+      
+      console.log(`✅ Created ${stateAlerts.length} state-specific alerts`);
+      return stateAlerts;
+      
+    } catch (error) {
+      console.error('❌ Error in fetchStateSpecificAlerts:', error);
+      return [];
     }
   }
 

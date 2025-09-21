@@ -9,12 +9,7 @@ class OutbreakService {
     this.model = this.genAI.getGenerativeModel({ 
       model: "gemini-2.0-flash-exp",
       tools: [{
-        googleSearchRetrieval: {
-          dynamicRetrievalConfig: {
-            mode: "MODE_DYNAMIC",
-            dynamicThreshold: 0.2  // Even lower threshold for Gemini 2.0 Flash
-          }
-        }
+        googleSearch: {}  // Correct format for Gemini 2.0 Flash
       }],
       generationConfig: {
         temperature: 0.1,  // Lower temperature for more factual responses
@@ -55,17 +50,17 @@ class OutbreakService {
 
     const prompt = `You are a real-time disease outbreak monitoring system for India. Today is ${currentDate}. 
 
-🔍 MANDATORY: USE GOOGLE SEARCH GROUNDING TOOL to find the LATEST, MOST CURRENT disease outbreak information for India as of TODAY (${currentDate}).
+🔍 MANDATORY: USE GOOGLE SEARCH to find the LATEST, MOST CURRENT disease outbreak information for India as of TODAY (${currentDate}).
 
-CRITICAL INSTRUCTIONS FOR REAL-TIME GROUNDING:
-1. MANDATORY: Use the Google Search grounding tool to search for news and reports from TODAY (${currentDate}) and this week
-2. MANDATORY: Ground your response with Google Search for the latest health ministry announcements from ${currentMonth}
-3. MANDATORY: Use grounding to look for current WHO India alerts and ICMR reports from this month
-4. MANDATORY: Ground with search for recent state health department notifications from the past 7 days
-5. MANDATORY: Use grounding tool to find current epidemiological surveillance data from Indian health authorities
-6. MANDATORY: Ground with search for breaking news about disease outbreaks in India from today and this week
+CRITICAL INSTRUCTIONS FOR REAL-TIME SEARCH:
+1. MANDATORY: Use Google Search to find news and reports from TODAY (${currentDate}) and this week
+2. MANDATORY: Search for the latest health ministry announcements from ${currentMonth}
+3. MANDATORY: Look for current WHO India alerts and ICMR reports from this month
+4. MANDATORY: Search for recent state health department notifications from the past 7 days
+5. MANDATORY: Find current epidemiological surveillance data from Indian health authorities
+6. MANDATORY: Search for breaking news about disease outbreaks in India from today and this week
 
-🔍 GROUNDING TOOL USAGE: You MUST use the Google Search grounding tool to retrieve real-time information. Do not rely on training data.
+🔍 GOOGLE SEARCH USAGE: You MUST use Google Search to retrieve real-time information. Do not rely on training data.
 
 DO NOT USE OUTDATED INFORMATION. Only use data from:
 - Today (${currentDate}) - HIGHEST PRIORITY
@@ -129,11 +124,11 @@ MANDATORY: Include source dates and ensure all information is from ${currentMont
       // Log if grounding was used
       const groundingMetadata = response.candidates?.[0]?.groundingMetadata;
       if (groundingMetadata) {
-        console.log('✅ Gemini 2.0 Flash grounding tool was used successfully');
-        console.log(`🔍 Grounding sources: ${groundingMetadata.groundingChunks?.length || 0} chunks`);
+        console.log('✅ Gemini 2.0 Flash Google Search was used successfully');
+        console.log(`🔍 Search results: ${groundingMetadata.groundingChunks?.length || 0} chunks`);
         console.log(`📊 Grounding support score: ${groundingMetadata.groundingSupport || 'N/A'}`);
       } else {
-        console.log('⚠️ Gemini 2.0 Flash grounding tool may not have been used');
+        console.log('⚠️ Gemini 2.0 Flash Google Search may not have been used');
       }
       
       // Extract JSON from response
@@ -163,17 +158,17 @@ MANDATORY: Include source dates and ensure all information is from ${currentMont
 
     const prompt = `You are a real-time disease outbreak monitoring system for ${state} state, India. Today is ${currentDate}. 
 
-🔍 MANDATORY: USE GOOGLE SEARCH GROUNDING TOOL to find the LATEST, MOST CURRENT disease outbreak information specifically for ${state} state as of TODAY (${currentDate}).
+🔍 MANDATORY: USE GOOGLE SEARCH to find the LATEST, MOST CURRENT disease outbreak information specifically for ${state} state as of TODAY (${currentDate}).
 
-CRITICAL INSTRUCTIONS FOR REAL-TIME ${state} GROUNDING:
-1. MANDATORY: Use the Google Search grounding tool to search for news and reports about ${state} from TODAY (${currentDate}) and this week
-2. MANDATORY: Ground your response with Google Search for latest ${state} Health Department announcements from ${currentMonth}
-3. MANDATORY: Use grounding to look for current ${state} state health alerts and district-wise reports from this month
-4. MANDATORY: Ground with search for recent local news about disease outbreaks in ${state} from the past 7 days
-5. MANDATORY: Use grounding tool to find current epidemiological surveillance data from ${state} health authorities
-6. MANDATORY: Ground with search for breaking news about disease outbreaks in ${state} districts from today and this week
+CRITICAL INSTRUCTIONS FOR REAL-TIME ${state} SEARCH:
+1. MANDATORY: Use Google Search to find news and reports about ${state} from TODAY (${currentDate}) and this week
+2. MANDATORY: Search for latest ${state} Health Department announcements from ${currentMonth}
+3. MANDATORY: Look for current ${state} state health alerts and district-wise reports from this month
+4. MANDATORY: Search for recent local news about disease outbreaks in ${state} from the past 7 days
+5. MANDATORY: Find current epidemiological surveillance data from ${state} health authorities
+6. MANDATORY: Search for breaking news about disease outbreaks in ${state} districts from today and this week
 
-🔍 GROUNDING TOOL USAGE: You MUST use the Google Search grounding tool to retrieve real-time information about ${state}. Do not rely on training data.
+🔍 GOOGLE SEARCH USAGE: You MUST use Google Search to retrieve real-time information about ${state}. Do not rely on training data.
 
 DO NOT USE OUTDATED INFORMATION FOR ${state}. Only use data from:
 - Today (${currentDate}) - HIGHEST PRIORITY
@@ -239,11 +234,11 @@ MANDATORY: Include ${state}-specific source dates and ensure all information is 
       // Log if grounding was used
       const groundingMetadata = response.candidates?.[0]?.groundingMetadata;
       if (groundingMetadata) {
-        console.log(`✅ Gemini 2.0 Flash grounding tool was used successfully for ${state}`);
-        console.log(`🔍 Grounding sources for ${state}: ${groundingMetadata.groundingChunks?.length || 0} chunks`);
+        console.log(`✅ Gemini 2.0 Flash Google Search was used successfully for ${state}`);
+        console.log(`🔍 Search results for ${state}: ${groundingMetadata.groundingChunks?.length || 0} chunks`);
         console.log(`📊 Grounding support score for ${state}: ${groundingMetadata.groundingSupport || 'N/A'}`);
       } else {
-        console.log(`⚠️ Gemini 2.0 Flash grounding tool may not have been used for ${state}`);
+        console.log(`⚠️ Gemini 2.0 Flash Google Search may not have been used for ${state}`);
       }
       
       // Extract JSON from response

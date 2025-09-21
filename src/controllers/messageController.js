@@ -1993,9 +1993,11 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
       const userStateInfo = await cacheService.getUserSelectedState(user.phone_number);
       const userStateName = userStateInfo?.indian_states?.state_name || null;
       
-      // Get disease outbreak data using smart caching (no redundant queries)
-      const diseaseData = await cacheService.getDiseaseOutbreakData(userStateName);
-      
+      // Try showing today's alerts first (rich Gemini-like format)
+      const OutbreakAlert = require('../models/OutbreakAlert');
+      const todaysNational = await OutbreakAlert.getTodaysNationalAlert();
+      const todaysState = userStateName ? await OutbreakAlert.getStateAlert(userStateName) : null;
+
       // Send multilingual main header
       const locationText = userStateName ? ` in ${userStateName}` : ' in India';
       const currentDate = new Date().toLocaleDateString('en-IN', {
@@ -2009,6 +2011,36 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
       
       await this.whatsappService.sendMessage(user.phone_number, headerText);
       await new Promise(resolve => setTimeout(resolve, 500));
+
+      // If we have today's state/national alerts, show those first and return
+      let showedRich = false;
+      if (todaysState) {
+        await this.whatsappService.sendMessage(user.phone_number, todaysState.getFormattedAlert(user.preferred_language || 'en'));
+        await new Promise(resolve => setTimeout(resolve, 600));
+        showedRich = true;
+      }
+      if (todaysNational) {
+        await this.whatsappService.sendMessage(user.phone_number, todaysNational.getFormattedAlert(user.preferred_language || 'en'));
+        await new Promise(resolve => setTimeout(resolve, 600));
+        showedRich = true;
+      }
+
+      if (showedRich) {
+        // Provide quick follow-up actions and exit
+        const followUpButtons = [
+          { id: 'disease_alerts', title: '↩️ Back' },
+          { id: 'back_to_menu', title: '🏠 Main Menu' }
+        ];
+        await this.whatsappService.sendInteractiveButtons(
+          user.phone_number,
+          '📱 Want alerts for disease outbreaks in your area?',
+          followUpButtons
+        );
+        return;
+      }
+
+      // Otherwise, fall back to the smart caching disease list flow
+      const diseaseData = await cacheService.getDiseaseOutbreakData(userStateName);
 
       try {
         // Use cached disease data (eliminates redundant API calls)

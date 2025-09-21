@@ -39,7 +39,8 @@ class SchedulerService {
         const nationalAlert = await outbreakService.fetchAndBroadcastNationalOutbreaks();
         
         if (nationalAlert) {
-          console.log(`📢 Broadcasting national alert: ${nationalAlert.alertId}`);
+          const alertId = nationalAlert.alert_id || nationalAlert.parsed_diseases?.alertId || nationalAlert.id || 'unknown';
+          console.log(`📢 Broadcasting national alert: ${alertId}`);
           
           // Broadcast to all users
           await broadcastService.broadcastNationalAlert(nationalAlert);
@@ -100,7 +101,8 @@ class SchedulerService {
         const nationalAlert = await outbreakService.fetchAndBroadcastNationalOutbreaks();
         
         if (nationalAlert) {
-          console.log(`📢 TEST BROADCAST: Broadcasting national alert: ${nationalAlert.alertId}`);
+          const alertId = nationalAlert.alert_id || nationalAlert.parsed_diseases?.alertId || nationalAlert.id || 'unknown';
+          console.log(`📢 TEST BROADCAST: Broadcasting national alert: ${alertId}`);
           
           // Broadcast to all users
           await broadcastService.broadcastNationalAlert(nationalAlert);

@@ -27,7 +27,15 @@ class OutbreakAlert {
         preventionTips: alertData.preventionTips || [],
         symptoms: alertData.symptoms || [],
         priority: alertData.priority || 1,
-        queryType: alertData.queryType
+        queryType: alertData.queryType,
+        // Rich fields from Gemini output
+        estimatedCases: alertData.estimatedCases || null,
+        lastUpdated: alertData.lastUpdated || new Date().toISOString(),
+        dataAge: alertData.dataAge || null,
+        dataFreshness: alertData.dataFreshness || null,
+        searchDate: alertData.searchDate || null,
+        sources: alertData.sources || [],
+        additionalDiseases: alertData.additionalDiseases || []
       },
       query_date: new Date().toISOString().split('T')[0], // YYYY-MM-DD format
       created_at: new Date(),
@@ -120,73 +128,98 @@ class OutbreakAlert {
   getFormattedAlert(language = 'en') {
     // Get data from parsed_diseases JSON or fallback to direct properties
     const alertData = this.parsed_diseases || this;
-    
-    const severityEmojis = {
-      low: '🟡',
-      medium: '🟠', 
-      high: '🔴',
-      critical: '🚨'
-    };
 
-    const scopeEmojis = {
-      national: '🇮🇳',
-      nationwide: '🇮🇳',
-      state: '🏛️',
-      district: '🏘️'
-    };
+    const severityEmojis = { low: '🟡', medium: '🟠', high: '🔴', critical: '🚨' };
+    const scopeEmojis = { national: '🇮🇳', nationwide: '🇮🇳', state: '🏛️', district: '🏘️' };
 
-    const scope = alertData.scope || this.cache_type;
-    const severity = alertData.severity || 'medium';
+    const scope = (alertData.scope || this.cache_type || 'nationwide').toLowerCase();
+    const severity = (alertData.severity || 'medium').toLowerCase();
     const title = alertData.title || 'Disease Outbreak Alert';
-    const description = alertData.description || this.ai_response_text;
+    const description = alertData.description || this.ai_response_text || '';
     const disease = alertData.disease || 'Various';
-    const symptoms = alertData.symptoms || [];
-    const preventionTips = alertData.preventionTips || [];
+    const symptoms = Array.isArray(alertData.symptoms) ? alertData.symptoms : [];
+    const preventionTips = Array.isArray(alertData.preventionTips) ? alertData.preventionTips : [];
     const location = alertData.location || { state: this.state_name };
+    const affectedAreas = Array.isArray(alertData.affectedAreas) ? alertData.affectedAreas : [];
+    const additional = Array.isArray(alertData.additionalDiseases) ? alertData.additionalDiseases : [];
+    const sources = Array.isArray(alertData.sources) ? alertData.sources : [];
+    const lastUpdated = alertData.lastUpdated || this.query_date || this.updated_at;
+    const estimatedCases = alertData.estimatedCases;
+    const dataFreshness = alertData.dataFreshness;
 
-    return {
-      en: `${severityEmojis[severity]} *${title}*
+    const locationLine = location?.state ? `\n📍 *Location:* ${location.state}` : '';
+    const scopeLine = `${scopeEmojis[scope] || '🗺️'} *Scope:* ${scope === 'nationwide' ? 'National' : scope.charAt(0).toUpperCase() + scope.slice(1)}`;
 
-${scopeEmojis[scope]} *Scope:* ${scope === 'nationwide' ? 'National' : scope.charAt(0).toUpperCase() + scope.slice(1)}
-${location && location.state ? `📍 *Location:* ${location.state}` : ''}
+    const affectedLine = affectedAreas.length > 0
+      ? `\n🗺️ *Affected Areas:* ${affectedAreas
+          .map(a => a.state ? `${a.state}${a.districts && a.districts.length ? ` (${a.districts.join(', ')})` : ''}` : a)
+          .join(', ')}`
+      : '';
+
+    const keyFacts = [
+      estimatedCases ? `• Estimated cases: ${estimatedCases}` : null,
+      dataFreshness ? `• Data freshness: ${dataFreshness}` : null,
+    ].filter(Boolean).join('\n');
+
+    const additionalBlock = additional.length > 0
+      ? `\n\n📰 *Other Notable Outbreaks:*
+${additional.slice(0, 5).map((d, idx) => {
+  const name = d.disease || d.name || 'Disease';
+  const sev = (d.severity || d.riskLevel || '').toString();
+  const areas = Array.isArray(d.affectedAreas || d.affectedDistricts) ? (d.affectedAreas || d.affectedDistricts).join(', ') : '';
+  const last = d.lastReported || d.lastUpdated || '';
+  return `• ${name}${sev ? ` — ${sev}` : ''}${areas ? ` — ${areas}` : ''}${last ? ` (last: ${last})` : ''}`;
+}).join('\n')}`
+      : '';
+
+    const sourcesBlock = sources.length > 0
+      ? `\n\n🔎 *Sources:*
+${sources.slice(0, 3).map((s, i) => `• ${typeof s === 'string' ? s : (s.title || s.name || 'Source')} `).join('\n')}`
+      : '';
+
+    const symptomsBlock = symptoms.length > 0
+      ? `\n\n*🩺 Symptoms to Watch:*
+${symptoms.map(s => `• ${s}`).join('\n')}`
+      : '';
+
+    const preventionBlock = preventionTips.length > 0
+      ? `\n\n*🛡️ Prevention Tips:*
+${preventionTips.map(tip => `• ${tip}`).join('\n')}`
+      : '';
+
+    const messageEn = `${severityEmojis[severity] || '🟠'} *${title}*
+${scopeLine}${locationLine}
 
 *🦠 Disease:* ${disease}
 
-*📋 Description:*
+*📋 Overview:*
 _${description}_
+${affectedLine}
+${keyFacts ? `\n*Key facts:*\n${keyFacts}` : ''}
+${symptomsBlock}
+${preventionBlock}
+${additionalBlock}
+${sourcesBlock}
 
-${symptoms && symptoms.length > 0 ? `*🩺 Symptoms to Watch:*
-${symptoms.map(s => `• ${s}`).join('\n')}` : ''}
+*📞 Emergency:* 108
+*🕐 Last Updated:* ${new Date(lastUpdated).toLocaleDateString('en-IN')}
 
-${preventionTips && preventionTips.length > 0 ? `*🛡️ Prevention Tips:*
-${preventionTips.map(tip => `• ${tip}`).join('\n')}` : ''}
+_Stay safe. For medical emergencies, contact your nearest healthcare facility._`;
 
-*📞 Emergency Contact:* 108
-*🕐 Last Updated:* ${new Date(this.updated_at).toLocaleDateString()}
+    if (language === 'en') return messageEn;
 
-_Stay safe and follow health guidelines. For medical emergencies, contact your nearest healthcare facility._`,
-
-      hi: `${severityEmojis[severity]} *${title}*
-
-${scopeEmojis[scope]} *क्षेत्र:* ${scope === 'nationwide' ? 'राष्ट्रीय' : scope === 'state' ? 'राज्य' : 'जिला'}
-${location && location.state ? `📍 *स्थान:* ${location.state}` : ''}
+    // Keep Hindi fallback minimal but functional (can be expanded similarly)
+    const messageHi = `${severityEmojis[severity] || '🟠'} *${title}*
+${scopeEmojis[scope] || '🗺️'} *क्षेत्र:* ${scope === 'nationwide' ? 'राष्ट्रीय' : scope === 'state' ? 'राज्य' : 'जिला'}${location?.state ? `\n📍 *स्थान:* ${location.state}` : ''}
 
 *🦠 बीमारी:* ${disease}
 
 *📋 विवरण:*
 _${description}_
 
-${symptoms && symptoms.length > 0 ? `*🩺 लक्षण:*
-${symptoms.map(s => `• ${s}`).join('\n')}` : ''}
+*🕐 अंतिम अपडेट:* ${new Date(lastUpdated).toLocaleDateString('hi-IN')}`;
 
-${preventionTips && preventionTips.length > 0 ? `*🛡️ बचाव के तरीके:*
-${preventionTips.map(tip => `• ${tip}`).join('\n')}` : ''}
-
-*📞 आपातकालीन संपर्क:* 108
-*🕐 अंतिम अपडेट:* ${new Date(this.updated_at).toLocaleDateString()}
-
-_सुरक्षित रहें और स्वास्थ्य दिशानिर्देशों का पालन करें। चिकित्सा आपातकाल के लिए अपनी निकटतम स्वास्थ्य सुविधा से संपर्क करें।_`
-    }[language] || this.getFormattedAlert('en');
+    return messageHi;
   }
 }
 

@@ -83,7 +83,7 @@ Required JSON Response Format:
   "searchDate": "${currentDate}",
   "hasActiveOutbreaks": true/false,
   "nationalAlert": {
-    "title": "Disease Outbreak Alert - ${currentDate}",
+    "title": "Compelling, newsroom-style headline summarizing the current India situation for ${currentMonth}",
     "description": "Current outbreak situation in India based on latest reports from ${currentDate}",
     "primaryDisease": "Main disease of concern from recent data",
     "severity": "low/medium/high/critical",
@@ -396,7 +396,15 @@ MANDATORY: Include ${state}-specific source dates and ensure all information is 
         preventionTips: alert.preventionTips || [],
         symptoms: alert.symptoms || [],
         queryType: 'daily_national',
-        priority: this.getSeverityPriority(alert.severity)
+        priority: this.getSeverityPriority(alert.severity),
+        // Rich fields
+        estimatedCases: alert.estimatedCases || null,
+        lastUpdated: alert.lastUpdated || outbreakData.searchDate || new Date().toISOString(),
+        dataAge: alert.dataAge || null,
+        dataFreshness: outbreakData.dataFreshness || null,
+        searchDate: outbreakData.searchDate || null,
+        sources: alert.sources || [],
+        additionalDiseases: Array.isArray(outbreakData.additionalDiseases) ? outbreakData.additionalDiseases : []
       });
 
       console.log(`✅ Created national outbreak alert: ${outbreakAlert.alert_id}`);
@@ -435,7 +443,15 @@ MANDATORY: Include ${state}-specific source dates and ensure all information is 
         preventionTips: alert.preventionTips || [],
         symptoms: alert.symptoms || [],
         queryType: 'state_specific',
-        priority: this.getSeverityPriority(alert.severity)
+        priority: this.getSeverityPriority(alert.severity),
+        // Rich fields
+        estimatedCases: alert.estimatedCases || null,
+        lastUpdated: alert.lastUpdated || stateData.searchDate || new Date().toISOString(),
+        dataAge: alert.dataAge || null,
+        dataFreshness: stateData.dataFreshness || null,
+        searchDate: stateData.searchDate || null,
+        sources: alert.sources || [],
+        additionalDiseases: Array.isArray(stateData.seasonalDiseases) ? stateData.seasonalDiseases : []
       });
 
       console.log(`✅ Created state outbreak alert for ${state}: ${outbreakAlert.alert_id}`);

@@ -72,8 +72,8 @@ Response Format (MANDATORY):
 • Use bullet points with • symbol
 • Keep each point short (1-2 sentences)
 • FORMATTING RULES:
-  - Use monospace for medical terms, conditions, and key information
-  - Use italics for emphasis and important points
+  - Use backticks for medical terms, conditions, and key information
+  - Use underscores for emphasis and important points
   - NO asterisks for bold - use WhatsApp formatting instead
   - Use bullet points for lists
 • End with medical disclaimer
@@ -247,8 +247,8 @@ RESPONSE FORMAT FOR NUTRITION/HYGIENE QUESTIONS:
 • Include "why" it's important for health
 • Mention affordable, locally available options
 • FORMATTING RULES:
-  - Use monospace for food names, measurements, and key terms
-  - Use italics for emphasis and important points
+  - Use backticks for food names, measurements, and key terms
+  - Use underscores for emphasis and important points
   - NO asterisks for bold - use WhatsApp formatting instead
   - Use bullet points for lists
 • End with: "This is general health information. For medical conditions, consult a doctor."
@@ -314,10 +314,10 @@ RESPONSE FORMAT FOR EXERCISE/LIFESTYLE QUESTIONS:
 • Include safety tips and precautions
 • Mention modifications for different fitness levels
 • FORMATTING RULES:
-  - Use `monospace` for exercise names, steps, and key terms
-  - Use _italics_ for emphasis and important points
-  - NO asterisks (*) for bold - use WhatsApp formatting instead
-  - Use bullet points (•) for lists
+  - Use backticks for exercise names, steps, and key terms
+  - Use underscores for emphasis and important points
+  - NO asterisks for bold - use WhatsApp formatting instead
+  - Use bullet points for lists
 • End with: "This is general health information. For medical conditions, consult a doctor."
 
 REDIRECT FORMAT FOR NON-EXERCISE QUESTIONS:

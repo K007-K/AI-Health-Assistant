@@ -187,24 +187,21 @@ ${symptoms.map(s => `• ${s}`).join('\n')}`
 ${preventionTips.map(tip => `• ${tip}`).join('\n')}`
       : '';
 
-    const messageEn = `${severityEmojis[severity] || '🟠'} *${title}*
+    const messageEn = `${severityEmojis[severity] || '🟠'} *Disease Outbreak Alert - ${new Date(lastUpdated).toLocaleDateString('en-IN')}*
 ${scopeLine}${locationLine}
 
 *🦠 Disease:* ${disease}
 
 *📋 Overview:*
-_${description}_
+${description}
 ${affectedLine}
-${keyFacts ? `\n*Key facts:*\n${keyFacts}` : ''}
 ${symptomsBlock}
 ${preventionBlock}
-${additionalBlock}
-${sourcesBlock}
 
 *📞 Emergency:* 108
 *🕐 Last Updated:* ${new Date(lastUpdated).toLocaleDateString('en-IN')}
 
-_Stay safe. For medical emergencies, contact your nearest healthcare facility._`;
+Stay safe. For medical emergencies, contact your nearest healthcare facility.`;
 
     if (language === 'en') return messageEn;
 

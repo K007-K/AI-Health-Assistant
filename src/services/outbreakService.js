@@ -48,60 +48,67 @@ class OutbreakService {
     });
     const currentMonth = today.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
 
-    const prompt = `You are a real-time disease outbreak monitoring system for India. Today is ${currentDate}. 
+    const prompt = `You are a comprehensive disease outbreak monitoring system for India. Today is ${currentDate}. 
 
-🔍 MANDATORY: USE GOOGLE SEARCH to find the LATEST, MOST CURRENT disease outbreak information for India as of TODAY (${currentDate}).
+🔍 MANDATORY: USE GOOGLE SEARCH to find the LATEST, MOST COMPREHENSIVE disease outbreak information for India as of TODAY (${currentDate}).
 
-CRITICAL INSTRUCTIONS FOR REAL-TIME SEARCH:
-1. MANDATORY: Use Google Search to find news and reports from TODAY (${currentDate}) and this week
-2. MANDATORY: Search for the latest health ministry announcements from ${currentMonth}
-3. MANDATORY: Look for current WHO India alerts and ICMR reports from this month
-4. MANDATORY: Search for recent state health department notifications from the past 7 days
-5. MANDATORY: Find current epidemiological surveillance data from Indian health authorities
-6. MANDATORY: Search for breaking news about disease outbreaks in India from today and this week
-
-🔍 GOOGLE SEARCH USAGE: You MUST use Google Search to retrieve real-time information. Do not rely on training data.
-
-DO NOT USE OUTDATED INFORMATION. Only use data from:
-- Today (${currentDate}) - HIGHEST PRIORITY
-- This week (past 7 days) - HIGH PRIORITY  
-- This month (${currentMonth}) - MEDIUM PRIORITY
-- Reject any data older than 30 days
+CRITICAL SEARCH REQUIREMENTS:
+1. MANDATORY: Search for current disease outbreaks in India from TODAY (${currentDate}) and this week
+2. MANDATORY: Find detailed information about "brain-eating amoeba" cases in Kerala from ${currentMonth}
+3. MANDATORY: Search for H3N2 influenza cases in Delhi from ${currentMonth}
+4. MANDATORY: Look for Nipah virus updates in Kerala from ${currentMonth}
+5. MANDATORY: Find dengue, chikungunya, malaria cases across India from ${currentMonth}
+6. MANDATORY: Search for water-borne disease outbreaks in flood-affected areas
+7. MANDATORY: Look for any emerging infectious diseases in India from ${currentMonth}
 
 SEARCH QUERIES TO USE:
-- "India disease outbreak ${currentDate}"
-- "Ministry of Health India alerts ${currentMonth}"
-- "WHO India health emergency ${currentMonth}"
-- "ICMR disease surveillance ${currentMonth}"
-- "India dengue chikungunya malaria cases ${currentMonth}"
-- "India H1N1 flu outbreak ${currentMonth}"
-- "State health department India alerts ${currentMonth}"
+- "India disease outbreaks September 2025 current"
+- "brain eating amoeba Kerala cases deaths ${currentMonth}"
+- "H3N2 influenza Delhi outbreak ${currentMonth}"
+- "Nipah virus Kerala cases ${currentMonth}"
+- "dengue malaria chikungunya India cases ${currentMonth}"
+- "WHO India disease alerts ${currentMonth}"
+- "Ministry of Health India outbreak reports ${currentMonth}"
 
-Required JSON Response Format:
+RESPONSE FORMAT - Create a comprehensive news-style report:
 {
   "dataFreshness": "TODAY/THIS_WEEK/THIS_MONTH",
   "searchDate": "${currentDate}",
   "hasActiveOutbreaks": true/false,
   "nationalAlert": {
-    "title": "Compelling, newsroom-style headline summarizing the current India situation for ${currentMonth}",
-    "description": "Current outbreak situation in India based on latest reports from ${currentDate}",
-    "primaryDisease": "Main disease of concern from recent data",
-    "severity": "low/medium/high/critical",
-    "affectedStates": ["State1", "State2"],
-    "symptoms": ["symptom1", "symptom2", "symptom3"],
-    "preventionTips": ["tip1", "tip2", "tip3", "tip4"],
-    "estimatedCases": "latest numbers from ${currentMonth}",
+    "title": "India Grapples with Multiple Disease Outbreaks in ${currentMonth}",
+    "description": "Comprehensive overview: As of ${currentDate}, India is contending with several disease outbreaks across various states. Write a detailed 3-4 paragraph summary covering: 1) Brain-eating amoeba in Kerala with specific case/death numbers, 2) H3N2 influenza in Delhi, 3) Nipah virus concerns in Kerala, 4) Seasonal diseases like dengue/malaria, 5) Any flood-related health risks. Include specific locations, case numbers, and health authority responses.",
+    "primaryDisease": "Multiple (Naegleria fowleri, H3N2 Influenza, Nipah Virus, Vector-borne diseases)",
+    "severity": "high",
+    "affectedStates": ["Kerala", "Delhi", "Maharashtra", "Punjab", "West Bengal", "Karnataka"],
+    "symptoms": ["Fever", "Headache", "Respiratory distress", "Body aches", "Persistent cough", "Neurological symptoms"],
+    "preventionTips": ["Avoid swimming in untreated freshwater", "Use mosquito nets and repellents", "Maintain personal hygiene", "Consume safe food and water", "Seek immediate medical attention for fever", "Follow health advisories"],
+    "estimatedCases": "Specific numbers from latest reports: Naegleria fowleri cases and deaths, H3N2 cases in Delhi, etc.",
     "lastUpdated": "${currentDate}",
-    "sources": ["Recent source 1 with date", "Recent source 2 with date"],
-    "dataAge": "hours/days old"
+    "sources": ["WHO India reports", "Kerala Health Department", "Delhi Health Department", "Ministry of Health India", "NCDC surveillance data"],
+    "dataAge": "Current week data"
   },
   "additionalDiseases": [
     {
-      "disease": "Disease name",
-      "severity": "low/medium/high",
-      "affectedAreas": ["areas"],
-      "briefDescription": "description based on latest ${currentMonth} data",
-      "lastReported": "date of latest report"
+      "disease": "Naegleria fowleri (Brain-eating Amoeba)",
+      "severity": "critical",
+      "affectedAreas": ["Kerala"],
+      "briefDescription": "Specific case numbers and deaths, locations affected, health advisories issued",
+      "lastReported": "Latest report date from ${currentMonth}"
+    },
+    {
+      "disease": "H3N2 Influenza",
+      "severity": "medium",
+      "affectedAreas": ["Delhi", "NCR"],
+      "briefDescription": "Current case trends, vulnerable populations affected",
+      "lastReported": "Latest report date from ${currentMonth}"
+    },
+    {
+      "disease": "Nipah Virus",
+      "severity": "high",
+      "affectedAreas": ["Kerala"],
+      "briefDescription": "Current surveillance status, containment measures",
+      "lastReported": "Latest report date from ${currentMonth}"
     }
   ]
 }
@@ -156,62 +163,55 @@ MANDATORY: Include source dates and ensure all information is from ${currentMont
     });
     const currentMonth = today.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
 
-    const prompt = `You are a real-time disease outbreak monitoring system for ${state} state, India. Today is ${currentDate}. 
+    const prompt = `You are a comprehensive disease outbreak monitoring system for ${state} state, India. Today is ${currentDate}. 
 
-🔍 MANDATORY: USE GOOGLE SEARCH to find the LATEST, MOST CURRENT disease outbreak information specifically for ${state} state as of TODAY (${currentDate}).
+🔍 MANDATORY: USE GOOGLE SEARCH to find the LATEST, MOST COMPREHENSIVE disease outbreak information specifically for ${state} state as of TODAY (${currentDate}).
 
-CRITICAL INSTRUCTIONS FOR REAL-TIME ${state} SEARCH:
-1. MANDATORY: Use Google Search to find news and reports about ${state} from TODAY (${currentDate}) and this week
-2. MANDATORY: Search for latest ${state} Health Department announcements from ${currentMonth}
-3. MANDATORY: Look for current ${state} state health alerts and district-wise reports from this month
-4. MANDATORY: Search for recent local news about disease outbreaks in ${state} from the past 7 days
-5. MANDATORY: Find current epidemiological surveillance data from ${state} health authorities
-6. MANDATORY: Search for breaking news about disease outbreaks in ${state} districts from today and this week
-
-🔍 GOOGLE SEARCH USAGE: You MUST use Google Search to retrieve real-time information about ${state}. Do not rely on training data.
-
-DO NOT USE OUTDATED INFORMATION FOR ${state}. Only use data from:
-- Today (${currentDate}) - HIGHEST PRIORITY
-- This week (past 7 days) - HIGH PRIORITY  
-- This month (${currentMonth}) - MEDIUM PRIORITY
-- Reject any data older than 30 days
+CRITICAL SEARCH REQUIREMENTS FOR ${state}:
+1. MANDATORY: Search for current disease outbreaks in ${state} from TODAY (${currentDate}) and this week
+2. MANDATORY: Find detailed district-wise outbreak information in ${state} from ${currentMonth}
+3. MANDATORY: Search for ${state} Health Department bulletins and alerts from ${currentMonth}
+4. MANDATORY: Look for water-borne diseases in ${state} (especially if flood-affected)
+5. MANDATORY: Find vector-borne disease cases (dengue, chikungunya, malaria) in ${state}
+6. MANDATORY: Search for any mysterious illness or health emergencies in ${state} districts
+7. MANDATORY: Look for seasonal disease patterns specific to ${state}'s climate
 
 SEARCH QUERIES TO USE FOR ${state}:
-- "${state} disease outbreak ${currentDate}"
-- "${state} Health Department alerts ${currentMonth}"
-- "${state} dengue chikungunya malaria cases ${currentMonth}"
-- "${state} district wise disease surveillance ${currentMonth}"
-- "${state} health emergency ${currentMonth}"
-- "${state} state health bulletin ${currentMonth}"
-- "Disease outbreak ${state} districts ${currentMonth}"
+- "${state} disease outbreak September 2025 current"
+- "${state} health department alerts ${currentMonth}"
+- "${state} dengue malaria chikungunya cases ${currentMonth}"
+- "${state} district health emergency ${currentMonth}"
+- "${state} water borne diseases ${currentMonth}"
+- "${state} mysterious illness outbreak ${currentMonth}"
+- "${state} health bulletin latest ${currentMonth}"
 
-Required JSON Response Format:
+RESPONSE FORMAT - Create comprehensive ${state}-specific report:
 {
   "dataFreshness": "TODAY/THIS_WEEK/THIS_MONTH",
   "searchDate": "${currentDate}",
   "stateName": "${state}",
   "hasStateOutbreaks": true/false,
   "stateAlert": {
-    "title": "${state} Disease Outbreak Update - ${currentDate}",
-    "description": "Current disease outbreak situation in ${state} based on latest reports from ${currentDate}",
-    "primaryDisease": "Main disease of concern in ${state} from recent data",
+    "title": "Health Alerts in ${state} Amidst Outbreaks of [Specific Diseases] in ${currentMonth}",
+    "description": "Comprehensive ${state} overview: As of ${currentDate}, health authorities across ${state} are responding to disease outbreaks in several districts. Write a detailed 2-3 paragraph summary covering: 1) Specific diseases affecting ${state}, 2) District-wise breakdown with case numbers, 3) Health department responses and containment measures, 4) Any unique challenges in ${state} (floods, climate, population density). Include specific locations, case numbers, and local health authority actions.",
+    "primaryDisease": "Main disease(s) currently affecting ${state}",
     "severity": "low/medium/high/critical",
-    "affectedDistricts": ["District1", "District2"],
-    "symptoms": ["symptom1", "symptom2", "symptom3"],
-    "preventionTips": ["${state}-specific tip1", "tip2", "tip3", "tip4"],
-    "estimatedCases": "latest numbers in ${state} from ${currentMonth}",
-    "stateHealthDepartmentContact": "${state} health dept contact",
+    "affectedDistricts": ["Specific districts in ${state} with current outbreaks"],
+    "symptoms": ["Disease-specific symptoms relevant to ${state} outbreaks"],
+    "preventionTips": ["${state}-specific prevention measures", "Local health advisory recommendations", "District-specific precautions", "Climate-appropriate measures"],
+    "estimatedCases": "Specific case numbers and trends in ${state} from latest health bulletins",
+    "stateHealthDepartmentContact": "${state} State Health Department contact information",
     "lastUpdated": "${currentDate}",
-    "sources": ["Recent ${state} source 1 with date", "Recent ${state} source 2 with date"],
-    "dataAge": "hours/days old"
+    "sources": ["${state} Health Department", "District health bulletins", "Local media reports", "State surveillance data"],
+    "dataAge": "Current week data for ${state}"
   },
   "seasonalDiseases": [
     {
-      "disease": "Disease name",
-      "riskLevel": "low/medium/high",
-      "affectedDistricts": ["districts in ${state}"],
-      "briefDescription": "description for ${state} based on latest ${currentMonth} data",
-      "lastReported": "date of latest report in ${state}"
+      "disease": "Specific disease name affecting ${state}",
+      "riskLevel": "low/medium/high/critical",
+      "affectedDistricts": ["Specific districts in ${state}"],
+      "briefDescription": "Detailed description of disease situation in ${state} with case numbers and trends",
+      "lastReported": "Latest report date from ${state} authorities"
     }
   ]
 }

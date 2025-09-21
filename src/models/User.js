@@ -29,15 +29,25 @@ class User {
     return data.map(user => new User(user));
   }
 
-  // Static method to get subscribed users (only those who enabled disease outbreak alerts)
+  // Static method to get subscribed users (from user_alert_preferences table)
   static async getSubscribedUsers() {
     const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('consent_outbreak_alerts', true); // Only users who specifically enabled disease outbreak alerts
+      .from('user_alert_preferences')
+      .select(`
+        *,
+        users!inner(*)
+      `)
+      .eq('alert_enabled', true)
+      .eq('users.consent_outbreak_alerts', true);
 
     if (error) throw error;
-    return data.map(user => new User(user));
+    
+    // Return users with their alert preferences
+    return data.map(pref => {
+      const user = new User(pref.users);
+      user.alertPreferences = pref;
+      return user;
+    });
   }
 
   // Static method to create or update user

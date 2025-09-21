@@ -87,25 +87,26 @@ class BroadcastService {
   // Send state-specific alert to user if available
   async sendStateSpecificAlert(user) {
     try {
-      // Check if user has state information from user_alert_preferences table
-      const userState = user.state || user.location_pincode || null;
+      // Check if user has alert preferences with state information
+      const userState = user.alertPreferences?.state;
       
       if (!userState) {
-        console.log(`ℹ️ No state info for user ${user.phone_number}, skipping state alert`);
+        console.log(`ℹ️ No state preferences for user ${user.phone_number}, skipping state alert`);
         return;
       }
 
-      // Get today's state-specific alert
+      // Get today's state-specific alert (cached or fresh)
       const stateAlert = await OutbreakAlert.getStateAlert(userState);
       
       if (stateAlert) {
-        const language = user.language || 'en';
+        const language = user.preferred_language || 'en';
         const formattedStateAlert = stateAlert.getFormattedAlert(language);
         
-        // Add state-specific header
+        // Add state-specific header with district info
+        const district = user.alertPreferences?.district;
         const stateHeader = {
-          en: `\n\n🏛️ *${userState} State Alert*\n\n`,
-          hi: `\n\n🏛️ *${userState} राज्य अलर्ट*\n\n`
+          en: `\n\n🏛️ *${userState} State Alert*${district ? ` (${district} District)` : ''}\n\n`,
+          hi: `\n\n🏛️ *${userState} राज्य अलर्ट*${district ? ` (${district} जिला)` : ''}\n\n`
         };
         
         const stateMessage = (stateHeader[language] || stateHeader.en) + formattedStateAlert;
@@ -113,7 +114,9 @@ class BroadcastService {
         // Send state-specific alert
         await sendMessage(user.phone_number, stateMessage);
         
-        console.log(`🏛️ Sent state alert for ${userState} to ${user.phone_number}`);
+        console.log(`🏛️ Sent cached state alert for ${userState} to ${user.phone_number}`);
+      } else {
+        console.log(`ℹ️ No state alert available for ${userState} today`);
       }
       
     } catch (error) {

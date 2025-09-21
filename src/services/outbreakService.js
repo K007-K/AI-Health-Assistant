@@ -309,19 +309,27 @@ MANDATORY: Include ${state}-specific source dates and ensure all information is 
     }
   }
 
-  // Fetch state-specific alerts for multiple states
+  // Fetch state-specific alerts for multiple states (with caching)
   async fetchStateSpecificAlerts(states) {
     try {
       console.log(`🔍 Fetching state-specific alerts for: ${states.join(', ')}`);
       
       const stateAlerts = [];
+      const today = new Date().toISOString().split('T')[0];
       
-      // Fetch alerts for each state (limit to top 5 to avoid rate limits)
-      const statesToProcess = states.slice(0, 5);
-      
-      for (const state of statesToProcess) {
+      // Process each state
+      for (const state of states.slice(0, 5)) {
         try {
-          console.log(`📍 Fetching alert for ${state}...`);
+          // Check if we already have today's data for this state
+          const existingAlert = await OutbreakAlert.getStateAlert(state);
+          
+          if (existingAlert) {
+            console.log(`📋 Using cached alert for ${state}`);
+            stateAlerts.push(existingAlert);
+            continue;
+          }
+
+          console.log(`📍 Fetching new alert for ${state}...`);
           const stateData = await this.fetchStateOutbreakData(state);
           
           if (stateData.hasStateOutbreaks && stateData.stateAlert) {
@@ -349,7 +357,7 @@ MANDATORY: Include ${state}-specific source dates and ensure all information is 
             });
 
             stateAlerts.push(stateAlert);
-            console.log(`✅ Created state alert for ${state}: ${stateAlert.alert_id}`);
+            console.log(`✅ Created and cached state alert for ${state}: ${stateAlert.alert_id}`);
           }
         } catch (stateError) {
           console.error(`⚠️ Error fetching alert for ${state}:`, stateError);
@@ -357,7 +365,7 @@ MANDATORY: Include ${state}-specific source dates and ensure all information is 
         }
       }
       
-      console.log(`✅ Created ${stateAlerts.length} state-specific alerts`);
+      console.log(`✅ Processed ${stateAlerts.length} state-specific alerts (cached + new)`);
       return stateAlerts;
       
     } catch (error) {

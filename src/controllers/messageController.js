@@ -2115,7 +2115,7 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
     }
   }
 
-  // Handle turning on alerts - simplified approach
+  // Handle turning on alerts - with location preferences
   async handleTurnOnAlerts(user) {
     try {
       console.log('🔔 User requesting to turn on disease outbreak alerts:', user.phone_number);
@@ -2127,32 +2127,24 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
       if (dbUser && dbUser.consent_outbreak_alerts) {
         await this.whatsappService.sendMessage(
           user.phone_number,
-          `✅ *Disease Outbreak Alerts Already Enabled*\n\nYou are already subscribed to receive disease outbreak alerts!\n\n📅 You will receive:\n• Daily national outbreak updates at 10:00 AM\n• Emergency outbreak notifications\n• State-specific alerts when available\n\n📞 Emergency: 108\n\nReply "STOP ALERTS" anytime to unsubscribe.`
+          `✅ *Disease Outbreak Alerts Already Enabled*\n\nYou are already subscribed to receive disease outbreak alerts!\n\n📅 You will receive:\n• Daily national outbreak updates at 10:00 AM\n• Emergency outbreak notifications\n• State-specific alerts for your location\n\n📞 Emergency: 108\n\nReply "STOP ALERTS" anytime to unsubscribe.`
         );
         return;
       }
 
-      // Enable disease outbreak alerts for the user
-      if (dbUser) {
-        await dbUser.enableDiseaseAlerts();
-      } else {
-        // Create new user with alerts enabled
-        await User.createOrUpdateUser(user.phone_number, {
-          consent_outbreak_alerts: true,
-          first_name: user.name || '',
-          preferred_language: user.preferred_language || 'en'
-        });
-      }
-
-      const successMessages = {
-        en: `🔔 *Disease Outbreak Alerts Enabled*\n\n✅ You have successfully subscribed to disease outbreak alerts!\n\n📅 **What you'll receive:**\n• Daily national outbreak updates at 10:00 AM IST\n• Emergency outbreak notifications\n• Real-time health advisories\n• Prevention tips and safety guidelines\n\n🛡️ **Stay protected and informed!**\n\n📞 Emergency: 108\n\nReply "STOP ALERTS" anytime to unsubscribe.`,
-        hi: `🔔 *रोग प्रकोप अलर्ट सक्षम*\n\n✅ आपने सफलतापूर्वक रोग प्रकोप अलर्ट की सदस्यता ली है!\n\n📅 **आपको मिलेगा:**\n• दैनिक राष्ट्रीय प्रकोप अपडेट सुबह 10:00 बजे IST\n• आपातकालीन प्रकोप सूचनाएं\n• रियल-टाइम स्वास्थ्य सलाह\n• रोकथाम युक्तियां और सुरक्षा दिशानिर्देश\n\n🛡️ **सुरक्षित और सूचित रहें!**\n\n📞 आपातकाल: 108\n\nसदस्यता रद्द करने के लिए कभी भी "STOP ALERTS" का उत्तर दें।`
+      // Ask for location preferences
+      const locationMessages = {
+        en: `📍 *Setup Location for Personalized Alerts*\n\nTo provide you with relevant disease outbreak alerts for your area, please share your location details:\n\n*Format:* State, District, Pincode\n*Example:* Maharashtra, Mumbai, 400001\n\nPlease reply with your location details:`,
+        hi: `📍 *व्यक्तिगत अलर्ट के लिए स्थान सेटअप*\n\nआपके क्षेत्र के लिए प्रासंगिक रोग प्रकोप अलर्ट प्रदान करने के लिए, कृपया अपने स्थान का विवरण साझा करें:\n\n*प्रारूप:* राज्य, जिला, पिनकोड\n*उदाहरण:* महाराष्ट्र, मुंबई, 400001\n\nकृपया अपने स्थान के विवरण के साथ उत्तर दें:`
       };
 
       await this.whatsappService.sendMessage(
         user.phone_number,
-        successMessages[user.preferred_language] || successMessages.en
+        locationMessages[user.preferred_language] || locationMessages.en
       );
+
+      // Set user session to wait for location input
+      await this.userService.updateUserSession(user.id, 'waiting_for_alert_location');
       
     } catch (error) {
       console.error('Error in handleTurnOnAlerts:', error);
@@ -2178,29 +2170,78 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
 
       const [state, district, pincode] = parts;
       
-      // Register user for alerts
-      const result = await this.diseaseAlertService.registerUserForAlerts(
-        user.phone_number,
-        user.id,
-        { state, district, pincode }
-      );
-
-      if (result.success) {
-        await this.whatsappService.sendMessage(
-          user.phone_number,
-          `✅ *Alert Registration Successful!*\n\n📍 *Location:* ${district}, ${state} - ${pincode}\n\n🔔 You will now receive real-time disease outbreak alerts for your area.\n\n*Alert Settings:*\n• Severity: Medium and above\n• Frequency: Immediate for critical alerts\n• Time: 8 AM - 8 PM\n\nReply "STOP ALERTS" anytime to unsubscribe.`
-        );
-        
-        // Return to main menu
-        setTimeout(async () => {
-          await this.showMainMenu(user);
-        }, 2000);
-      } else {
-        await this.whatsappService.sendMessage(
-          user.phone_number,
-          '❌ Failed to register for alerts. Please try again later.'
-        );
+      // Save location and enable alerts
+      const User = require('../models/User');
+      const { supabase } = require('../config/database');
+      
+      let dbUser = await User.findByPhoneNumber(user.phone_number);
+      
+      if (!dbUser) {
+        dbUser = await User.createOrUpdateUser(user.phone_number, {
+          first_name: user.name || '',
+          preferred_language: user.preferred_language || 'en'
+        });
       }
+
+      // Enable alerts in users table
+      await dbUser.enableDiseaseAlerts();
+      
+      // Find state ID from indian_states table
+      const { data: stateData, error: stateError } = await supabase
+        .from('indian_states')
+        .select('id')
+        .ilike('state_name', state)
+        .single();
+
+      if (stateError) {
+        console.error('State not found:', stateError);
+        await this.whatsappService.sendMessage(
+          user.phone_number,
+          `❌ State "${state}" not found. Please check the spelling and try again.\n\nExample: Maharashtra, Mumbai, 400001`
+        );
+        return;
+      }
+
+      // Save to user_alert_preferences table
+      const { data: prefData, error: prefError } = await supabase
+        .from('user_alert_preferences')
+        .upsert({
+          phone_number: user.phone_number,
+          user_id: dbUser.id,
+          state: state,
+          district: district,
+          pincode: pincode,
+          alert_enabled: true,
+          selected_state_id: stateData.id,
+          created_at: new Date(),
+          updated_at: new Date()
+        })
+        .select()
+        .single();
+
+      if (prefError) {
+        console.error('Error saving alert preferences:', prefError);
+        throw prefError;
+      }
+
+      const successMessage = `✅ *Disease Outbreak Alerts Enabled*
+
+📍 **Location Set:** ${state}, ${district} - ${pincode}
+
+🔔 **You will now receive:**
+• Daily national outbreak updates at 10:00 AM IST
+• State-specific alerts for ${state}
+• District-level notifications for ${district}
+• Emergency outbreak notifications
+• Real-time health advisories
+
+🛡️ **Stay protected and informed!**
+
+📞 Emergency: 108
+
+Reply "STOP ALERTS" anytime to unsubscribe.`;
+
+      await this.whatsappService.sendMessage(user.phone_number, successMessage);
       
       // Clear waiting state
       await this.userService.updateUserSession(user.id, 'main_menu');
@@ -3061,40 +3102,60 @@ async function handleDiseaseAlerts(phoneNumber, userMessage, language, scriptPre
 
 // Show disease alerts menu
 async function showDiseaseAlertsMenu(phoneNumber, language, res) {
-  const menuTexts = {
-    en: `🦠 *Disease Outbreak Alerts*
+  try {
+    // Check user's current alert subscription status
+    const User = require('../models/User');
+    const user = await User.findByPhoneNumber(phoneNumber);
+    
+    const isSubscribed = user && user.consent_outbreak_alerts;
+    
+    const menuTexts = {
+      en: `🦠 *Disease Outbreak Alerts*
 
 Stay informed about disease outbreaks in your area:
 
 *📅 Daily National Alerts:* Sent every day at 10:00 AM
-*🏛️ State-Specific Alerts:* Request alerts for your state
+*🏛️ State-Specific Alerts:* Personalized for your location
 *🚨 Emergency Alerts:* Critical outbreak notifications
 
+${isSubscribed ? '✅ You are currently subscribed to alerts' : '❌ You are not subscribed to alerts'}
+
 Choose an option below:`,
-    hi: `🦠 *रोग प्रकोप अलर्ट*
+      hi: `🦠 *रोग प्रकोप अलर्ट*
 
 अपने क्षेत्र में रोग प्रकोप के बारे में सूचित रहें:
 
 *📅 दैनिक राष्ट्रीय अलर्ट:* प्रतिदिन सुबह 10:00 बजे भेजे जाते हैं
-*🏛️ राज्य-विशिष्ट अलर्ट:* अपने राज्य के लिए अलर्ट का अनुरोध करें
+*🏛️ राज्य-विशिष्ट अलर्ट:* आपके स्थान के लिए व्यक्तिगत
 *🚨 आपातकालीन अलर्ट:* महत्वपूर्ण प्रकोप सूचनाएं
 
+${isSubscribed ? '✅ आप वर्तमान में अलर्ट की सदस्यता लिए हुए हैं' : '❌ आप अलर्ट की सदस्यता नहीं लिए हुए हैं'}
+
 नीचे एक विकल्प चुनें:`
-  };
+    };
 
-  const buttons = [
-    { id: 'view_active_diseases', title: '🦠 View Outbreaks' },
-    { id: 'turn_on_alerts', title: '🔔 Enable Alerts' },
-    { id: 'turn_off_alerts', title: '🔕 Disable Alerts' }
-  ];
+    // Show different buttons based on subscription status
+    const buttons = [
+      { id: 'view_active_diseases', title: '🦠 View Outbreaks' }
+    ];
 
-  await sendInteractiveButtons(
-    phoneNumber,
-    menuTexts[language] || menuTexts.en,
-    buttons
-  );
+    if (isSubscribed) {
+      buttons.push({ id: 'turn_off_alerts', title: '🔕 Disable Alerts' });
+    } else {
+      buttons.push({ id: 'turn_on_alerts', title: '🔔 Enable Alerts' });
+    }
 
-  return res.json({ success: true });
+    await sendInteractiveButtons(
+      phoneNumber,
+      menuTexts[language] || menuTexts.en,
+      buttons
+    );
+
+    return res.json({ success: true });
+  } catch (error) {
+    console.error('Error in showDiseaseAlertsMenu:', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
 }
 
 // Handle viewing active diseases

@@ -40,13 +40,16 @@ class WhatsAppService {
   // Send interactive button message
   async sendInteractiveButtons(to, text, buttons, header = null) {
     try {
+      // For Meta-style feedback buttons (empty text), use a minimal space
+      const buttonText = text || ' ';
+      
       const payload = {
         messaging_product: 'whatsapp',
         to: to,
         type: 'interactive',
         interactive: {
           type: 'button',
-          body: { text: text },
+          body: { text: buttonText },
           action: {
             buttons: buttons.map((button, index) => {
               // Handle different button formats

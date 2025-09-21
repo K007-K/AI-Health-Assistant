@@ -27,8 +27,8 @@ class MessageController {
       // Show typing indicator
       await this.whatsappService.sendTypingIndicator(phoneNumber);
       
-      // Simulate typing time based on message length (realistic timing)
-      const typingDelay = Math.min(Math.max(message.length * 30, 1000), 3000); // 1-3 seconds
+      // Optimized typing time - shorter for better UX
+      const typingDelay = Math.min(Math.max(message.length * 15, 500), 1500); // 0.5-1.5 seconds (faster)
       await new Promise(resolve => setTimeout(resolve, typingDelay));
       
       // Stop typing indicator
@@ -170,6 +170,13 @@ class MessageController {
       // Handle inline feedback buttons (thumbs up/down)
       if (content === 'feedback_good' || content === 'feedback_bad') {
         await this.handleInlineFeedback(user, content, messageId);
+        return;
+      }
+
+      // Check if user is in AI chat mode - handle all messages as AI chat
+      if (currentState === 'ai_chat' && !content.toLowerCase().includes('menu') && !content.toLowerCase().includes('back')) {
+        console.log('🤖 User in AI chat mode - routing to handleAIChat');
+        await this.handleAIChat(user, content, mediaData);
         return;
       }
 

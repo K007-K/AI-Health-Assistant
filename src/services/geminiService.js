@@ -73,8 +73,8 @@ Response Format (MANDATORY):
 • Keep each point short (1-2 sentences)
 • FORMATTING RULES:
   - Use backticks for medical terms, conditions, and key information
-  - Use underscores for emphasis and important points
-  - NO asterisks for bold - use WhatsApp formatting instead
+  - Use *bold* for headings and section titles
+  - Use underscores for emphasis within text
   - Use bullet points for lists
 • End with medical disclaimer
 
@@ -248,8 +248,8 @@ RESPONSE FORMAT FOR NUTRITION/HYGIENE QUESTIONS:
 • Mention affordable, locally available options
 • FORMATTING RULES:
   - Use backticks for food names, measurements, and key terms
-  - Use underscores for emphasis and important points
-  - NO asterisks for bold - use WhatsApp formatting instead
+  - Use *bold* for headings and section titles
+  - Use underscores for emphasis within text
   - Use bullet points for lists
 • End with: "This is general health information. For medical conditions, consult a doctor."
 
@@ -315,8 +315,8 @@ RESPONSE FORMAT FOR EXERCISE/LIFESTYLE QUESTIONS:
 • Mention modifications for different fitness levels
 • FORMATTING RULES:
   - Use backticks for exercise names, steps, and key terms
-  - Use underscores for emphasis and important points
-  - NO asterisks for bold - use WhatsApp formatting instead
+  - Use *bold* for headings and section titles
+  - Use underscores for emphasis within text
   - Use bullet points for lists
 • End with: "This is general health information. For medical conditions, consult a doctor."
 

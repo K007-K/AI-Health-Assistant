@@ -825,22 +825,22 @@ Instructions:
 3. If symptoms are vague, ask clarifying questions (duration, severity, triggers, additional symptoms).
 4. For clear symptoms, provide response in BULLET POINTS (not paragraphs) with these sections:
 
-🔍 _How it's caused:_
+*🔍 How it's caused:*
 • List possible causes in bullet points
 
-🏥 _Common diseases related to these symptoms:_
+*🏥 Common diseases related to these symptoms:*
 • List related conditions in bullet points
 
-🛡️ _How to prevent these symptoms:_
+*🛡️ How to prevent these symptoms:*
 • List prevention methods in bullet points
 
-🚨 _When to see a doctor immediately:_
+*🚨 When to see a doctor immediately:*
 • List red flag symptoms in bullet points
 
 FORMATTING RULES:
 • Use backticks for medical terms and conditions
-• Use underscores for section headers and emphasis
-• NO asterisks for bold - use WhatsApp formatting instead
+• Use *bold* for headings and section titles
+• Use underscores for emphasis within text
 • Use bullet points for lists
 
 4. Always end with: "⚠️ This is not a diagnosis. Please visit a doctor if symptoms persist or worsen."

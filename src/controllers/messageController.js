@@ -3105,9 +3105,13 @@ async function showDiseaseAlertsMenu(phoneNumber, language, res) {
   try {
     // Check user's current alert subscription status
     const User = require('../models/User');
-    const user = await User.findByPhoneNumber(phoneNumber);
+    const WhatsAppService = require('../services/whatsappService');
+    const whatsappService = new WhatsAppService();
     
+    const user = await User.findByPhoneNumber(phoneNumber);
     const isSubscribed = user && user.consent_outbreak_alerts;
+    
+    console.log(`🔍 User ${phoneNumber} subscription status: ${isSubscribed ? 'SUBSCRIBED' : 'NOT SUBSCRIBED'}`);
     
     const menuTexts = {
       en: `🦠 *Disease Outbreak Alerts*
@@ -3141,11 +3145,13 @@ ${isSubscribed ? '✅ आप वर्तमान में अलर्ट क
 
     if (isSubscribed) {
       buttons.push({ id: 'turn_off_alerts', title: '🔕 Disable Alerts' });
+      console.log('📱 Showing DISABLE button for subscribed user');
     } else {
       buttons.push({ id: 'turn_on_alerts', title: '🔔 Enable Alerts' });
+      console.log('📱 Showing ENABLE button for non-subscribed user');
     }
 
-    await sendInteractiveButtons(
+    await whatsappService.sendInteractiveButtons(
       phoneNumber,
       menuTexts[language] || menuTexts.en,
       buttons

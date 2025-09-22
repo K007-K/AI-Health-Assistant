@@ -1988,13 +1988,17 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
       
       // Get user's state for personalized alerts
       const userStateName = user.state || null;
+      console.log(`[DEBUG] User state for alerts: ${userStateName}`);
       
       // Show user's state-specific alert first (if available)
       if (userStateName) {
-        console.log(`📍 Showing ${userStateName} state-specific alert with enhanced prompts`);
+        console.log(`[DEBUG] User state found. Fetching state-specific alert for ${userStateName}...`);
         const stateAlert = await aiService.fetchStateSpecificDiseases(userStateName);
+        console.log(`[DEBUG] Sending state-specific alert for ${userStateName} to ${user.phone_number}`);
         await this.whatsappService.sendMessage(user.phone_number, stateAlert);
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait before sending national alert
+      } else {
+        console.log('[DEBUG] No user state found. Skipping state-specific alert.');
       }
       
       // Show national overview with enhanced prompts

@@ -174,7 +174,7 @@ class AIDiseaseMonitorService {
         - ❌ REJECT: Any information older than August 2025
         - 🗺️ Must mention specific districts/cities currently affected in ${stateName} with recent case numbers
 
-        Return in this EXACT format, using WhatsApp formatting (*bold*, _italic_, - bullet points):
+        Return ONLY the formatted alert below. Do not add any conversational text or introductory sentences. Use WhatsApp formatting (*bold*, _italic_, - bullet points):
 
         📢 *Public Health Alert - [Current Date]* 📢
         _A state-wise summary of ongoing health advisories._
@@ -231,7 +231,7 @@ class AIDiseaseMonitorService {
         - ❌ REJECT: Any information older than August 2025, single-state outbreaks
         - 🗺️ Must show current multi-state spread with recent case numbers from September 2025
 
-        Return in this EXACT format, using WhatsApp formatting (*bold*, _italic_, - bullet points):
+        Return ONLY the formatted alert below. Do not add any conversational text or introductory sentences. Use WhatsApp formatting (*bold*, _italic_, - bullet points):
 
         📢 *Public Health Alert - [Current Date]* 📢
         _A state-wise summary of ongoing health advisories._

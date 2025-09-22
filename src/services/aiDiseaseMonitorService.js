@@ -1,6 +1,26 @@
 const GeminiService = require('./geminiService');
 
-class AIDiseaseMonitorService {
+// Shared, same-day cache for disease alerts
+let alertCache = {
+  nationwide: null,
+  states: {},
+  date: new Date().toDateString()
+};
+
+// Function to reset the cache if the day has changed
+function checkAndResetCache() {
+  const today = new Date().toDateString();
+  if (alertCache.date !== today) {
+    console.log('📅 New day detected. Clearing disease alert cache.');
+    alertCache = {
+      nationwide: null,
+      states: {},
+      date: today
+    };
+  }
+}
+
+class AIDiseMonitorService {
   constructor() {
     this.geminiService = new GeminiService();
     this.dailyCache = null;
@@ -159,7 +179,14 @@ class AIDiseaseMonitorService {
 
   // Fetch state-specific disease outbreaks
   async fetchStateSpecificDiseases(stateName) {
-    console.log(`🏛️ Fetching diseases specific to ${stateName}...`);
+    checkAndResetCache(); // Ensure cache is for the current day
+
+    if (alertCache.states[stateName]) {
+      console.log(`💾 Using cached alert for ${stateName}`);
+      return alertCache.states[stateName];
+    }
+
+    console.log(`🏛️ Fetching fresh alert for ${stateName} from AI...`);
     
     try {
       const response = await this.geminiService.generateResponseWithGrounding(
@@ -203,8 +230,9 @@ class AIDiseaseMonitorService {
         3
       );
       
-      console.log(`✅ Generated state template for ${stateName}`);
-      return response; // Return the complete template directly
+      console.log(`✅ Generated fresh state alert for ${stateName}. Caching result.`);
+      alertCache.states[stateName] = response; // Save to cache
+      return response;
       
     } catch (error) {
       console.error(`Error fetching diseases for ${stateName}:`, error);
@@ -212,9 +240,16 @@ class AIDiseaseMonitorService {
     }
   }
 
-  // Fetch nationwide disease outbreaks (excluding user's state to avoid duplication)
+  // Fetch nationwide disease outbreaks
   async fetchNationwideDiseases() {
-    console.log('🇮🇳 Fetching nationwide disease outbreaks...');
+    checkAndResetCache(); // Ensure cache is for the current day
+
+    if (alertCache.nationwide) {
+      console.log('💾 Using cached nationwide alert');
+      return alertCache.nationwide;
+    }
+
+    console.log('🇮🇳 Fetching fresh nationwide alert from AI...');
     
     try {
       const response = await this.geminiService.generateResponseWithGrounding(
@@ -261,8 +296,9 @@ class AIDiseaseMonitorService {
         4
       );
       
-      console.log(`✅ Generated nationwide template`);
-      return response; // Return the complete template directly
+      console.log('✅ Generated fresh nationwide alert. Caching result.');
+      alertCache.nationwide = response; // Save to cache
+      return response;
       
     } catch (error) {
       console.error('Error fetching nationwide diseases:', error);

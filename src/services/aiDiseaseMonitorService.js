@@ -174,29 +174,29 @@ class AIDiseaseMonitorService {
         - ❌ REJECT: Any information older than August 2025
         - 🗺️ Must mention specific districts/cities currently affected in ${stateName} with recent case numbers
 
-        Return ONLY the formatted alert below. Do not add any conversational text or introductory sentences. Use WhatsApp formatting (*bold*, _italic_, - bullet points):
+        Return ONLY the formatted alert below in SIMPLE, CLEAR language for all users. Do not add any conversational text. Use WhatsApp formatting (*bold*, _italic_).
 
-        📢 *Health Alert for ${stateName} - [Current Date]* 📢
+        📢 *Health Alert for ${stateName}*
+        _Updated: [Current Date]_
 
-        *What is happening?*
-        [Simple summary of the main health issue in the state.]
+        *Summary:* [Provide a simple, one-sentence summary of the main health concern in the state].
 
-        *Where is it happening?*
-        - [City or District 1]: [Simple details]
-        - [City or District 2]: [Simple details]
+        *📍 What's Happening in ${stateName}?*
+         - *[Disease Name]:* [Simple description of the disease and what's happening, e.g., "More cases are being seen in [District/City]..."]
+         - *[Disease Name]:* [Simple description...]
 
-        *What should I look for? (Symptoms)*
-        - [Simple Symptom 1]
-        - [Simple Symptom 2]
-        - [Simple Symptom 3]
+        *🤔 What to Look For? (Symptoms)*
+         - [Symptom 1]
+         - [Symptom 2]
+         - [Symptom 3]
 
-        *How can I stay safe? (Prevention)*
-        - [Simple prevention tip 1]
-        - [Simple prevention tip 2]
-        - [Simple prevention tip 3]
+        *✅ How to Stay Safe:*
+         - [Simple, actionable prevention tip 1]
+         - [Simple, actionable prevention tip 2]
+         - [Simple, actionable prevention tip 3]
 
-        *Official Source:* [Source Name]
-        *Emergency Contact:* 108
+        *📞 Emergency Contact: 108*
+        _Source: [Recent source name with date]_
         
         If no current outbreaks found in ${stateName}, return: "No significant disease outbreaks reported in ${stateName} in the last 30 days."`,
         'en',
@@ -229,30 +229,32 @@ class AIDiseaseMonitorService {
         - ❌ REJECT: Any information older than August 2025, single-state outbreaks
         - 🗺️ Must show current multi-state spread with recent case numbers from September 2025
 
-        Return ONLY the formatted alert below. Do not add any conversational text or introductory sentences. Use WhatsApp formatting (*bold*, _italic_, - bullet points):
+        Return ONLY the formatted alert below in SIMPLE, CLEAR language for all users. Do not add any conversational text. Use WhatsApp formatting (*bold*, _italic_).
 
-        📢 *National Health Alert - [Current Date]* 📢
+        📢 *National Health Alert for India*
+        _Updated: [Current Date]_
 
-        *What is happening across India?*
-        [Simple summary of the main multi-state health issues.]
+        *🇮🇳 Main Health News:*
+        [Provide a simple, one-sentence summary of the most significant multi-state health issue].
 
-        *Which states are affected?*
-        - *[State 1]:* [Simple details of the main issue]
-        - *[State 2]:* [Simple details of the main issue]
-        - *[State 3]:* [Simple details of the main issue]
+        *State-by-State Health Summary:*
 
-        *What should I look for? (Symptoms)*
-        - [Simple Symptom 1]
-        - [Simple Symptom 2]
-        - [Simple Symptom 3]
+        *📍 [State Name 1]*
+         - *What's Happening?* [Simple description of the main health concern, e.g., "More cases of [Disease] are being seen..."]
 
-        *How can I stay safe? (Prevention)*
-        - [Simple prevention tip 1]
-        - [Simple prevention tip 2]
-        - [Simple prevention tip 3]
+        *📍 [State Name 2]*
+         - *What's Happening?* [Simple description...]
 
-        *Official Source:* [Source Name]
-        *Emergency Contact:* 108
+        *📍 [State Name 3]*
+         - *What's Happening?* [Simple description...]
+
+        *✅ How to Stay Safe:*
+         - [Simple, actionable prevention tip 1]
+         - [Simple, actionable prevention tip 2]
+         - [Simple, actionable prevention tip 3]
+
+        *📞 Emergency Contact: 108*
+        _Source: [Recent source name with date]_
         
         If no significant current outbreaks found, return: "No major disease outbreaks reported across India in the last 30 days."`,
         'en',

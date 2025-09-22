@@ -3112,8 +3112,8 @@ async function handleViewActiveDiseases(phoneNumber, language, res) {
     if (nationalAlert && nationalAlert.trim() && !nationalAlert.includes('No major disease outbreaks')) {
       await sendMessage(phoneNumber, nationalAlert);
     } else {
-        const noAlertsMessages = {
-          en: `✅ *No Active Disease Outbreaks*
+      const noAlertsMessages = {
+        en: `✅ *No Active Disease Outbreaks*
 
 _Good news! There are currently no major disease outbreaks reported in India._
 
@@ -3125,7 +3125,7 @@ _Good news! There are currently no major disease outbreaks reported in India._
 
 *📞 Emergency:* 108
 *🕐 Next Update:* Tomorrow at 10:00 AM`,
-          hi: `✅ *कोई सक्रिय रोग प्रकोप नहीं*
+        hi: `✅ *कोई सक्रिय रोग प्रकोप नहीं*
 
 _अच्छी खबर! वर्तमान में भारत में कोई बड़ा रोग प्रकोप रिपोर्ट नहीं किया गया है।_
 
@@ -3137,10 +3137,9 @@ _अच्छी खबर! वर्तमान में भारत मे�
 
 *📞 आपातकाल:* 108
 *🕐 अगला अपडेट:* कल सुबह 10:00 बजे`
-        };
+      };
 
-        await sendMessage(phoneNumber, noAlertsMessages[language] || noAlertsMessages.en);
-      }
+      await sendMessage(phoneNumber, noAlertsMessages[language] || noAlertsMessages.en);
     }
 
     return res.json({ success: true });

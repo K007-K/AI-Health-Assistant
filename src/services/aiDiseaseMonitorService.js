@@ -173,14 +173,14 @@ class AIDiseaseMonitorService {
         - 🔍 Search specifically for: "${stateName} health department September 2025", "${stateName} disease outbreak latest news", "${stateName} health alert current"
         - ❌ REJECT: Any information older than August 2025
         - 🗺️ Must mention specific districts/cities currently affected in ${stateName} with recent case numbers
-        
-        Return in this EXACT format:
-        
-        📢 Public Health Alert - [Current Date] 📢
-        A state-wise summary of ongoing health advisories.
-        
-        🇮🇳 ${stateName}
-        🦠 Key Diseases:
+
+        Return in this EXACT format, using WhatsApp formatting (*bold*, _italic_, - bullet points):
+
+        📢 *Public Health Alert - [Current Date]* 📢
+        _A state-wise summary of ongoing health advisories._
+
+        🇮🇳 *${stateName}*
+        🦠 *Key Diseases:*
          - [Disease Name]: [Brief description with recent case numbers and dates]
          - [Disease Name]: [Brief description with recent case numbers and dates]
         
@@ -230,14 +230,14 @@ class AIDiseaseMonitorService {
         - 🔍 Search specifically for: "India health ministry September 2025", "multi-state disease outbreak latest", "national health emergency current", "WHO India September 2025"
         - ❌ REJECT: Any information older than August 2025, single-state outbreaks
         - 🗺️ Must show current multi-state spread with recent case numbers from September 2025
-        
-        Return in this EXACT format:
-        
-        📢 Public Health Alert - [Current Date] 📢
-        A state-wise summary of ongoing health advisories.
-        
-        🇮🇳 [State Name 1]
-        🦠 Key Diseases:
+
+        Return in this EXACT format, using WhatsApp formatting (*bold*, _italic_, - bullet points):
+
+        📢 *Public Health Alert - [Current Date]* 📢
+        _A state-wise summary of ongoing health advisories._
+
+        🇮🇳 *[State Name 1]*
+        🦠 *Key Diseases:*
          - [Disease Name]: [Brief description with recent case numbers and dates]
          - [Disease Name]: [Brief description with recent case numbers and dates]
         

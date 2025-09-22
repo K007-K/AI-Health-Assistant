@@ -9,12 +9,17 @@ const AIDiseaseMonitorService = require('./src/services/aiDiseaseMonitorService'
     
     console.log('\n🌍 FETCHING NATIONWIDE DATA WITH ENHANCED PROMPT:');
     console.log('================================================');
-    
     const nationalResponse = await aiService.fetchNationwideDiseases();
-    
-    console.log('\n📄 AI-GENERATED RESPONSE:');
+    console.log('\n📄 NATIONWIDE RESPONSE:');
     console.log('--------------------------');
     console.log(nationalResponse);
+
+    console.log('\n\n🏛️ FETCHING STATE-SPECIFIC DATA (ANDHRA PRADESH) WITH ENHANCED PROMPT:');
+    console.log('==================================================================');
+    const stateResponse = await aiService.fetchStateSpecificDiseases('Andhra Pradesh');
+    console.log('\n📄 ANDHRA PRADESH-SPECIFIC RESPONSE:');
+    console.log('-----------------------------------');
+    console.log(stateResponse);
     
     console.log('\n\n🔍 ANALYSIS OF GROUNDING EFFECTIVENESS:');
     console.log('------------------------------------------');

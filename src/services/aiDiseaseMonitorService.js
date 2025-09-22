@@ -20,7 +20,7 @@ function checkAndResetCache() {
   }
 }
 
-class AIDiseMonitorService {
+class AIDiseaseMonitorService {
   constructor() {
     this.geminiService = new GeminiService();
     this.dailyCache = null;

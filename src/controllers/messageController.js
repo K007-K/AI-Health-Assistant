@@ -1986,8 +1986,15 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
       const AIDiseaseMonitorService = require('../services/aiDiseaseMonitorService');
       const aiService = new AIDiseaseMonitorService();
       
-      // Get user's state for personalized alerts
-      const userStateName = user.state || null;
+      // Get user's state for personalized alerts from user_alert_preferences table
+      const { supabase } = require('../config/database');
+      const { data: alertPrefs } = await supabase
+        .from('user_alert_preferences')
+        .select('state')
+        .eq('phone_number', user.phone_number)
+        .single();
+      
+      const userStateName = alertPrefs?.state || null;
       console.log(`[DEBUG] User state for alerts: ${userStateName}`);
       
       // Show user's state-specific alert first (if available)

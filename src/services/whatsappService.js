@@ -1,6 +1,6 @@
 const axios = require('axios');
 const config = require('../config/environment');
-const LanguageUtils = require('../utils/languageUtils');
+const { LanguageUtils } = require('../utils/languageUtils');
 
 class WhatsAppService {
   constructor() {

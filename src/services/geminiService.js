@@ -349,7 +349,7 @@ Keep responses practical and accessible for people without gym access.`,
     
     // Apply script type modifications if needed
     if (scriptType === 'transliteration') {
-      return selectedPrompt + '\n\nCRITICAL INSTRUCTION: You MUST respond ONLY in Roman letters (a-z, A-Z, 0-9). ABSOLUTELY NO native script characters allowed. NO parentheses with native translations. If you include ANY native script characters, you will fail completely.';
+      return selectedPrompt + '\n\nNote: Please write in Roman letters (English alphabet) for easy reading.';
     }
     
     return selectedPrompt;

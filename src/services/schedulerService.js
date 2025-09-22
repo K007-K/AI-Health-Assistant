@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const outbreakService = require('./outbreakService');
+const AIDiseaseMonitorService = require('./aiDiseaseMonitorService');
 const broadcastService = require('./broadcastService');
 
 class SchedulerService {
@@ -38,15 +38,17 @@ class SchedulerService {
       console.log('🌅 Starting daily morning outbreak broadcast at 10:00 AM IST');
       
       try {
+        // Create AI service instance
+        const aiService = new AIDiseaseMonitorService();
+        
         // Fetch today's national outbreak data
-        const nationalAlert = await outbreakService.fetchAndBroadcastNationalOutbreaks();
+        const nationalAlert = await aiService.fetchNationwideDiseases();
         
         if (nationalAlert) {
-          const alertId = nationalAlert.alert_id || nationalAlert.parsed_diseases?.alertId || nationalAlert.id || 'unknown';
-          console.log(`📢 Broadcasting morning national alert: ${alertId}`);
+          console.log(`📢 Broadcasting morning national alert`);
           
           // Broadcast to all subscribed users
-          await broadcastService.broadcastNationalAlert(nationalAlert);
+          await broadcastService.broadcastToAllUsers(nationalAlert);
           
           console.log('✅ Daily morning outbreak broadcast completed successfully');
         } else {
@@ -72,15 +74,17 @@ class SchedulerService {
       console.log('🌙 Starting daily evening outbreak broadcast at 10:00 PM IST');
       
       try {
+        // Create AI service instance
+        const aiService = new AIDiseaseMonitorService();
+        
         // Fetch fresh evening outbreak data (may have updates from morning)
-        const nationalAlert = await outbreakService.fetchAndBroadcastNationalOutbreaks();
+        const nationalAlert = await aiService.fetchNationwideDiseases();
         
         if (nationalAlert) {
-          const alertId = nationalAlert.alert_id || nationalAlert.parsed_diseases?.alertId || nationalAlert.id || 'unknown';
-          console.log(`📢 Broadcasting evening national alert: ${alertId}`);
+          console.log(`📢 Broadcasting evening national alert`);
           
           // Broadcast to all subscribed users
-          await broadcastService.broadcastNationalAlert(nationalAlert);
+          await broadcastService.broadcastToAllUsers(nationalAlert);
           
           console.log('✅ Daily evening outbreak broadcast completed successfully');
         } else {
@@ -135,15 +139,18 @@ class SchedulerService {
     console.log('🔧 Manual trigger: Starting outbreak broadcast...');
     
     try {
-      const nationalAlert = await outbreakService.fetchAndBroadcastNationalOutbreaks();
+      // Create AI service instance
+      const aiService = new AIDiseaseMonitorService();
+      
+      const nationalAlert = await aiService.fetchNationwideDiseases();
       
       if (nationalAlert) {
-        await broadcastService.broadcastNationalAlert(nationalAlert);
-        console.log('✅ Manual broadcast completed successfully');
-        return { success: true, alert: nationalAlert };
+        await broadcastService.broadcastToAllUsers(nationalAlert);
+        console.log('✅ Manual outbreak broadcast completed successfully');
+        return { success: true, message: 'Outbreak broadcast completed successfully' };
       } else {
-        console.log('ℹ️ No alert to broadcast');
-        return { success: true, message: 'No alert to broadcast' };
+        console.log('ℹ️ No outbreak alert to broadcast');
+        return { success: false, message: 'No outbreak alert available to broadcast' };
       }
       
     } catch (error) {
@@ -184,15 +191,17 @@ class SchedulerService {
       console.log('🧪 TEST: Starting disease alert broadcast at 4:35 PM IST');
       
       try {
+        // Create AI service instance
+        const aiService = new AIDiseaseMonitorService();
+        
         // Fetch today's national outbreak data
-        const nationalAlert = await outbreakService.fetchAndBroadcastNationalOutbreaks();
+        const nationalAlert = await aiService.fetchNationwideDiseases();
         
         if (nationalAlert) {
-          const alertId = nationalAlert.alert_id || nationalAlert.parsed_diseases?.alertId || nationalAlert.id || 'test-alert';
-          console.log(`📢 TEST: Broadcasting national alert: ${alertId}`);
+          console.log(`📢 TEST: Broadcasting national alert`);
           
           // Broadcast to all subscribed users
-          await broadcastService.broadcastNationalAlert(nationalAlert);
+          await broadcastService.broadcastToAllUsers(nationalAlert);
           
           console.log('✅ TEST: Disease alert broadcast completed successfully at 4:35 PM');
         } else {

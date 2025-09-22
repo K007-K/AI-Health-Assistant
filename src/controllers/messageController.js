@@ -180,7 +180,7 @@ class MessageController {
         }
         
         // Allow menu navigation even from AI chat mode
-        const menuIntents = ['preventive_tips', 'disease_alerts', 'symptom_check', 'view_active_diseases', 'turn_on_alerts', 'turn_off_alerts'];
+        const menuIntents = ['preventive_tips', 'disease_alerts', 'symptom_check', 'view_active_diseases', 'turn_on_alerts', 'turn_off_alerts', 'change_language', 'menu_request'];
         if (menuIntents.includes(intent)) {
           console.log(`🔄 Menu navigation detected in AI chat - switching to ${intent}`);
           // Continue to normal intent handling below

@@ -1982,20 +1982,24 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
     try {
       console.log('🦠 Showing current disease outbreaks to user:', user.phone_number);
       
-      // Get user's state for personalized alerts (simplified)
-      const userStateName = user.state || null; // Use user's state if available
+      // Use the enhanced AIDiseaseMonitorService with real-time prompts
+      const AIDiseaseMonitorService = require('../services/aiDiseaseMonitorService');
+      const aiService = new AIDiseaseMonitorService();
+      
+      // Get user's state for personalized alerts
+      const userStateName = user.state || null;
       
       // Show user's state-specific alert first (if available)
       if (userStateName) {
-        console.log(`📍 Showing ${userStateName} state-specific alert`);
-        const stateAlert = await this.getCurrentDiseaseOutbreaksFromAI({ state: userStateName });
+        console.log(`📍 Showing ${userStateName} state-specific alert with enhanced prompts`);
+        const stateAlert = await aiService.fetchStateSpecificDiseases(userStateName);
         await this.whatsappService.sendMessage(user.phone_number, stateAlert);
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
       
-      // Show national overview
-      console.log('🇮🇳 Showing national disease overview');
-      const nationalAlert = await this.getCurrentDiseaseOutbreaksFromAI();
+      // Show national overview with enhanced prompts
+      console.log('🇮🇳 Showing national disease overview with enhanced prompts');
+      const nationalAlert = await aiService.fetchNationwideDiseases();
       await this.whatsappService.sendMessage(user.phone_number, nationalAlert);
       
       // Provide follow-up options
@@ -3096,22 +3100,18 @@ ${isSubscribed ? '✅ आप वर्तमान में अलर्ट क
 // Handle viewing active diseases
 async function handleViewActiveDiseases(phoneNumber, language, res) {
   try {
-    console.log(`🔍 Fetching active diseases for ${phoneNumber}`);
+    console.log(`🔍 Fetching active diseases for ${phoneNumber} with enhanced prompts`);
 
-    // Get today's national alert
-    const nationalAlert = await outbreakService.getTodaysNationalAlert();
+    // Use the enhanced AIDiseaseMonitorService with real-time prompts
+    const AIDiseaseMonitorService = require('../services/aiDiseaseMonitorService');
+    const aiService = new AIDiseaseMonitorService();
     
-    if (nationalAlert) {
-      const formattedAlert = nationalAlert.getFormattedAlert(language);
-      await sendMessage(phoneNumber, formattedAlert);
+    // Fetch fresh nationwide data with enhanced prompts
+    const nationalAlert = await aiService.fetchNationwideDiseases();
+    
+    if (nationalAlert && nationalAlert.trim() && !nationalAlert.includes('No major disease outbreaks')) {
+      await sendMessage(phoneNumber, nationalAlert);
     } else {
-      // Trigger manual fetch if no alert exists
-      const newAlert = await outbreakService.triggerManualNationalFetch();
-      
-      if (newAlert) {
-        const formattedAlert = newAlert.getFormattedAlert(language);
-        await sendMessage(phoneNumber, formattedAlert);
-      } else {
         const noAlertsMessages = {
           en: `✅ *No Active Disease Outbreaks*
 

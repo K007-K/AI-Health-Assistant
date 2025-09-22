@@ -516,11 +516,12 @@ CRITICAL MEDICAL RESPONSE REQUIREMENTS:
         lastError = error;
         console.error(`Gemini Grounding API error (attempt ${attempt + 1}/${maxRetries}):`, error.message);
         
-        // Check if it's a rate limit error
-        if (error.status === 429 && attempt < maxRetries - 1) {
-          console.log(`⚠️ Rate limit hit, waiting before retry...`);
+        // Check if it's a rate limit or server overload error
+        if ((error.status === 429 || error.status === 503) && attempt < maxRetries - 1) {
+          const waitTime = error.status === 503 ? 5000 : 3000; // Wait longer for server overload
+          console.log(`⚠️ API Error (${error.status}), waiting ${waitTime}ms before retry...`);
           // Wait before retrying
-          await new Promise(resolve => setTimeout(resolve, 3000));
+          await new Promise(resolve => setTimeout(resolve, waitTime));
           continue;
         }
         

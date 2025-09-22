@@ -113,17 +113,17 @@ class AIDiseaseMonitorService {
   // Kept for compatibility but not used in current implementation
 
   // Get comprehensive disease outbreaks (state-specific + nationwide)
-  async getDailyDiseaseOutbreaks(userState = null) {
+  async getDailyDiseaseOutbreaks(userState = null, force_refresh = false) {
     const today = new Date().toDateString();
     const cacheKey = userState ? `${today}_${userState}` : today;
     
-    // Return cached data if available for today
-    if (this.dailyCache && this.cacheDate === cacheKey) {
+    // Return cached data if available and not forcing a refresh
+    if (this.dailyCache && this.cacheDate === cacheKey && !force_refresh) {
       console.log('💾 Using cached disease outbreak data for today');
       return this.dailyCache;
     }
     
-    console.log('🔄 Fetching comprehensive disease outbreak data (state + nationwide)...');
+    console.log(force_refresh ? '🔄 Forcing refresh: Fetching real-time disease data...' : '🔄 Fetching comprehensive disease outbreak data...');
     
     try {
       // Fetch both state-specific and nationwide data
@@ -163,15 +163,16 @@ class AIDiseaseMonitorService {
     
     try {
       const response = await this.geminiService.generateResponseWithGrounding(
-        `Search for CURRENT disease outbreaks in ${stateName}, India from the LATEST verified health news and official reports published in the LAST 30 DAYS only.  
+        `URGENT: Search for CURRENT disease outbreaks in ${stateName}, India from TODAY'S and LATEST verified health news published in September 2025 ONLY. Use Google Search to find the most recent reports from the last 7-15 days.
 
-        STRICT SEARCH RULES FOR ${stateName}:  
-        - ✅ Include ONLY active outbreaks in ${stateName} state.  
-        - ❌ EXCLUDE common seasonal diseases (COVID-19, dengue, malaria, diarrhoea, chikungunya) UNLESS an outbreak is extraordinary or unusual.  
-        - 🎯 PRIORITIZE: Emerging diseases, rare infections, unusual outbreaks, significant state/district-level health alerts.  
-        - 🔍 Look for ${stateName} Health Department advisories, district-level alerts, local hospital reports.  
-        - ❌ Do NOT include nationwide/general alerts — only ${stateName}-specific.  
-        - 🗺️ Must mention specific districts/cities affected in ${stateName}.
+        CRITICAL SEARCH REQUIREMENTS FOR ${stateName}:  
+        - 📅 MANDATORY: Only include outbreaks reported in September 2025 or the last 2 weeks
+        - ✅ Include ONLY active outbreaks currently happening in ${stateName} state  
+        - ❌ COMPLETELY EXCLUDE: Old outbreaks from 2024, H3N2 influenza, seasonal COVID-19, routine dengue/malaria unless there's an extraordinary surge in September 2025
+        - 🎯 PRIORITIZE: NEW emerging diseases, rare infections, unusual outbreaks, recent state/district health alerts from September 2025
+        - 🔍 Search specifically for: "${stateName} health department September 2025", "${stateName} disease outbreak latest news", "${stateName} health alert current"
+        - ❌ REJECT: Any information older than August 2025
+        - 🗺️ Must mention specific districts/cities currently affected in ${stateName} with recent case numbers
         
         Return in this EXACT format:
         
@@ -219,14 +220,16 @@ class AIDiseaseMonitorService {
     
     try {
       const response = await this.geminiService.generateResponseWithGrounding(
-        `Search for SIGNIFICANT CURRENT disease outbreaks across MULTIPLE STATES in India from the LATEST verified health news and official reports published in the LAST 30 DAYS only.  
+        `URGENT: Search for SIGNIFICANT CURRENT disease outbreaks across MULTIPLE STATES in India from TODAY'S and LATEST verified health news published in September 2025 ONLY. Use Google Search to find the most recent multi-state health reports from the last 7-15 days.
 
-        STRICT SEARCH RULES (NATIONWIDE):  
-        - ✅ Include ONLY diseases affecting 2 or more states, or those flagged as NATIONAL emergencies.  
-        - ❌ EXCLUDE seasonal/common diseases (COVID-19, dengue, malaria, diarrhoea, chikungunya) UNLESS an outbreak is extraordinary or unusual.  
-        - 🎯 PRIORITIZE: Emerging diseases, rare outbreaks, unusual infections, or major national health emergencies.  
-        - 🔍 Sources: Health Ministry of India, WHO, NCDC, national advisories, multi-state news reports.  
-        - ❌ Do NOT include single-state outbreaks (those go into state alerts).
+        CRITICAL SEARCH REQUIREMENTS (NATIONWIDE):  
+        - 📅 MANDATORY: Only include outbreaks reported in September 2025 or the last 2 weeks
+        - ✅ Include ONLY diseases currently affecting 2+ states or flagged as NATIONAL emergencies in September 2025
+        - ❌ COMPLETELY EXCLUDE: Old outbreaks from 2024, H3N2 influenza, seasonal COVID-19, routine dengue/malaria unless there's an extraordinary multi-state surge in September 2025
+        - 🎯 PRIORITIZE: NEW emerging diseases, rare multi-state outbreaks, unusual infections, major national health emergencies from September 2025
+        - 🔍 Search specifically for: "India health ministry September 2025", "multi-state disease outbreak latest", "national health emergency current", "WHO India September 2025"
+        - ❌ REJECT: Any information older than August 2025, single-state outbreaks
+        - 🗺️ Must show current multi-state spread with recent case numbers from September 2025
         
         Return in this EXACT format:
         

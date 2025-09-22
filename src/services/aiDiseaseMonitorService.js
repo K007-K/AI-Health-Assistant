@@ -176,29 +176,27 @@ class AIDiseaseMonitorService {
 
         Return ONLY the formatted alert below. Do not add any conversational text or introductory sentences. Use WhatsApp formatting (*bold*, _italic_, - bullet points):
 
-        📢 *Public Health Alert - [Current Date]* 📢
-        _A state-wise summary of ongoing health advisories._
+        📢 *Health Alert for ${stateName} - [Current Date]* 📢
 
-        🇮🇳 *${stateName}*
-        🦠 *Key Diseases:*
-         - [Disease Name]: [Brief description with recent case numbers and dates]
-         - [Disease Name]: [Brief description with recent case numbers and dates]
-        
-        🗺️ Affected Areas:
-         - [District/City 1]: [Disease and case details from recent reports]
-         - [District/City 2]: [Disease and case details from recent reports]
-        
-        🩺 Symptoms to Watch For:
-        If you experience any of these symptoms, seek immediate medical attention:
-         - [Symptom 1] • [Symptom 2] • [Symptom 3]
-        
-        🛡️ Prevention & Advisory:
-         - [Prevention tip 1]
-         - [Prevention tip 2]
-         - [Prevention tip 3]
-        
-        🔗 Official Source: [Recent source name with date]
-        📞 Emergency Contact: 108
+        *What is happening?*
+        [Simple summary of the main health issue in the state.]
+
+        *Where is it happening?*
+        - [City or District 1]: [Simple details]
+        - [City or District 2]: [Simple details]
+
+        *What should I look for? (Symptoms)*
+        - [Simple Symptom 1]
+        - [Simple Symptom 2]
+        - [Simple Symptom 3]
+
+        *How can I stay safe? (Prevention)*
+        - [Simple prevention tip 1]
+        - [Simple prevention tip 2]
+        - [Simple prevention tip 3]
+
+        *Official Source:* [Source Name]
+        *Emergency Contact:* 108
         
         If no current outbreaks found in ${stateName}, return: "No significant disease outbreaks reported in ${stateName} in the last 30 days."`,
         'en',
@@ -233,33 +231,28 @@ class AIDiseaseMonitorService {
 
         Return ONLY the formatted alert below. Do not add any conversational text or introductory sentences. Use WhatsApp formatting (*bold*, _italic_, - bullet points):
 
-        📢 *Public Health Alert - [Current Date]* 📢
-        _A state-wise summary of ongoing health advisories._
+        📢 *National Health Alert - [Current Date]* 📢
 
-        🇮🇳 *[State Name 1]*
-        🦠 *Key Diseases:*
-         - [Disease Name]: [Brief description with recent case numbers and dates]
-         - [Disease Name]: [Brief description with recent case numbers and dates]
-        
-        🇮🇳 [State Name 2]
-        🦠 Key Diseases:
-         - [Disease Name]: [Brief description with recent case numbers and dates]
-         - [Disease Name]: [Brief description with recent case numbers and dates]
-        
-        🇮🇳 [State Name 3]
-        🦠 Key Diseases:
-         - [Disease Name]: [Brief description with recent case numbers and dates]
-        
-        🩺 Symptoms to Watch For:
-        If you experience any of these symptoms, seek immediate medical attention:
-         - [Symptom 1] • [Symptom 2] • [Symptom 3]
-        
-        🛡️ Prevention & Advisory:
-         - [Prevention tip 1]
-         - [Prevention tip 2]
-         - [Prevention tip 3]
-        
-        🔗 Official Source: [Recent source name with date]
+        *What is happening across India?*
+        [Simple summary of the main multi-state health issues.]
+
+        *Which states are affected?*
+        - *[State 1]:* [Simple details of the main issue]
+        - *[State 2]:* [Simple details of the main issue]
+        - *[State 3]:* [Simple details of the main issue]
+
+        *What should I look for? (Symptoms)*
+        - [Simple Symptom 1]
+        - [Simple Symptom 2]
+        - [Simple Symptom 3]
+
+        *How can I stay safe? (Prevention)*
+        - [Simple prevention tip 1]
+        - [Simple prevention tip 2]
+        - [Simple prevention tip 3]
+
+        *Official Source:* [Source Name]
+        *Emergency Contact:* 108
         
         If no significant current outbreaks found, return: "No major disease outbreaks reported across India in the last 30 days."`,
         'en',

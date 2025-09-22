@@ -2006,24 +2006,35 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
       const nationalAlert = await aiService.fetchNationwideDiseases();
       await this.whatsappService.sendMessage(user.phone_number, nationalAlert);
       
-      // Provide follow-up options
+      // Provide intelligent follow-up options
       const isSubscribed = user.consent_outbreak_alerts === true;
-      
-      const followUpButtons = isSubscribed 
-        ? [
-            { id: 'disease_alerts', title: '↩️ Back' },
-            { id: 'back_to_menu', title: '🏠 Main Menu' }
-          ]
-        : [
-            { id: 'turn_on_alerts', title: '🔔 Get Alerts' },
-            { id: 'disease_alerts', title: '↩️ Back' },
-            { id: 'back_to_menu', title: '🏠 Main Menu' }
-          ];
-      
-      const followUpMessage = isSubscribed 
-        ? '✅ You are receiving disease outbreak alerts. Stay informed!'
-        : '📱 Want alerts for disease outbreaks in your area?';
-          
+      let followUpMessage = '';
+      let followUpButtons = [];
+
+      if (!userStateName) {
+        // If user's state is unknown, prompt them to set it
+        followUpMessage = 'To get personalized alerts for your state, you can set your location. Would you like to do that now?';
+        followUpButtons = [
+          { id: 'turn_on_alerts', title: '📍 Set Location' }, // This intent triggers the location setup flow
+          { id: 'back_to_menu', title: '🏠 Main Menu' }
+        ];
+      } else if (isSubscribed) {
+        // If user is subscribed and state is known
+        followUpMessage = '✅ You are receiving alerts for your area. Stay informed!';
+        followUpButtons = [
+          { id: 'disease_alerts', title: '↩️ Back' },
+          { id: 'back_to_menu', title: '🏠 Main Menu' }
+        ];
+      } else {
+        // If user's state is known but they are not subscribed
+        followUpMessage = '📱 Want to get automatic alerts for your area?';
+        followUpButtons = [
+          { id: 'turn_on_alerts', title: '🔔 Get Alerts' },
+          { id: 'disease_alerts', title: '↩️ Back' },
+          { id: 'back_to_menu', title: '🏠 Main Menu' }
+        ];
+      }
+
       await this.whatsappService.sendInteractiveButtons(
         user.phone_number,
         followUpMessage,

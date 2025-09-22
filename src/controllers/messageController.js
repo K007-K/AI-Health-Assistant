@@ -3,7 +3,7 @@ const MockWhatsAppService = require('../services/mockWhatsappService');
 const UserService = require('../services/userService');
 const ConversationService = require('../services/conversationService');
 const User = require('../models/User');
-const geminiService = require('../services/geminiService');
+const GeminiService = require('../services/geminiService');
 const broadcastService = require('../services/broadcastService');
 const { sendMessage, sendInteractiveButtons, sendInteractiveList } = require('../services/whatsappService');
 const { LanguageUtils } = require('../utils/languageUtils');
@@ -17,7 +17,7 @@ class MessageController {
     this.whatsappService = isTestMode ? new MockWhatsAppService() : new WhatsAppService();
     this.userService = new UserService();
     this.conversationService = new ConversationService();
-    this.geminiService = geminiService; // Use the imported service instance
+    this.geminiService = new GeminiService(); // Create new instance of GeminiService
     this.userFeedbackService = new UserFeedbackService();
     this.aiDiseaseMonitorService = new AIDiseaseMonitorService();
   }

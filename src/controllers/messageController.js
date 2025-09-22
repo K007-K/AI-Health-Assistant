@@ -923,11 +923,14 @@ ${language} భాషలో${scriptPreference === 'transliteration' ? ' ఆం�
         // Show tip categories using list
         const tipsList = this.whatsappService.getPreventiveTipsList(user.preferred_language);
         
+        const categoryText = LanguageUtils.getText('choose_category', user.preferred_language);
+        const tipsText = LanguageUtils.getText('preventive_healthcare_tips', user.preferred_language);
+        
         await this.whatsappService.sendList(
           user.phone_number,
-          '🌱 Preventive Healthcare Tips\nChoose a category:',
+          `🌱 ${tipsText}\n${categoryText}:`,
           tipsList.sections,
-          'Choose Category'
+          categoryText
         );
 
         await this.userService.updateUserSession(user.id, 'preventive_tips');
@@ -1319,21 +1322,31 @@ ${language} భాషలో${scriptPreference === 'transliteration' ? ' ఆం�
     }
   }
 
-  // Handle nutrition-specific questions with proper categorization and redirects
   async handleNutritionQuestion(user, message) {
     try {
       const lowerMessage = message.toLowerCase();
       
-      // Define nutrition-related keywords
+      // Define nutrition-related keywords (multilingual)
       const nutritionKeywords = [
+        // English
         'eat', 'eating', 'food', 'diet', 'nutrition', 'meal', 'breakfast', 'lunch', 'dinner',
         'chicken', 'fish', 'meat', 'vegetable', 'fruit', 'rice', 'wheat', 'dal', 'milk',
         'protein', 'vitamin', 'calcium', 'iron', 'carbohydrate', 'fat', 'sugar', 'salt',
-        'cooking', 'recipe', 'ingredient', 'spice', 'oil', 'ghee', 'butter', 'cheese',
-        'water', 'drink', 'juice', 'tea', 'coffee', 'alcohol', 'beverage',
-        'weight', 'gain', 'lose', 'healthy', 'balanced', 'portion', 'calorie',
-        'hygiene', 'clean', 'wash', 'sanitize', 'soap', 'hand', 'kitchen', 'utensil'
-      ];
+        'recipe', 'cooking', 'cook', 'ingredient', 'healthy eating', 'balanced diet',
+        'hygiene', 'clean', 'wash', 'soap', 'water', 'sanitation', 'toilet', 'bathroom',
+        // Hindi
+        'खाना', 'भोजन', 'आहार', 'पोषण', 'नाश्ता', 'दोपहर', 'रात का खाना', 'चिकन', 'मछली', 
+        'मांस', 'सब्जी', 'फल', 'चावल', 'दूध', 'प्रोटीन', 'विटामिन', 'स्वच्छता', 'साफ', 'धोना',
+        // Telugu
+        'తినడం', 'ఆహారం', 'భోజనం', 'పోషణ', 'అల్లం', 'చికెన్', 'చేప', 'మాంసం', 'కూరగాయలు', 
+        'పండ్లు', 'అన్నం', 'పాలు', 'ప్రోటీన్', 'విటమిన్', 'పరిశుభ్రత', 'శుభ్రం', 'కడుక్కోవడం',
+        // Tamil  
+        'சாப்பிடு', 'உணவு', 'சாப்பாடு', 'ஊட்டச்சத்து', 'கோழி', 'மீன்', 'இறைச்சி', 'காய்கறி',
+        'பழம்', 'அரிசி', 'பால்', 'புரதம்', 'வைட்டமின்', 'சுகாதாரம்', 'சுத்தம்', 'கழுவு',
+        // Odia
+        'ଖାଇବା', 'ଖାଦ୍ୟ', 'ଭୋଜନ', 'ପୋଷଣ', 'କୁକୁଡ଼ା', 'ମାଛ', 'ମାଂସ', 'ପନିପରିବା', 
+        'ଫଳ', 'ଚାଉଳ', 'କ୍ଷୀର', 'ପ୍ରୋଟିନ୍', 'ଭିଟାମିନ୍', 'ସ୍ୱଚ୍ଛତା', 'ସଫା', 'ଧୋଇବା'
+      ];  
       
       // Define non-nutrition keywords that should be redirected
       const symptomKeywords = [
@@ -2000,17 +2013,18 @@ ${fallbackTexts[user.preferred_language] || fallbackTexts.en}`;
       // Show user's state-specific alert first (if available)
       if (userStateName) {
         console.log(`[DEBUG] User state found. Fetching state-specific alert for ${userStateName}...`);
-        const stateAlert = await aiService.fetchStateSpecificDiseases(userStateName);
+        const stateAlert = await aiService.fetchStateSpecificDiseases(userStateName, user.preferred_language, user.script_preference);
         console.log(`[DEBUG] Sending state-specific alert for ${userStateName} to ${user.phone_number}`);
         await this.whatsappService.sendMessage(user.phone_number, stateAlert);
         await new Promise(resolve => setTimeout(resolve, 1000)); // Wait before sending national alert
       } else {
-        console.log('[DEBUG] No user state found. Skipping state-specific alert.');
+        console.log(`[DEBUG] No user state found. Skipping state-specific alert.`);
       }
       
-      // Show national overview with enhanced prompts
-      console.log('🇮🇳 Showing national disease overview with enhanced prompts');
-      const nationalAlert = await aiService.fetchNationwideDiseases();
+      // Always show national alert
+      console.log(`[DEBUG] Fetching nationwide alert...`);
+      const nationalAlert = await aiService.fetchNationwideDiseases(user.preferred_language, user.script_preference);
+      console.log(`[DEBUG] Sending nationwide alert to ${user.phone_number}`);
       await this.whatsappService.sendMessage(user.phone_number, nationalAlert);
       
       // Provide intelligent follow-up options

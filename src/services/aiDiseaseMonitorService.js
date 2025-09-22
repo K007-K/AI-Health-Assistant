@@ -178,7 +178,7 @@ class AIDiseaseMonitorService {
   }
 
   // Fetch state-specific disease outbreaks
-  async fetchStateSpecificDiseases(stateName) {
+  async fetchStateSpecificDiseases(stateName, language = 'en', scriptType = 'native') {
     checkAndResetCache(); // Ensure cache is for the current day
 
     if (alertCache.states[stateName]) {
@@ -201,7 +201,7 @@ class AIDiseaseMonitorService {
         - ❌ REJECT: Any information older than August 2025
         - 🗺️ Must mention specific districts/cities currently affected in ${stateName} with recent case numbers
 
-        Return ONLY the formatted alert below in SIMPLE, CLEAR language for all users. Do not add any conversational text. Use WhatsApp formatting (*bold*, _italic_).
+        Return ONLY the formatted alert below in SIMPLE, CLEAR ${language === 'en' ? 'English' : language === 'hi' ? 'Hindi' : language === 'te' ? 'Telugu' : language === 'ta' ? 'Tamil' : language === 'or' ? 'Odia' : 'English'} language for all users. Do not add any conversational text. Use WhatsApp formatting (*bold*, _italic_).
 
         📢 *Health Alert for ${stateName}*
         _Updated: [Current Date]_
@@ -226,7 +226,7 @@ class AIDiseaseMonitorService {
         _Source: [Recent source name with date]_
         
         If no current outbreaks found in ${stateName}, return: "No significant disease outbreaks reported in ${stateName} in the last 30 days."`,
-        'en',
+        language,
         3
       );
       
@@ -241,7 +241,7 @@ class AIDiseaseMonitorService {
   }
 
   // Fetch nationwide disease outbreaks
-  async fetchNationwideDiseases() {
+  async fetchNationwideDiseases(language = 'en', scriptType = 'native') {
     checkAndResetCache(); // Ensure cache is for the current day
 
     if (alertCache.nationwide) {
@@ -264,7 +264,7 @@ class AIDiseaseMonitorService {
         - ❌ REJECT: Any information older than August 2025, single-state outbreaks
         - 🗺️ Must show current multi-state spread with recent case numbers from September 2025
 
-        Return ONLY the formatted alert below in SIMPLE, CLEAR language for all users. Do not add any conversational text. Use WhatsApp formatting (*bold*, _italic_).
+        Return ONLY the formatted alert below in SIMPLE, CLEAR ${language === 'en' ? 'English' : language === 'hi' ? 'Hindi' : language === 'te' ? 'Telugu' : language === 'ta' ? 'Tamil' : language === 'or' ? 'Odia' : 'English'} language for all users. Do not add any conversational text. Use WhatsApp formatting (*bold*, _italic_).
 
         📢 *National Health Alert for India*
         _Updated: [Current Date]_
@@ -292,7 +292,7 @@ class AIDiseaseMonitorService {
         _Source: [Recent source name with date]_
         
         If no significant current outbreaks found, return: "No major disease outbreaks reported across India in the last 30 days."`,
-        'en',
+        language,
         4
       );
       

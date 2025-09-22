@@ -335,10 +335,11 @@ class WhatsAppService {
 
   // Get main menu as list (supports 6 options)
   getMainMenuList(language = 'en', scriptType = 'native') {
+    const mainMenuText = LanguageUtils.getText('main_menu', language);
     const menus = {
       en: {
         sections: [{
-          title: "📋 Main Menu",
+          title: `📋 ${mainMenuText}`,
           rows: [
             { id: 'chat_ai', title: '🤖 Chat with AI', description: 'Ask health questions & get guidance' },
             { id: 'symptom_check', title: '🩺 Check Symptoms', description: 'Analyze symptoms & get recommendations' },

@@ -22,6 +22,9 @@ class SchedulerService {
     // Daily outbreak fetch and broadcast at 10:00 PM IST
     this.scheduleDailyEveningBroadcast();
 
+    // TEST: Disease alert broadcast at 4:31 PM IST (for testing)
+    this.scheduleTestBroadcast();
+
     // Cleanup old alerts daily at 2:00 AM IST
     this.scheduleCleanupOldAlerts();
 
@@ -173,6 +176,38 @@ class SchedulerService {
         }
       }
     };
+  }
+
+  // TEST: Schedule disease alert broadcast at 4:31 PM IST (for testing)
+  scheduleTestBroadcast() {
+    cron.schedule('31 16 * * *', async () => {
+      console.log('🧪 TEST: Starting disease alert broadcast at 4:31 PM IST');
+      
+      try {
+        // Fetch today's national outbreak data
+        const nationalAlert = await outbreakService.fetchAndBroadcastNationalOutbreaks();
+        
+        if (nationalAlert) {
+          const alertId = nationalAlert.alert_id || nationalAlert.parsed_diseases?.alertId || nationalAlert.id || 'test-alert';
+          console.log(`📢 TEST: Broadcasting national alert: ${alertId}`);
+          
+          // Broadcast to all subscribed users
+          await broadcastService.broadcastNationalAlert(nationalAlert);
+          
+          console.log('✅ TEST: Disease alert broadcast completed successfully at 4:31 PM');
+        } else {
+          console.log('ℹ️ TEST: No national outbreak alert to broadcast');
+        }
+      } catch (error) {
+        console.error('❌ TEST: Error during 4:31 PM disease alert broadcast:', error);
+        await this.notifyAdminOfError('TEST Disease Alert Broadcast Failed', error);
+      }
+    }, {
+      scheduled: true,
+      timezone: "Asia/Kolkata"
+    });
+    
+    console.log('🧪 TEST: Scheduled disease alert broadcast for 4:31 PM IST');
   }
 
   // Notify admin of errors (placeholder for future implementation)

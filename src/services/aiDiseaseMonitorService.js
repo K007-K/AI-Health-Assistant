@@ -56,17 +56,28 @@ class AIDiseaseMonitorService {
       }
     }
     
-    const prompt = `Search for current disease outbreaks in ${locationQuery} as of ${currentDate}.
+    const prompt = `Search for CURRENT disease outbreaks in ${locationQuery} from the LATEST news and health reports published in the last 30 days only.
     
-    Return the results in this template format:
+    CRITICAL SEARCH REQUIREMENTS:
+    - Only include diseases with ACTIVE outbreaks reported in the last 30 days
+    - COMPLETELY EXCLUDE: COVID-19, dengue, malaria, diarrhea, chikungunya (unless extraordinary circumstances)
+    - Focus ONLY on: EMERGING diseases, RARE diseases, UNUSUAL outbreaks, or SIGNIFICANT health emergencies
+    - Look for diseases like: Nipah virus, brain-eating amoeba, H5N1, HMPV, unusual bacterial infections, rare viral outbreaks
+    - Search for recent health ministry alerts, WHO reports, state health department notifications
+    
+    Return in this EXACT format:
     
     📢 Public Health Alert - ${currentDate} 📢
     A state-wise summary of ongoing health advisories.
     
-    🇮🇳 [State Name]
+    🇮🇳 [State Name 1]
     🦠 Key Diseases:
-     - [Disease Name]: [Brief description with case numbers]
-     - [Disease Name]: [Brief description with case numbers]
+     - [Disease Name]: [Brief description with recent case numbers and dates]
+     - [Disease Name]: [Brief description with recent case numbers and dates]
+    
+    🇮🇳 [State Name 2]
+    🦠 Key Diseases:
+     - [Disease Name]: [Brief description with recent case numbers and dates]
     
     🩺 Symptoms to Watch For:
     If you experience any of these symptoms, seek immediate medical attention:
@@ -77,9 +88,9 @@ class AIDiseaseMonitorService {
      - [Prevention tip 2]
      - [Prevention tip 3]
     
-    🔗 Official Source: [Source name]
+    🔗 Official Source: [Recent source name with date]
     
-    Repeat for each affected state. Use real current data from search results.`;
+    If no significant current outbreaks found, return: "No major disease outbreaks reported in ${locationQuery} in the last 30 days."`;
 
     try {
       const response = await this.geminiService.generateResponseWithGrounding(
@@ -88,113 +99,18 @@ class AIDiseaseMonitorService {
         3
       );
 
-      // Parse the structured text response
-      const diseases = this.parseTextResponse(response);
-      console.log(`📊 Found ${diseases.length} diseases from AI scan`);
-      
-      return {
-        diseases: diseases,
-        data_date: new Date().toISOString().split('T')[0],
-        sources: ['Google Search', 'Health Department Reports']
-      };
+      console.log(`✅ Generated location template for ${locationQuery}`);
+      return response; // Return the complete template directly
       
     } catch (error) {
       console.error('Error fetching disease data from AI:', error);
       
-      // Fallback to manual monitoring for known diseases
-      return this.getFallbackDiseaseData();
+      return `📢 Public Health Alert - ${currentDate} 📢\nA state-wise summary of ongoing health advisories.\n\n🇮🇳 ${locationQuery}\n🦠 Key Diseases:\n - No current nationwide alerts\n\n📞 Emergency Contact: 108`;
     }
   }
 
-  // Parse enhanced structured text response from AI with location relevance
-  parseTextResponse(response) {
-    const diseases = [];
-    
-    // Split response into disease blocks
-    const diseaseBlocks = response.split(/DISEASE \d+:/).slice(1);
-    
-    for (const block of diseaseBlocks) {
-      try {
-        const lines = block.trim().split('\n');
-        const disease = {
-          name: '',
-          location: '',
-          cases: '',
-          symptoms: '',
-          prevention: '',
-          relevance: 'NATIONAL',
-          priority: 4,
-          isLocal: false,
-          isState: false,
-          isNearby: false
-        };
-        
-        // Extract disease name from first line
-        if (lines[0]) {
-          disease.name = lines[0].trim();
-        }
-        
-        // Parse each field
-        for (const line of lines) {
-          const trimmedLine = line.trim();
-          
-          if (trimmedLine.startsWith('LOCATION:')) {
-            disease.location = trimmedLine.replace('LOCATION:', '').trim();
-          }
-          
-          if (trimmedLine.startsWith('CASES:')) {
-            disease.cases = trimmedLine.replace('CASES:', '').trim();
-          }
-          
-          if (trimmedLine.startsWith('SEVERITY:')) {
-            disease.severity = trimmedLine.replace('SEVERITY:', '').trim();
-          }
-          
-          if (trimmedLine.startsWith('SYMPTOMS:')) {
-            disease.symptoms = trimmedLine.replace('SYMPTOMS:', '').trim();
-          }
-          
-          if (trimmedLine.startsWith('PREVENTION:')) {
-            disease.prevention = trimmedLine.replace('PREVENTION:', '').trim();
-          }
-          
-          if (trimmedLine.startsWith('RELEVANCE:')) {
-            const relevance = trimmedLine.replace('RELEVANCE:', '').trim();
-            disease.relevance = relevance;
-            
-            // Set priority and flags based on relevance
-            switch (relevance) {
-              case 'LOCAL':
-                disease.priority = 1;
-                disease.isLocal = true;
-                break;
-              case 'STATE':
-                disease.priority = 2;
-                disease.isState = true;
-                break;
-              case 'NEARBY':
-                disease.priority = 3;
-                disease.isNearby = true;
-                break;
-              default:
-                disease.priority = 4;
-            }
-          }
-        }
-        
-        // Only add if we have a name
-        if (disease.name) {
-          diseases.push(disease);
-        }
-        
-      } catch (error) {
-        console.error('Error parsing disease block:', error);
-        continue;
-      }
-    }
-    
-    return diseases;
-  }
+  // This method is no longer needed since we return complete templates directly
+  // Kept for compatibility but not used in current implementation
 
   // Get comprehensive disease outbreaks (state-specific + nationwide)
   async getDailyDiseaseOutbreaks(userState = null) {
@@ -247,74 +163,29 @@ class AIDiseaseMonitorService {
     
     try {
       const response = await this.geminiService.generateResponseWithGrounding(
-        `Search for current disease outbreaks specifically in ${stateName} state, India from recent news and health reports.
-        
-        Return in this EXACT format:
-        
-        📢 Public Health Alert - ${new Date().toLocaleDateString()} 📢
-        *📍 Location: ${stateName}
-        *🦠 Health Concerns Overview
-        [Brief overview of current health situation in ${stateName}]
-        
-        *🗺️ Affected Areas:
-         * [District/City 1]: [Disease and case details]
-         * [District/City 2]: [Disease and case details]
-         * [District/City 3]: [Disease and case details]
-        
-        *🩺 Symptoms to Watch For:
-        If you experience any of the following, seek medical advice:
-         * [Symptom 1]
-         * [Symptom 2]
-         * [Symptom 3]
-        
-        *🛡️ Prevention & Safety Measures:
-         * [Prevention tip 1]
-         * [Prevention tip 2]
-         * [Prevention tip 3]
-        
-        *📞 Emergency Contact: 108
-        *🕐 Last Updated: ${new Date().toLocaleDateString()}
-        
-        Focus on current disease outbreaks, health alerts, or surveillance reports specifically in ${stateName} state. Use real current data from search results.`,
-        'en',
-        3
-      );
-      
-      console.log(`✅ Generated state template for ${stateName}`);
-      return response; // Return the complete template directly
-      
-    } catch (error) {
-      console.error(`Error fetching diseases for ${stateName}:`, error);
-      return `📢 Public Health Alert - ${new Date().toLocaleDateString()} 📢\n*📍 Location: ${stateName}\n*🦠 Health Concerns Overview\nNo current health alerts for ${stateName}.\n\n*📞 Emergency Contact: 108`;
-    }
-  }
+        `Search for CURRENT disease outbreaks in ${stateName}, India from the LATEST verified health news and official reports published in the LAST 30 DAYS only.  
 
-  // Fetch nationwide disease outbreaks (excluding user's state to avoid duplication)
-  async fetchNationwideDiseases() {
-    console.log('🇮🇳 Fetching nationwide disease outbreaks...');
-    
-    try {
-      const response = await this.geminiService.generateResponseWithGrounding(
-        `Search for the most significant current disease outbreaks across India from recent news and health reports. Focus on national-level outbreaks affecting multiple states.
+        STRICT SEARCH RULES FOR ${stateName}:  
+        - ✅ Include ONLY active outbreaks in ${stateName} state.  
+        - ❌ EXCLUDE common seasonal diseases (COVID-19, dengue, malaria, diarrhoea, chikungunya) UNLESS an outbreak is extraordinary or unusual.  
+        - 🎯 PRIORITIZE: Emerging diseases, rare infections, unusual outbreaks, significant state/district-level health alerts.  
+        - 🔍 Look for ${stateName} Health Department advisories, district-level alerts, local hospital reports.  
+        - ❌ Do NOT include nationwide/general alerts — only ${stateName}-specific.  
+        - 🗺️ Must mention specific districts/cities affected in ${stateName}.
         
         Return in this EXACT format:
         
-        📢 Public Health Alert - ${new Date().toLocaleDateString()} 📢
+        📢 Public Health Alert - [Current Date] 📢
         A state-wise summary of ongoing health advisories.
         
-        🇮🇳 [State Name 1]
+        🇮🇳 ${stateName}
         🦠 Key Diseases:
-         - [Disease Name]: [Brief description with case numbers]
-         - [Disease Name]: [Brief description with case numbers]
+         - [Disease Name]: [Brief description with recent case numbers and dates]
+         - [Disease Name]: [Brief description with recent case numbers and dates]
         
-        🇮🇳 [State Name 2]
-        🦠 Key Diseases:
-         - [Disease Name]: [Brief description with case numbers]
-         - [Disease Name]: [Brief description with case numbers]
-        
-        🇮🇳 [State Name 3]
-        🦠 Key Diseases:
-         - [Disease Name]: [Brief description with case numbers]
+        🗺️ Affected Areas:
+         - [District/City 1]: [Disease and case details from recent reports]
+         - [District/City 2]: [Disease and case details from recent reports]
         
         🩺 Symptoms to Watch For:
         If you experience any of these symptoms, seek immediate medical attention:
@@ -325,9 +196,69 @@ class AIDiseaseMonitorService {
          - [Prevention tip 2]
          - [Prevention tip 3]
         
-        🔗 Official Source: [Source name]
+        🔗 Official Source: [Recent source name with date]
+        📞 Emergency Contact: 108
         
-        Focus on major nationwide outbreaks affecting multiple Indian states. Use real current data from search results.`,
+        If no current outbreaks found in ${stateName}, return: "No significant disease outbreaks reported in ${stateName} in the last 30 days."`,
+        'en',
+        3
+      );
+      
+      console.log(`✅ Generated state template for ${stateName}`);
+      return response; // Return the complete template directly
+      
+    } catch (error) {
+      console.error(`Error fetching diseases for ${stateName}:`, error);
+      return `📢 Public Health Alert - ${new Date().toLocaleDateString()} 📢\nA state-wise summary of ongoing health advisories.\n\n🇮🇳 ${stateName}\n🦠 Key Diseases:\n - No current health alerts for ${stateName}\n\n📞 Emergency Contact: 108`;
+    }
+  }
+
+  // Fetch nationwide disease outbreaks (excluding user's state to avoid duplication)
+  async fetchNationwideDiseases() {
+    console.log('🇮🇳 Fetching nationwide disease outbreaks...');
+    
+    try {
+      const response = await this.geminiService.generateResponseWithGrounding(
+        `Search for SIGNIFICANT CURRENT disease outbreaks across MULTIPLE STATES in India from the LATEST verified health news and official reports published in the LAST 30 DAYS only.  
+
+        STRICT SEARCH RULES (NATIONWIDE):  
+        - ✅ Include ONLY diseases affecting 2 or more states, or those flagged as NATIONAL emergencies.  
+        - ❌ EXCLUDE seasonal/common diseases (COVID-19, dengue, malaria, diarrhoea, chikungunya) UNLESS an outbreak is extraordinary or unusual.  
+        - 🎯 PRIORITIZE: Emerging diseases, rare outbreaks, unusual infections, or major national health emergencies.  
+        - 🔍 Sources: Health Ministry of India, WHO, NCDC, national advisories, multi-state news reports.  
+        - ❌ Do NOT include single-state outbreaks (those go into state alerts).
+        
+        Return in this EXACT format:
+        
+        📢 Public Health Alert - [Current Date] 📢
+        A state-wise summary of ongoing health advisories.
+        
+        🇮🇳 [State Name 1]
+        🦠 Key Diseases:
+         - [Disease Name]: [Brief description with recent case numbers and dates]
+         - [Disease Name]: [Brief description with recent case numbers and dates]
+        
+        🇮🇳 [State Name 2]
+        🦠 Key Diseases:
+         - [Disease Name]: [Brief description with recent case numbers and dates]
+         - [Disease Name]: [Brief description with recent case numbers and dates]
+        
+        🇮🇳 [State Name 3]
+        🦠 Key Diseases:
+         - [Disease Name]: [Brief description with recent case numbers and dates]
+        
+        🩺 Symptoms to Watch For:
+        If you experience any of these symptoms, seek immediate medical attention:
+         - [Symptom 1] • [Symptom 2] • [Symptom 3]
+        
+        🛡️ Prevention & Advisory:
+         - [Prevention tip 1]
+         - [Prevention tip 2]
+         - [Prevention tip 3]
+        
+        🔗 Official Source: [Recent source name with date]
+        
+        If no significant current outbreaks found, return: "No major disease outbreaks reported across India in the last 30 days."`,
         'en',
         4
       );
@@ -341,59 +272,8 @@ class AIDiseaseMonitorService {
     }
   }
   
-  // Parse simple text response into disease objects
-  parseSimpleTextResponse(response) {
-    const diseases = [];
-    const diseaseBlocks = response.split(/DISEASE \d+:/).slice(1);
-    
-    for (const block of diseaseBlocks) {
-      try {
-        const lines = block.trim().split('\n');
-        const disease = {};
-        
-        // Extract disease name from first line
-        if (lines[0]) {
-          disease.name = lines[0].trim();
-        }
-        
-        // Parse each field
-        for (const line of lines) {
-          const trimmedLine = line.trim();
-          
-          if (trimmedLine.startsWith('LOCATION:')) {
-            disease.location = trimmedLine.replace('LOCATION:', '').trim();
-          }
-          
-          if (trimmedLine.startsWith('CASES:')) {
-            disease.cases = trimmedLine.replace('CASES:', '').trim();
-          }
-          
-          if (trimmedLine.startsWith('SEVERITY:')) {
-            disease.severity = trimmedLine.replace('SEVERITY:', '').trim();
-          }
-          
-          if (trimmedLine.startsWith('SYMPTOMS:')) {
-            disease.symptoms = trimmedLine.replace('SYMPTOMS:', '').trim();
-          }
-          
-          if (trimmedLine.startsWith('PREVENTION:')) {
-            disease.prevention = trimmedLine.replace('PREVENTION:', '').trim();
-          }
-        }
-        
-        // Only add if we have a name
-        if (disease.name) {
-          diseases.push(disease);
-        }
-        
-      } catch (error) {
-        console.error('Error parsing disease block:', error);
-        continue;
-      }
-    }
-    
-    return diseases;
-  }
+  // This method is no longer needed since we return complete templates directly
+  // Kept for compatibility but not used in current implementation
 
   // Legacy method - no longer needed with caching approach
   async processDiseaseData(diseaseData) {
@@ -512,22 +392,17 @@ class AIDiseaseMonitorService {
     }
   }
 
-  // AI-powered disease name extraction
+  // AI-powered disease name extraction - removed hardcoded patterns
   async extractDiseaseName(text) {
-    // Simple regex patterns for common diseases
-    const diseasePatterns = [
-      /dengue/i, /malaria/i, /chikungunya/i, /covid-19/i, /coronavirus/i,
-      /tuberculosis/i, /hepatitis/i, /cholera/i, /typhoid/i, /influenza/i,
-      /h1n1/i, /zika/i, /ebola/i, /mpox/i, /monkeypox/i
-    ];
-    
-    for (const pattern of diseasePatterns) {
-      if (pattern.test(text)) {
-        return text.match(pattern)[0].toLowerCase();
-      }
+    // Use AI to extract disease names instead of hardcoded patterns
+    try {
+      const prompt = `Extract the disease name from this text: "${text}". Return only the disease name, nothing else.`;
+      const result = await this.geminiService.generateResponse(prompt, 'en');
+      return result.trim().toLowerCase();
+    } catch (error) {
+      console.error('Error extracting disease name:', error);
+      return 'unknown';
     }
-    
-    return 'unknown';
   }
 
   // Calculate severity based on case numbers and spread

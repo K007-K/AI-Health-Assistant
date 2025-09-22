@@ -1,5 +1,6 @@
 const axios = require('axios');
 const config = require('../config/environment');
+const LanguageUtils = require('../utils/languageUtils');
 
 class WhatsAppService {
   constructor() {
@@ -336,6 +337,10 @@ class WhatsAppService {
   // Get main menu as list (supports 6 options)
   getMainMenuList(language = 'en', scriptType = 'native') {
     const mainMenuText = LanguageUtils.getText('main_menu', language);
+    
+    // Determine the correct language key based on script type
+    const languageKey = scriptType === 'transliteration' ? `${language}_trans` : language;
+    
     const menus = {
       en: {
         sections: [{
@@ -401,7 +406,7 @@ class WhatsAppService {
       // Transliterated versions
       hi_trans: {
         sections: [{
-          title: "📋 Main Menu",
+          title: `📋 ${mainMenuText}`,
           rows: [
             { id: 'chat_ai', title: '🤖 AI se baat karo', description: 'Swasthya prashn pucho aur margdarshan pao' },
             { id: 'symptom_check', title: '🩺 Lakshan jancho', description: 'Lakshano ka vishleshan karo aur sifarish pao' },
@@ -415,7 +420,7 @@ class WhatsAppService {
       
       te_trans: {
         sections: [{
-          title: "📋 Main Menu",
+          title: `📋 ${mainMenuText}`,
           rows: [
             { id: 'chat_ai', title: '🤖 AI tho chat cheyandi', description: 'Aarogya prashnalu adigi margadarshanam pondandi' },
             { id: 'symptom_check', title: '🩺 Lakshanalu thanikhi cheyandi', description: 'Lakshanalanu vishleshinchi sifarasulu pondandi' },
@@ -429,7 +434,7 @@ class WhatsAppService {
       
       ta_trans: {
         sections: [{
-          title: "📋 Main Menu",
+          title: `📋 ${mainMenuText}`,
           rows: [
             { id: 'chat_ai', title: '🤖 AI udan aratai', description: 'Sugathara kelvikal kettu vazhikattuthal perungal' },
             { id: 'symptom_check', title: '🩺 Arikuri saripar', description: 'Arikurikarai pakuppaivu seithu parinthurakairai perungal' },
@@ -443,7 +448,7 @@ class WhatsAppService {
       
       or_trans: {
         sections: [{
-          title: "📋 Main Menu",
+          title: `📋 ${mainMenuText}`,
           rows: [
             { id: 'chat_ai', title: '🤖 AI sahita chat karanta', description: 'Swaasthya prashna pacharanta o margadarshan paanta' },
             { id: 'symptom_check', title: '🩺 Lakshan jancha karanta', description: 'Lakshana vishleshan karanta o sifarish paanta' },
@@ -667,6 +672,48 @@ class WhatsAppService {
             { id: 'learn_diseases', title: '🦠 ରୋଗ ବିଷୟରେ ଜାଣନ୍ତୁ', description: 'ସାଧାରଣ ରୋଗ, ଲକ୍ଷଣ ଏବଂ ପ୍ରତିରୋଧ' },
             { id: 'nutrition_hygiene', title: '🥗 ପୋଷଣ ଏବଂ ସ୍ୱଚ୍ଛତା', description: 'ସ୍ୱାସ୍ଥ୍ୟକର ଖାଇବା ଅଭ୍ୟାସ ଏବଂ ସ୍ୱଚ୍ଛତା ଟିପସ' },
             { id: 'exercise_lifestyle', title: '🏃 ବ୍ୟାୟାମ ଏବଂ ଜୀବନଶୈଳୀ', description: 'ଶାରୀରିକ କାର୍ଯ୍ୟକଳାପ ଏବଂ ସ୍ୱାସ୍ଥ୍ୟକର ଜୀବନ ଟିପସ' }
+          ]
+        }]
+      },
+
+      // Transliteration versions
+      hi_trans: {
+        sections: [{
+          title: "🌱 Swasthya sujhav shreniyan",
+          rows: [
+            { id: 'learn_diseases', title: '🦠 Bimariyo ke bare mein jano', description: 'Samanya bimariyan, lakshan aur roktham' },
+            { id: 'nutrition_hygiene', title: '🥗 Poshan aur swachhata', description: 'Swasth khane ki aadaten aur safai ke sujhav' },
+            { id: 'exercise_lifestyle', title: '🏃 Vyayam aur jeevansheli', description: 'Sharirik gatividhi aur swasth jeevan ke sujhav' }
+          ]
+        }]
+      },
+      te_trans: {
+        sections: [{
+          title: "🌱 Aarogya chitkala vargalu",
+          rows: [
+            { id: 'learn_diseases', title: '🦠 Vyadhula gurinchi telusukondi', description: 'Sadharana vyadhulu, lakshanalu & nivarana' },
+            { id: 'nutrition_hygiene', title: '🥗 Poshana & parishubhrata', description: 'Aarogyakaramaina aahara alavatlalu & parishubhrata chitkalu' },
+            { id: 'exercise_lifestyle', title: '🏃 Vyayamam & jeevanasheli', description: 'Sharirika karyakalapalu & aarogyakaramaina jeevana chitkalu' }
+          ]
+        }]
+      },
+      ta_trans: {
+        sections: [{
+          title: "🌱 Aarokkiya kuripugal vagaigal",
+          rows: [
+            { id: 'learn_diseases', title: '🦠 Noikal patri ariya', description: 'Poduvana noikal, arikurikal & thaduppu' },
+            { id: 'nutrition_hygiene', title: '🥗 Oottachatthu & sugatharam', description: 'Aarokkiyamana unavu pazhakkangal & sutham kuripugal' },
+            { id: 'exercise_lifestyle', title: '🏃 Udarpayirchi & valkkai murai', description: 'Udarpayirchi & aarokkiyamana valvin kuripugal' }
+          ]
+        }]
+      },
+      or_trans: {
+        sections: [{
+          title: "🌱 Swaasthya tips bibhagagudika",
+          rows: [
+            { id: 'learn_diseases', title: '🦠 Rog bisayare jaananta', description: 'Sadharana rog, lakshan ebam pratirodha' },
+            { id: 'nutrition_hygiene', title: '🥗 Poshan ebam swachhata', description: 'Swaasthyakara khaiba abhyasa ebam swachhata tips' },
+            { id: 'exercise_lifestyle', title: '🏃 Byayam ebam jeebanshaili', description: 'Sharirika karyakalapa ebam swaasthyakara jeebana tips' }
           ]
         }]
       }

@@ -921,7 +921,8 @@ ${language} భాషలో${scriptPreference === 'transliteration' ? ' ఆం�
       
       if (currentState !== 'preventive_tips') {
         // Show tip categories using list
-        const tipsList = this.whatsappService.getPreventiveTipsList(user.preferred_language);
+        const languageKey = user.script_preference === 'transliteration' ? `${user.preferred_language}_trans` : user.preferred_language;
+        const tipsList = this.whatsappService.getPreventiveTipsList(languageKey);
         
         const categoryText = LanguageUtils.getText('choose_category', user.preferred_language);
         const tipsText = LanguageUtils.getText('preventive_healthcare_tips', user.preferred_language);

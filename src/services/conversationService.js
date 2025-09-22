@@ -204,7 +204,7 @@ class ConversationService {
     if (this.isLanguageCommand(lowerMessage)) return 'change_language';
     
     // More options menu selections and Change Language from main menu
-    if (trimmedMessage.includes('🌐 Change Language') || trimmedMessage.includes('🌐 भाषा बदलें') || trimmedMessage.includes('🌐 భాష మార్చండి') || lowerMessage.includes('change language') || lowerMessage.includes('switch to different language')) return 'change_language';
+    if (trimmedMessage.includes('🌐 Change Language') || trimmedMessage.includes('🌐 भाषा बदलें') || trimmedMessage.includes('🌐 భాష మార్చండి') || trimmedMessage.includes('🌐 மொழி மாற்று') || trimmedMessage.includes('🌐 ଭାଷା ବଦଳାନ୍ତୁ') || lowerMessage.includes('change language') || lowerMessage.includes('switch to different language')) return 'change_language';
     if (message === 'change_language') return 'change_language';
     
     // Handle the exact text from main menu list selection

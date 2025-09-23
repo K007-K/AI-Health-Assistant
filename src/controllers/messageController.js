@@ -229,6 +229,22 @@ class MessageController {
           await this.handleAppointments(user);
           break;
 
+        case 'telemedicine':
+          await this.handleTelemedicine(user);
+          break;
+
+        case 'health_records':
+          await this.handleHealthRecords(user);
+          break;
+
+        case 'pharmacy':
+          await this.handlePharmacy(user);
+          break;
+
+        case 'community_health':
+          await this.handleCommunityHealth(user);
+          break;
+
         case 'more_options':
           await this.showMoreOptionsMenu(user);
           break;
@@ -1561,21 +1577,129 @@ ${language} భాషలో${scriptPreference === 'transliteration' ? ' ఆం�
     return score;
   }
 
-  // Handle coming soon features
+  // Handle future features with specific intro messages
   async handleAppointments(user) {
-    const comingSoonText = LanguageUtils.getText('coming_soon', user.preferred_language);
-    await this.whatsappService.sendMessage(user.phone_number, comingSoonText);
+    const introMessages = {
+      en: '📅 Appointment management will soon allow you to book, view, and track hospital or PHC visits directly from WhatsApp.',
+      hi: '📅 अपॉइंटमेंट प्रबंधन जल्द ही आपको WhatsApp से सीधे अस्पताल या PHC की यात्राओं को बुक, देखने और ट्रैक करने की अनुमति देगा।',
+      te: '📅 అపాయింట్‌మెంట్ మేనేజ్‌మెంట్ త్వరలో WhatsApp నుండి నేరుగా ఆసుపత్రి లేదా PHC సందర్శనలను బుక్ చేయడానికి, చూడడానికి మరియు ట్రాక్ చేయడానికి మిమ్మల్ని అనుమతిస్తుంది।',
+      ta: '📅 அపாயிண்ட்மென்ட் மேலாண்மை விரைவில் WhatsApp இலிருந்து நேரடியாக மருத்துவமனை அல்லது PHC வருகைகளை முன்பதிவு செய்ய, பார்க்க மற்றும் கண்காணிக்க உங்களை அனுமதிக்கும்।',
+      or: '📅 ଆପଏଣ୍ଟମେଣ୍ଟ ପରିଚାଳନା ଶୀଘ୍ର WhatsApp ରୁ ସିଧାସଳଖ ଡାକ୍ତରଖାନା କିମ୍ବା PHC ଭ୍ରମଣ ବୁକ୍, ଦେଖିବା ଏବଂ ଟ୍ରାକ୍ କରିବାକୁ ଆପଣଙ୍କୁ ଅନୁମତି ଦେବ।'
+    };
+    
+    const introText = introMessages[user.preferred_language] || introMessages.en;
+    await this.whatsappService.sendMessage(user.phone_number, introText);
     
     await this.conversationService.saveBotMessage(
       user.id,
-      comingSoonText,
-      'coming_soon',
+      introText,
+      'appointments_intro',
       user.preferred_language
     );
 
     setTimeout(async () => {
       await this.showMainMenu(user);
-    }, 2000);
+    }, 3000);
+  }
+
+  // Handle Telemedicine (eSanjeevani) feature
+  async handleTelemedicine(user) {
+    const introMessages = {
+      en: '🩻 Coming soon: connect to doctors through eSanjeevani telemedicine for remote video/audio consultations.',
+      hi: '🩻 जल्द आ रहा है: रिमोट वीडियो/ऑडियो परामर्श के लिए eSanjeevani टेलीमेडिसिन के माध्यम से डॉक्टरों से जुड़ें।',
+      te: '🩻 త్వరలో వస్తోంది: రిమోట్ వీడియో/ఆడియో కన్సల్టేషన్‌ల కోసం eSanjeevani టెలిమెడిసిన్ ద్వారా వైద్యులతో కనెక్ట్ అవ్వండి।',
+      ta: '🩻 விரைவில் வருகிறது: தொலைநிலை வீடியோ/ஆடியோ ஆலோசனைகளுக்கு eSanjeevani தொலைமருத்துவம் மூலம் மருத்துவர்களுடன் இணைக்கவும்।',
+      or: '🩻 ଶୀଘ୍ର ଆସୁଛି: ରିମୋଟ୍ ଭିଡିଓ/ଅଡିଓ ପରାମର୍ଶ ପାଇଁ eSanjeevani ଟେଲିମେଡିସିନ୍ ମାଧ୍ୟମରେ ଡାକ୍ତରମାନଙ୍କ ସହିତ ସଂଯୋଗ କରନ୍ତୁ।'
+    };
+    
+    const introText = introMessages[user.preferred_language] || introMessages.en;
+    await this.whatsappService.sendMessage(user.phone_number, introText);
+    
+    await this.conversationService.saveBotMessage(
+      user.id,
+      introText,
+      'telemedicine_intro',
+      user.preferred_language
+    );
+
+    setTimeout(async () => {
+      await this.showMainMenu(user);
+    }, 3000);
+  }
+
+  // Handle Digital Health Records (ABHA ID) feature
+  async handleHealthRecords(user) {
+    const introMessages = {
+      en: '📂 In the future, you will be able to link your ABHA ID for portable and migrant-friendly digital health records.',
+      hi: '📂 भविष्य में, आप पोर्टेबल और प्रवासी-अनुकूल डिजिटल स्वास्थ्य रिकॉर्ड के लिए अपनी ABHA ID को लिंक कर सकेंगे।',
+      te: '📂 భవిష్యత్తులో, పోర్టబుల్ మరియు మైగ్రెంట్-ఫ్రెండ్లీ డిజిటల్ హెల్త్ రికార్డ్స్ కోసం మీ ABHA IDని లింక్ చేయగలుగుతారు।',
+      ta: '📂 எதிர்காலத்தில், போர்ட்டபிள் மற்றும் புலம்பெயர்ந்தோர்-நட்பு டிஜிட்டல் சுகாதார பதிவுகளுக்கு உங்கள் ABHA IDஐ இணைக்க முடியும்।',
+      or: '📂 ଭବିଷ୍ୟତରେ, ଆପଣ ପୋର୍ଟେବଲ୍ ଏବଂ ପ୍ରବାସୀ-ଅନୁକୂଳ ଡିଜିଟାଲ୍ ସ୍ୱାସ୍ଥ୍ୟ ରେକର୍ଡ ପାଇଁ ଆପଣଙ୍କର ABHA ID ଲିଙ୍କ କରିପାରିବେ।'
+    };
+    
+    const introText = introMessages[user.preferred_language] || introMessages.en;
+    await this.whatsappService.sendMessage(user.phone_number, introText);
+    
+    await this.conversationService.saveBotMessage(
+      user.id,
+      introText,
+      'health_records_intro',
+      user.preferred_language
+    );
+
+    setTimeout(async () => {
+      await this.showMainMenu(user);
+    }, 3000);
+  }
+
+  // Handle Pharmacy Integration feature
+  async handlePharmacy(user) {
+    const introMessages = {
+      en: '💊 Planned feature: get real-time updates on local pharmacy stock, generic medicine availability, and subsidy alerts.',
+      hi: '💊 नियोजित सुविधा: स्थानीय फार्मेसी स्टॉक, जेनेरिक दवा उपलब्धता, और सब्सिडी अलर्ट पर रियल-टाइम अपडेट प्राप्त करें।',
+      te: '💊 ప్రణాళికాబద్ధ ఫీచర్: స్థానిక ఫార్మసీ స్టాక్, జెనెరిక్ మెడిసిన్ లభ్యత మరియు సబ్సిడీ అలర్ట్‌లపై రియల్-టైమ్ అప్‌డేట్‌లను పొందండి।',
+      ta: '💊 திட்டமிடப்பட்ட அம்சம்: உள்ளூர் மருந்தக இருப்பு, பொதுவான மருந்து கிடைக்கும் தன்மை மற்றும் மானிய எச்சரிக்கைகள் பற்றிய நிகழ்நேர புதுப்பிப்புகளைப் பெறுங்கள்।',
+      or: '💊 ଯୋଜନାବଦ୍ଧ ବୈଶିଷ୍ଟ୍ୟ: ସ୍ଥାନୀୟ ଫାର୍ମେସି ଷ୍ଟକ୍, ଜେନେରିକ୍ ଔଷଧ ଉପଲବ୍ଧତା, ଏବଂ ସବସିଡି ଆଲର୍ଟ ଉପରେ ରିଅଲ୍-ଟାଇମ୍ ଅପଡେଟ୍ ପାଆନ୍ତୁ।'
+    };
+    
+    const introText = introMessages[user.preferred_language] || introMessages.en;
+    await this.whatsappService.sendMessage(user.phone_number, introText);
+    
+    await this.conversationService.saveBotMessage(
+      user.id,
+      introText,
+      'pharmacy_intro',
+      user.preferred_language
+    );
+
+    setTimeout(async () => {
+      await this.showMainMenu(user);
+    }, 3000);
+  }
+
+  // Handle Community Health Pulse feature
+  async handleCommunityHealth(user) {
+    const introMessages = {
+      en: '📊 With consent, anonymized data will be used to track health trends in your district, supporting policy makers.',
+      hi: '📊 सहमति के साथ, आपके जिले में स्वास्थ्य रुझानों को ट्रैक करने के लिए अज्ञात डेटा का उपयोग किया जाएगा, जो नीति निर्माताओं का समर्थन करेगा।',
+      te: '📊 సమ్మతితో, మీ జిల్లాలో ఆరోగ్య ధోరణులను ట్రాక్ చేయడానికి అనామక డేటా ఉపయోగించబడుతుంది, ఇది విధాన రూపకర్తలకు మద్దతు ఇస్తుంది।',
+      ta: '📊 ஒப்புதலுடன், உங்கள் மாவட்டத்தில் சுகாதார போக்குகளைக் கண்காணிக்க அநாமதேய தரவு பயன்படுத்தப்படும், இது கொள்கை வகுப்பாளர்களுக்கு ஆதரவளிக்கும்।',
+      or: '📊 ସମ୍ମତି ସହିତ, ଆପଣଙ୍କ ଜିଲ୍ଲାରେ ସ୍ୱାସ୍ଥ୍ୟ ଧାରାକୁ ଟ୍ରାକ୍ କରିବା ପାଇଁ ଅଜ୍ଞାତ ତଥ୍ୟ ବ୍ୟବହାର କରାଯିବ, ଯାହା ନୀତି ନିର୍ମାତାମାନଙ୍କୁ ସମର୍ଥନ କରିବ।'
+    };
+    
+    const introText = introMessages[user.preferred_language] || introMessages.en;
+    await this.whatsappService.sendMessage(user.phone_number, introText);
+    
+    await this.conversationService.saveBotMessage(
+      user.id,
+      introText,
+      'community_health_intro',
+      user.preferred_language
+    );
+
+    setTimeout(async () => {
+      await this.showMainMenu(user);
+    }, 3000);
   }
 
   async handleOutbreakAlerts(user) {

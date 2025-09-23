@@ -350,6 +350,11 @@ class WhatsAppService {
             { id: 'symptom_check', title: '🩺 Check Symptoms', description: 'Analyze symptoms & get recommendations' },
             { id: 'preventive_tips', title: '🌱 Health Tips', description: 'Learn about diseases, nutrition & lifestyle' },
             { id: 'disease_alerts', title: '🦠 Disease Outbreak Alerts', description: 'View active diseases & manage alerts' },
+            { id: 'appointments', title: '📅 My Appointments (Planned)', description: 'Book, view & track hospital visits' },
+            { id: 'telemedicine', title: '🩻 Telemedicine (eSanjeevani) (Planned)', description: 'Connect to doctors for remote consultations' },
+            { id: 'health_records', title: '📂 Digital Health Records (ABHA ID) (Planned)', description: 'Portable & migrant-friendly health records' },
+            { id: 'pharmacy', title: '💊 Pharmacy Integration (Planned)', description: 'Real-time pharmacy stock & subsidy alerts' },
+            { id: 'community_health', title: '📊 Community Health Pulse (Planned)', description: 'Track health trends in your district' },
             { id: 'change_language', title: '🌐 Change Language', description: 'Switch to different language' }
           ]
         }]
@@ -362,6 +367,11 @@ class WhatsAppService {
             { id: 'symptom_check', title: '🩺 लक्षण जांचें', description: 'लक्षणों का विश्लेषण करें और सिफारिशें पाएं' },
             { id: 'preventive_tips', title: '🌱 स्वास्थ्य सुझाव', description: 'बीमारियों, पोषण और जीवनशैली के बारे में जानें' },
             { id: 'disease_alerts', title: '🦠 रोग प्रकोप अलर्ट', description: 'सक्रिय रोग देखें और अलर्ट प्रबंधित करें' },
+            { id: 'appointments', title: '📅 मेरी अपॉइंटमेंट (नियोजित)', description: 'अस्पताल की यात्राओं को बुक, देखें और ट्रैक करें' },
+            { id: 'telemedicine', title: '🩻 टेलीमेडिसिन (eSanjeevani) (नियोजित)', description: 'रिमोट परामर्श के लिए डॉक्टरों से जुड़ें' },
+            { id: 'health_records', title: '📂 डिजिटल स्वास्थ्य रिकॉर्ड (ABHA ID) (नियोजित)', description: 'पोर्टेबल और प्रवासी-अनुकूल स्वास्थ्य रिकॉर्ड' },
+            { id: 'pharmacy', title: '💊 फार्मेसी एकीकरण (नियोजित)', description: 'रियल-टाइम फार्मेसी स्टॉक और सब्सिडी अलर्ट' },
+            { id: 'community_health', title: '📊 सामुदायिक स्वास्थ्य पल्स (नियोजित)', description: 'अपने जिले में स्वास्थ्य रुझानों को ट्रैक करें' },
             { id: 'change_language', title: '🌐 भाषा बदलें', description: 'अलग भाषा में बदलें' }
           ]
         }]
@@ -374,6 +384,11 @@ class WhatsAppService {
             { id: 'symptom_check', title: '🩺 లక్షణాలు తనిఖీ చేయండి', description: 'లక్షణాలను విశ్లేషించి సిఫార్సులు పొందండి' },
             { id: 'preventive_tips', title: '🌱 ఆరోగ్య చిట్కాలు', description: 'వ్యాధులు, పోషణ & జీవనశైలి గురించి తెలుసుకోండి' },
             { id: 'disease_alerts', title: '🦠 వ్యాధి వ్యాప్తి హెచ్చరికలు', description: 'చురుకైన వ్యాధులను చూడండి & హెచ్చరికలను నిర్వహించండి' },
+            { id: 'appointments', title: '📅 నా అపాయింట్‌మెంట్‌లు (ప్రణాళిక)', description: 'ఆసుపత్రి సందర్శనలను బుక్ చేయండి, చూడండి & ట్రాక్ చేయండి' },
+            { id: 'telemedicine', title: '🩻 టెలిమెడిసిన్ (eSanjeevani) (ప్రణాళిక)', description: 'రిమోట్ కన్సల్టేషన్‌ల కోసం వైద్యులతో కనెక్ట్ అవ్వండి' },
+            { id: 'health_records', title: '📂 డిజిటల్ హెల్త్ రికార్డ్స్ (ABHA ID) (ప్రణాళిక)', description: 'పోర్టబుల్ & మైగ్రెంట్-ఫ్రెండ్లీ హెల్త్ రికార్డ్స్' },
+            { id: 'pharmacy', title: '💊 ఫార్మసీ ఇంటిగ్రేషన్ (ప్రణాళిక)', description: 'రియల్-టైమ్ ఫార్మసీ స్టాక్ & సబ్సిడీ అలర్ట్‌లు' },
+            { id: 'community_health', title: '📊 కమ్యూనిటీ హెల్త్ పల్స్ (ప్రణాళిక)', description: 'మీ జిల్లాలో హెల్త్ ట్రెండ్‌లను ట్రాక్ చేయండి' },
             { id: 'change_language', title: '🌐 భాష మార్చండి', description: 'వేరే భాషకు మార్చండి' }
           ]
         }]
@@ -386,6 +401,11 @@ class WhatsAppService {
             { id: 'symptom_check', title: '🩺 அறிகுறி சரிபார்', description: 'அறிகுறிகளை பகுப்பாய்வு செய்து பரிந்துரைகளை பெறுங்கள்' },
             { id: 'preventive_tips', title: '🌱 ஆரோக்கிய குறிப்புகள்', description: 'நோய்கள், ஊட்டச்சத்து & வாழ்க்கை முறை பற்றி அறியுங்கள்' },
             { id: 'disease_alerts', title: '🦠 நோய் விரிவு எச்சரிக்கைகள்', description: 'தற்போதைய நோய்களை பார்க்கவும் & எச்சரிக்கைகளை நிர்வகிக்கவும்' },
+            { id: 'appointments', title: '📅 எனது சந்திப்புகள் (திட்டமிடப்பட்டது)', description: 'மருத்துவமனை வருகைகளை பதிவு செய்யுங்கள், பார்க்கவும் & கண்காணிக்கவும்' },
+            { id: 'telemedicine', title: '🩻 தொலைமருத்துவம் (eSanjeevani) (திட்டமிடப்பட்டது)', description: 'தொலைநிலை ஆலோசனைகளுக்கு மருத்துவர்களுடன் இணைக்கவும்' },
+            { id: 'health_records', title: '📂 டிஜிட்டல் சுகாதார பதிவுகள் (ABHA ID) (திட்டமிடப்பட்டது)', description: 'போர்ட்டபிள் & புலம்பெயர்ந்தோர்-நட்பு சுகாதார பதிவுகள்' },
+            { id: 'pharmacy', title: '💊 மருந்தகம் ஒருங்கிணைப்பு (திட்டமிடப்பட்டது)', description: 'நிகழ்நேர மருந்தகம் இருப்பு & மானியம் எச்சரிக்கைகள்' },
+            { id: 'community_health', title: '📊 சமூக சுகாதார துடிப்பு (திட்டமிடப்பட்டது)', description: 'உங்கள் மாவட்டத்தில் சுகாதார போக்குகளை கண்காணிக்கவும்' },
             { id: 'change_language', title: '🌐 மொழி மாற்று', description: 'வேறு மொழிக்கு மாற்றவும்' }
           ]
         }]
@@ -398,6 +418,11 @@ class WhatsAppService {
             { id: 'symptom_check', title: '🩺 ଲକ୍ଷଣ ଯାଞ୍ଚ କରନ୍ତୁ', description: 'ଲକ୍ଷଣ ବିଶ୍ଳେଷଣ କରନ୍ତୁ ଏବଂ ସୁପାରିଶ ପାଆନ୍ତୁ' },
             { id: 'preventive_tips', title: '🌱 ସ୍ୱାସ୍ଥ୍ଯ ଟିପସ', description: 'ରୋଗ, ପୋଷଣ ଏବଂ ଜୀବନଶୈଳୀ ବିଷୟରେ ଜାଣନ୍ତୁ' },
             { id: 'disease_alerts', title: '🦠 ରୋଗ ପ୍ରସାର ସଚେତନା', description: 'ସକ୍ରିୟ ରୋଗ ଦେଖନ୍ତୁ ଏବଂ ସଚେତନା ପ୍ରବନ୍ଧନ କରନ୍ତୁ' },
+            { id: 'appointments', title: '📅 ମୋର ନିଯୁକ୍ତି (ଯୋଜନାବଦ୍ଧ)', description: 'ଡାକ୍ତରଖାନା ଭ୍ରମଣ ବୁକ୍ କରନ୍ତୁ, ଦେଖନ୍ତୁ ଏବଂ ଟ୍ରାକ୍ କରନ୍ତୁ' },
+            { id: 'telemedicine', title: '🩻 ଟେଲିମେଡିସିନ୍ (eSanjeevani) (ଯୋଜନାବଦ୍ଧ)', description: 'ରିମୋଟ୍ ପରାମର୍ଶ ପାଇଁ ଡାକ୍ତରମାନଙ୍କ ସହିତ ସଂଯୋଗ କରନ୍ତୁ' },
+            { id: 'health_records', title: '📂 ଡିଜିଟାଲ୍ ସ୍ୱାସ୍ଥ୍ଯ ରେକର୍ଡ (ABHA ID) (ଯୋଜନାବଦ୍ଧ)', description: 'ପୋର୍ଟେବଲ୍ ଏବଂ ପ୍ରବାସୀ-ଅନୁକୂଳ ସ୍ୱାସ୍ଥ୍ଯ ରେକର୍ଡ' },
+            { id: 'pharmacy', title: '💊 ଫାର୍ମେସି ଏକୀକରଣ (ଯୋଜନାବଦ୍ଧ)', description: 'ରିଅଲ୍-ଟାଇମ୍ ଫାର୍ମେସି ଷ୍ଟକ୍ ଏବଂ ସବସିଡି ଆଲର୍ଟ' },
+            { id: 'community_health', title: '📊 ସମ୍ପ୍ରଦାୟ ସ୍ୱାସ୍ଥ୍ଯ ପଲ୍ସ (ଯୋଜନାବଦ୍ଧ)', description: 'ଆପଣଙ୍କ ଜିଲ୍ଲାରେ ସ୍ୱାସ୍ଥ୍ଯ ଧାରାକୁ ଟ୍ରାକ୍ କରନ୍ତୁ' },
             { id: 'change_language', title: '🌐 ଭାଷା ବଦଳାନ୍ତୁ', description: 'ଅନ୍ଯ ଭାଷାରେ ବଦଳାନ୍ତୁ' }
           ]
         }]
@@ -412,8 +437,12 @@ class WhatsAppService {
             { id: 'symptom_check', title: '🩺 Lakshan jancho', description: 'Lakshano ka vishleshan karo aur sifarish pao' },
             { id: 'preventive_tips', title: '🌱 Swasthya sujhav', description: 'Bimariyo, poshan aur jeevansheli ke bare mein jano' },
             { id: 'disease_alerts', title: '🦠 Rog prakop alert', description: 'Sakriya rog dekho aur alert prabandhan karo' },
-            { id: 'change_language', title: '🌐 Bhasha badlo', description: 'Alag bhasha mein badlo' },
-            { id: 'feedback', title: '📊 Feedback aur sachaita', description: 'Pratikriyao ko rate karo aur sachaita sudharne mein madad karo' }
+            { id: 'appointments', title: '📅 Meri appointment (niyojit)', description: 'Hospital ki yatraon ko book, dekho aur track karo' },
+            { id: 'telemedicine', title: '🩻 Telemedicine (eSanjeevani) (niyojit)', description: 'Remote paramarsh ke liye doctors se judo' },
+            { id: 'health_records', title: '📂 Digital swasthya record (ABHA ID) (niyojit)', description: 'Portable aur pravasi-anukul swasthya record' },
+            { id: 'pharmacy', title: '💊 Pharmacy ekikaran (niyojit)', description: 'Real-time pharmacy stock aur subsidy alert' },
+            { id: 'community_health', title: '📊 Samudayik swasthya pulse (niyojit)', description: 'Apne jile mein swasthya rujhano ko track karo' },
+            { id: 'change_language', title: '🌐 Bhasha badlo', description: 'Alag bhasha mein badlo' }
           ]
         }]
       },
@@ -426,8 +455,12 @@ class WhatsAppService {
             { id: 'symptom_check', title: '🩺 Lakshanalu thanikhi cheyandi', description: 'Lakshanalanu vishleshinchi sifarasulu pondandi' },
             { id: 'preventive_tips', title: '🌱 Aarogya chitkalu', description: 'Vyadhulu, poshanalu & jeevanasheli gurinchi telusukondi' },
             { id: 'disease_alerts', title: '🦠 Vyadhi vyapthi hecharikalu', description: 'Churukaina vyadhulanu chudandi & hecharikalanu nirvahinchandhi' },
-            { id: 'change_language', title: '🌐 Bhasha marchandi', description: 'Vere bhashaku marchandi' },
-            { id: 'feedback', title: '📊 Feedback & khachithatvam', description: 'Spandanalanu rate cheyandi & khachithatvam meruguparachadamlo sahayapadandi' }
+            { id: 'appointments', title: '📅 Na appointment-lu (pranalik)', description: 'Asupathri sandarshanalu book cheyandi, chudandi & track cheyandi' },
+            { id: 'telemedicine', title: '🩻 Telemedicine (eSanjeevani) (pranalik)', description: 'Remote consultation kosam vaidyulato connect avvandi' },
+            { id: 'health_records', title: '📂 Digital health records (ABHA ID) (pranalik)', description: 'Portable & migrant-friendly health records' },
+            { id: 'pharmacy', title: '💊 Pharmacy integration (pranalik)', description: 'Real-time pharmacy stock & subsidy alerts' },
+            { id: 'community_health', title: '📊 Community health pulse (pranalik)', description: 'Mee jillalo health trends track cheyandi' },
+            { id: 'change_language', title: '🌐 Bhasha marchandi', description: 'Vere bhashaku marchandi' }
           ]
         }]
       },
@@ -440,8 +473,12 @@ class WhatsAppService {
             { id: 'symptom_check', title: '🩺 Arikuri saripar', description: 'Arikurikarai pakuppaivu seithu parinthurakairai perungal' },
             { id: 'preventive_tips', title: '🌱 Aarokkiya kuripugal', description: 'Noikal, oottachatthu & valkkai murai patri ariyungal' },
             { id: 'disease_alerts', title: '🦠 Noi virivu echarikaikal', description: 'Tarpothaiya noikarai parkavum & echarikaikairai nirvahikkavum' },
-            { id: 'change_language', title: '🌐 Mozhi maatru', description: 'Veru mozhiku maatru' },
-            { id: 'feedback', title: '📊 Karuthu & sariyaana nilai', description: 'Spandanakairai rate seiyungal & sariyaana nilayai merugupaduthadhil uthavungal' }
+            { id: 'appointments', title: '📅 Enathu santhippugal (thittamidappattathu)', description: 'Maruthuvamani varugaigalai pathivu seiyungal, parkavum & kankanikkavum' },
+            { id: 'telemedicine', title: '🩻 Tholaimaruthuvam (eSanjeevani) (thittamidappattathu)', description: 'Tholainilai aalosanaigalukku maruthuvargaludan inaikkavum' },
+            { id: 'health_records', title: '📂 Digital sugathara pathivugal (ABHA ID) (thittamidappattathu)', description: 'Portable & pulampeiyarnthor-natpu sugathara pathivugal' },
+            { id: 'pharmacy', title: '💊 Marunthagam orungginaippu (thittamidappattathu)', description: 'Nigazhnera marunthagam iruppu & maniyam echarikkaigal' },
+            { id: 'community_health', title: '📊 Samuha sugathara thudippu (thittamidappattathu)', description: 'Ungal mavattathil sugathara pokkugalai kankanikkavum' },
+            { id: 'change_language', title: '🌐 Mozhi maatru', description: 'Veru mozhiku maatru' }
           ]
         }]
       },
@@ -454,8 +491,12 @@ class WhatsAppService {
             { id: 'symptom_check', title: '🩺 Lakshan jancha karanta', description: 'Lakshana vishleshan karanta o sifarish paanta' },
             { id: 'preventive_tips', title: '🌱 Swaasthya tips', description: 'Rog, aahaar o jeevan shaili bisayare jaananta' },
             { id: 'disease_alerts', title: '🦠 Rog prakop alert', description: 'Sakriya rog dekhanta o alert byabasthapana karanta' },
-            { id: 'change_language', title: '🌐 Bhaasha badalanta', description: 'Anya bhaashaku badalanta' },
-            { id: 'feedback', title: '📊 Feedback o sachaita', description: 'Pratikriya rate karanta o sachaita sudharibaa sahayata karanta' }
+            { id: 'appointments', title: '📅 Mor niyukti (yojanaabaddha)', description: 'Daaktarakhana bhramana book karanta, dekhanta o track karanta' },
+            { id: 'telemedicine', title: '🩻 Telemedicine (eSanjeevani) (yojanaabaddha)', description: 'Remote paramarsha paain daaktaramaankara sahita sanyoga karanta' },
+            { id: 'health_records', title: '📂 Digital swaasthya record (ABHA ID) (yojanaabaddha)', description: 'Portable o prabaasi-anukula swaasthya record' },
+            { id: 'pharmacy', title: '💊 Pharmacy ekikarana (yojanaabaddha)', description: 'Real-time pharmacy stock o subsidy alert' },
+            { id: 'community_health', title: '📊 Sampradaaya swaasthya pulse (yojanaabaddha)', description: 'Aapananka jillaare swaasthya dharaaku track karanta' },
+            { id: 'change_language', title: '🌐 Bhaasha badalanta', description: 'Anya bhaashaku badalanta' }
           ]
         }]
       }

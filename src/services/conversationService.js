@@ -179,6 +179,10 @@ class ConversationService {
     if (message.startsWith('script_')) return 'script_selection';
     if (message === 'chat_ai') return 'ai_chat';
     if (message === 'appointments') return 'appointments';
+    if (message === 'telemedicine') return 'telemedicine';
+    if (message === 'health_records') return 'health_records';
+    if (message === 'pharmacy') return 'pharmacy';
+    if (message === 'community_health') return 'community_health';
     if (message === 'preventive_tips') return 'preventive_tips';
     if (message === 'symptom_check') return 'symptom_check';
     if (message === 'disease_alerts') return 'disease_alerts';
@@ -192,6 +196,10 @@ class ConversationService {
     // Main menu options
     if (trimmedMessage.includes('🤖 Chat with AI') || lowerMessage.includes('chat with ai')) return 'ai_chat';
     if (trimmedMessage.includes('📅 My Appointments') || lowerMessage.includes('my appointments') || lowerMessage.includes('appointments')) return 'appointments';
+    if (trimmedMessage.includes('🩻 Telemedicine') || trimmedMessage.includes('eSanjeevani') || lowerMessage.includes('telemedicine') || lowerMessage.includes('esanjeevani')) return 'telemedicine';
+    if (trimmedMessage.includes('📂 Digital Health Records') || trimmedMessage.includes('ABHA ID') || lowerMessage.includes('health records') || lowerMessage.includes('abha id')) return 'health_records';
+    if (trimmedMessage.includes('💊 Pharmacy Integration') || lowerMessage.includes('pharmacy') || lowerMessage.includes('medicine')) return 'pharmacy';
+    if (trimmedMessage.includes('📊 Community Health Pulse') || lowerMessage.includes('community health') || lowerMessage.includes('health trends')) return 'community_health';
     if (trimmedMessage.includes('🌱 Health Tips') || trimmedMessage.includes('🌱 Preventive Healthcare Tips') || lowerMessage.includes('health tips') || lowerMessage.includes('preventive tips')) return 'preventive_tips';
     if (trimmedMessage.includes('🩺 Check Symptoms') || lowerMessage.includes('check symptoms') || lowerMessage.includes('symptom check')) return 'symptom_check';
     if (trimmedMessage.includes('🦠 Disease Outbreak Alerts') || lowerMessage.includes('disease outbreak alerts') || lowerMessage.includes('outbreak alerts')) return 'disease_alerts';

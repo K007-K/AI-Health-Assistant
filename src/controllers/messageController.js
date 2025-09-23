@@ -591,11 +591,13 @@ class MessageController {
       // Use interactive list (like Images 2 & 3)
       console.log('📱 Using interactive list for main menu...');
       
+      const buttonText = LanguageUtils.getText('select_service', safeUser.preferred_language, 'en', safeUser.script_preference);
+      
       await this.whatsappService.sendList(
         safeUser.phone_number,
         menuText,
         menuList.sections,
-        'Choose Option'
+        buttonText
       );
 
       await this.userService.updateUserSession(safeUser.id, 'main_menu');

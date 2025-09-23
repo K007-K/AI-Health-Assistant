@@ -506,13 +506,6 @@ Select your preferred language:`,
     or: 'ପଛକୁ'
   },
 
-  main_menu: {
-    en: 'Main Menu',
-    hi: 'मुख्य मेनू',
-    te: 'ప్రధాన మెనూ',
-    ta: 'முக்கிய மெனு',
-    or: 'ମୁଖ୍ୟ ମେନୁ'
-  },
 
   choose_category: {
     en: 'Choose Category',
@@ -520,6 +513,14 @@ Select your preferred language:`,
     te: 'వర్గాన్ని ఎంచుకోండి',
     ta: 'வகையைத் தேர்ந்தெடுக்கவும்',
     or: 'ବର୍ଗ ବାଛନ୍ତୁ'
+  },
+
+  select_service: {
+    en: 'Select Service',
+    hi: 'सेवा चुनें',
+    te: 'సేవను ఎంచుకోండి',
+    ta: 'சேவையைத் தேர்ந்தெடுக்கவும்',
+    or: 'ସେବା ବାଛନ୍ତୁ'
   },
 
   preventive_healthcare_tips: {

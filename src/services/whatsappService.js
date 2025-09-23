@@ -344,7 +344,7 @@ class WhatsAppService {
     const menus = {
       en: {
         sections: [{
-          title: `📋 ${mainMenuText}`,
+          title: `📋 Health Services`,
           rows: [
             { id: 'chat_ai', title: '🤖 Chat with AI', description: 'Ask health questions & get guidance' },
             { id: 'symptom_check', title: '🩺 Check Symptoms', description: 'Analyze symptoms & get recommendations' },

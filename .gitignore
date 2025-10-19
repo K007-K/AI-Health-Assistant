@@ -91,3 +91,20 @@ test-config.js
 # Temporary files
 tmp/
 temp/
+
+# Backup files
+*_BACKUP.*
+*_OLD.*
+*.backup
+*.bak
+
+# Build and deployment
+build/
+dist/
+
+# Database backups
+*.sql.backup
+database_backups/
+
+# Organization scripts (already executed)
+organize-repo.sh

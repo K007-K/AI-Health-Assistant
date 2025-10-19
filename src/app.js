@@ -97,12 +97,15 @@ app.get('/api/stats', async (req, res) => {
   }
 });
 
-// Manual outbreak broadcast trigger (for testing)
+// Manual outbreak broadcast trigger (for testing) - DISABLED (using on-demand system)
 app.post('/api/trigger-outbreak-broadcast', async (req, res) => {
   try {
-    console.log('🔧 Manual outbreak broadcast triggered via API');
-    const result = await schedulerService.triggerManualBroadcast();
-    res.json(result);
+    console.log('🔧 Manual outbreak broadcast - feature disabled (using on-demand system)');
+    res.json({ 
+      success: false, 
+      message: 'Manual broadcast disabled - system uses on-demand generation',
+      info: 'Disease alerts are generated when users request them'
+    });
   } catch (error) {
     console.error('❌ Error in manual outbreak broadcast:', error);
     res.status(500).json({ 
@@ -112,11 +115,15 @@ app.post('/api/trigger-outbreak-broadcast', async (req, res) => {
   }
 });
 
-// Get outbreak scheduler status
+// Get outbreak scheduler status - DISABLED (using on-demand system)
 app.get('/api/outbreak-status', (req, res) => {
   try {
-    const status = schedulerService.getStatus();
-    res.json(status);
+    res.json({
+      status: 'on-demand',
+      message: 'Using on-demand disease alert generation',
+      scheduler: 'disabled',
+      info: 'Alerts generated when users request outbreak information'
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

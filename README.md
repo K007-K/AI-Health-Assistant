@@ -518,8 +518,7 @@ MIT License - see [LICENSE](LICENSE) file for details
 ## 📞 Contact & Support
 
 ### Get Help
-- 📧 **Email**: your-email@example.com
-- 💬 **WhatsApp**: +91-XXXX-XXXXXX
+- 📧 **Email**: karthik.kuramdasu@gmail.com
 - 🐛 **Issues**: [GitHub Issues](https://github.com/K007-K/AI-Health-Assistant-AHA/issues)
 - 📖 **Documentation**: [Full Docs](docs/)
 

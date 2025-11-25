@@ -98,7 +98,7 @@ class MultilingualAccuracyTester {
     const lowerResponse = response.toLowerCase();
     let matchedCriteria = 0;
     let totalCriteria = expectedCriteria.length;
-    
+
     const matchedTerms = [];
     const missedTerms = [];
 
@@ -140,15 +140,19 @@ class MultilingualAccuracyTester {
     return keywords.some(keyword => lowerResponse.includes(keyword.toLowerCase()));
   }
 
+  async delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
   // Test all categories across all languages
   async testBasicHealthQueries() {
     console.log('\n🔍 Testing Basic Health Queries Across All Languages...');
     const scenarios = this.getMultilingualTestScenarios().basicHealthQueries;
-    
+
     for (const scenario of scenarios) {
       try {
         console.log(`\n📝 Query: "${scenario.query}" (${scenario.language.toUpperCase()})`);
-        
+
         const response = await this.geminiService.generateResponse(
           scenario.query,
           scenario.language,
@@ -158,7 +162,7 @@ class MultilingualAccuracyTester {
         );
 
         const evaluation = this.evaluateResponse(response, scenario.expectedCriteria, scenario);
-        
+
         console.log(`✅ Response: ${response.substring(0, 100)}...`);
         console.log(`📊 Accuracy: ${evaluation.accuracy}% (${evaluation.matchedCriteria}/${evaluation.totalCriteria} criteria met)`);
         console.log(`✅ Matched: ${evaluation.matchedTerms.join(', ')}`);
@@ -169,9 +173,14 @@ class MultilingualAccuracyTester {
 
         this.recordTestResult(scenario.category, scenario.language, evaluation.passed, evaluation.accuracy);
 
+        // Add delay to avoid rate limits
+        await this.delay(5000);
+
       } catch (error) {
         console.log(`❌ Error testing query: ${error.message}`);
         this.recordTestResult(scenario.category, scenario.language, false, 0);
+        // Wait even longer on error
+        await this.delay(10000);
       }
     }
   }
@@ -179,11 +188,11 @@ class MultilingualAccuracyTester {
   async testSymptomAnalysis() {
     console.log('\n🩺 Testing Symptom Analysis Across All Languages...');
     const scenarios = this.getMultilingualTestScenarios().symptomAnalysis;
-    
+
     for (const scenario of scenarios) {
       try {
         console.log(`\n🔍 Symptoms: "${scenario.symptoms}" (${scenario.language.toUpperCase()})`);
-        
+
         const userProfile = {
           preferred_language: scenario.language,
           script_preference: 'native'
@@ -195,7 +204,7 @@ class MultilingualAccuracyTester {
         );
 
         const evaluation = this.evaluateResponse(analysis, scenario.expectedCriteria, scenario);
-        
+
         console.log(`✅ Analysis: ${analysis.substring(0, 150)}...`);
         console.log(`📊 Accuracy: ${evaluation.accuracy}% (${evaluation.matchedCriteria}/${evaluation.totalCriteria} criteria met)`);
         console.log(`🚨 Urgency Detection: ${scenario.urgencyLevel || 'N/A'}`);
@@ -213,14 +222,14 @@ class MultilingualAccuracyTester {
   async testEmergencyDetection() {
     console.log('\n🚨 Testing Emergency Detection Across All Languages...');
     const scenarios = this.getMultilingualTestScenarios().emergencyDetection;
-    
+
     for (const scenario of scenarios) {
       try {
         console.log(`\n⚠️ Message: "${scenario.message}" (${scenario.language.toUpperCase()})`);
-        
+
         const isEmergency = LanguageUtils.detectEmergency(scenario.message, scenario.language);
         const correct = isEmergency === scenario.shouldDetectEmergency;
-        
+
         console.log(`🎯 Expected Emergency: ${scenario.shouldDetectEmergency}`);
         console.log(`🤖 Detected Emergency: ${isEmergency}`);
         console.log(`✅ Correct Detection: ${correct ? 'Yes' : 'No'}`);
@@ -237,11 +246,11 @@ class MultilingualAccuracyTester {
   async testPreventiveTips() {
     console.log('\n🌱 Testing Preventive Tips Across All Languages...');
     const scenarios = this.getMultilingualTestScenarios().preventiveTips;
-    
+
     for (const scenario of scenarios) {
       try {
         console.log(`\n📚 Category: "${scenario.category}" (${scenario.language.toUpperCase()})`);
-        
+
         const userProfile = {
           preferred_language: scenario.language,
           script_preference: 'native'
@@ -253,7 +262,7 @@ class MultilingualAccuracyTester {
         );
 
         const evaluation = this.evaluateResponse(tips, scenario.expectedCriteria, scenario);
-        
+
         console.log(`✅ Tips: ${tips.substring(0, 150)}...`);
         console.log(`📊 Accuracy: ${evaluation.accuracy}% (${evaluation.matchedCriteria}/${evaluation.totalCriteria} criteria met)`);
         console.log(`✅ Matched: ${evaluation.matchedTerms.join(', ')}`);
@@ -308,7 +317,7 @@ class MultilingualAccuracyTester {
     console.log('📊 COMPREHENSIVE MULTILINGUAL ACCURACY REPORT');
     console.log('='.repeat(80));
 
-    const overallAccuracy = this.testResults.totalTests > 0 
+    const overallAccuracy = this.testResults.totalTests > 0
       ? Math.round((this.testResults.passedTests / this.testResults.totalTests) * 100)
       : 0;
 
@@ -354,16 +363,16 @@ class MultilingualAccuracyTester {
   // Run all multilingual tests
   async runAllMultilingualTests() {
     console.log('🧪 Starting Comprehensive Multilingual Accuracy Testing...\n');
-    
+
     try {
       await this.testBasicHealthQueries();
       await this.testSymptomAnalysis();
       await this.testEmergencyDetection();
       await this.testPreventiveTips();
-      
+
       const finalAccuracy = this.generateMultilingualReport();
       return finalAccuracy;
-      
+
     } catch (error) {
       console.error('❌ Error during multilingual accuracy testing:', error);
       return 0;

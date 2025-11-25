@@ -2,6 +2,14 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const config = require('../config/environment');
 const { LanguageUtils } = require('../utils/languageUtils');
 
+const FALLBACK_MESSAGES = {
+  en: "I'm having trouble connecting right now. Please try again in a moment.",
+  hi: "मुझे अभी कनेक्ट करने में परेशानी हो रही है। कृपया थोड़ी देर बाद प्रयास करें।",
+  te: "నాకు కనెక్ట్ అవ్వడంలో ఇబ్బంది ఉంది. దయచేసి కాసేపటి తర్వాత మళ్లీ ప్రయత్నించండి.",
+  ta: "இணைப்பதில் எனக்குச் சிக்கல் உள்ளது. சிறிது நேரம் கழித்து மீண்டும் முயற்சிக்கவும்.",
+  or: "ମୋର ସଂଯୋଗ କରିବାରେ ଅସୁବିଧା ହେଉଛି | ଦୟାକରି କିଛି ସମୟ ପରେ ଚେଷ୍ଟା କରନ୍ତୁ |"
+};
+
 class GeminiService {
   constructor() {
     // Get API key from environment variable only
@@ -41,7 +49,7 @@ class GeminiService {
     });
   }
 
-  // No API key rotation - using single key only</  // Removed rotateApiKey method
+  // Single API key configuration
 
   // Get conversation mode specific prompts
   getConversationModePrompt(mode, language, scriptType) {
@@ -343,27 +351,27 @@ Keep responses practical and accessible for people without gym access.`,
 जवाब छोटे और व्यावहारिक रखें।`
       }
     };
-    
+
     const modePrompts = prompts[mode] || prompts.general;
     const selectedPrompt = modePrompts[language] || modePrompts.en;
-    
+
     // Apply script type modifications if needed
     if (scriptType === 'transliteration') {
       return selectedPrompt + '\n\nNote: Please write in Roman letters (English alphabet) for easy reading.';
     }
-    
+
     return selectedPrompt;
   }
 
   // Generate AI response with context and rate limit handling
   async generateResponse(prompt, language = 'en', scriptType = 'native', context = [], accessibilityMode = 'normal', maxRetries = 3, conversationMode = 'general') {
     let lastError = null;
-    
+
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
         // Get system prompt for the specified language
         const systemPrompt = LanguageUtils.getSystemPrompt(language, scriptType);
-        
+
         // Build conversation context
         let conversationHistory = '';
         if (context.length > 0) {
@@ -372,7 +380,7 @@ Keep responses practical and accessible for people without gym access.`,
             conversationHistory += `${msg.message_type}: ${msg.content}\n`;
           });
         }
-        
+
         // Add accessibility instructions
         let accessibilityInstructions = '';
         if (accessibilityMode === 'easy') {
@@ -382,13 +390,13 @@ Keep responses practical and accessible for people without gym access.`,
         } else if (accessibilityMode === 'audio') {
           accessibilityInstructions = '\n\nIMPORTANT: Format response for audio reading - use natural speech patterns.';
         }
-        
+
         // Get language-specific medical terms
         const medicalTermsForLanguage = this.getLanguageSpecificMedicalTerms(language);
-        
+
         // Get conversation-specific system prompt
         let conversationSystemPrompt = this.getConversationModePrompt(conversationMode, language, scriptType);
-        
+
         // Enhanced prompt for emergency detection
         const isEmergencyQuery = LanguageUtils.detectEmergency(prompt, language);
         let emergencyInstructions = '';
@@ -402,7 +410,7 @@ Keep responses practical and accessible for people without gym access.`,
           };
           emergencyInstructions = `\n\nEMERGENCY RESPONSE: This is an emergency! MUST include these terms: ${emergencyTerms[language] || emergencyTerms.en}`;
         }
-        
+
         const fullPrompt = `${conversationSystemPrompt || systemPrompt}${accessibilityInstructions}${conversationHistory}
 Current user message: ${prompt}
 
@@ -412,22 +420,22 @@ CRITICAL MEDICAL RESPONSE REQUIREMENTS:
 3. Keep responses SHORT (2-3 sentences max) and practical
 4. Be conversational and helpful
 5. Respond in the EXACT language requested: ${language}${emergencyInstructions}`;
-        
+
         const result = await this.model.generateContent(fullPrompt);
         const response = await result.response;
         let responseText = response.text();
-        
+
         // Remove native script characters for transliteration
         if (scriptType === 'transliteration') {
           responseText = this.removeNativeScript(responseText, language);
         }
-        
+
         return responseText;
-        
+
       } catch (error) {
         lastError = error;
         console.error(`Gemini API error (attempt ${attempt + 1}/${maxRetries}):`, error.message);
-        
+
         // Check if it's a rate limit error
         if (error.status === 429 && attempt < maxRetries - 1) {
           console.log(`⚠️ Rate limit hit, waiting before retry...`);
@@ -435,21 +443,21 @@ CRITICAL MEDICAL RESPONSE REQUIREMENTS:
           await new Promise(resolve => setTimeout(resolve, 2000));
           continue;
         }
-        
+
         // If not rate limit or last attempt, break
         break;
       }
     }
-    
+
     console.error('All API attempts failed:', lastError?.message);
-    
-    return fallbackMessages[language] || fallbackMessages.en;
+
+    return FALLBACK_MESSAGES[language] || FALLBACK_MESSAGES.en;
   }
 
   // Remove native script characters for transliteration
   removeNativeScript(text, language) {
     let cleanText = text;
-    
+
     // Define Unicode ranges for each language's script
     const scriptRanges = {
       hi: /[\u0900-\u097F]/g, // Devanagari (Hindi)
@@ -457,21 +465,21 @@ CRITICAL MEDICAL RESPONSE REQUIREMENTS:
       ta: /[\u0B80-\u0BFF]/g, // Tamil
       or: /[\u0B00-\u0B7F]/g  // Odia
     };
-    
+
     const range = scriptRanges[language];
     if (range) {
       // Remove native script characters
       cleanText = cleanText.replace(range, '');
-      
+
       // Clean up any remaining parentheses that might be empty
       cleanText = cleanText.replace(/\(\s*\)/g, '');
-      
+
       // Clean up extra spaces
       cleanText = cleanText.replace(/\s+/g, ' ').trim();
-      
+
       console.log(`🔄 Removed native script characters for ${language} transliteration`);
     }
-    
+
     return cleanText;
   }
 
@@ -479,19 +487,19 @@ CRITICAL MEDICAL RESPONSE REQUIREMENTS:
   getLanguageSpecificMedicalTerms(language) {
     const { medicalTerms } = require('../utils/languageUtils');
     const terms = medicalTerms[language] || medicalTerms.en;
-    
+
     const termsList = [
-      terms.rest[0], terms.fluids[0], terms.medicine[0], 
+      terms.rest[0], terms.fluids[0], terms.medicine[0],
       terms.doctor[0], terms.exercise[0]
     ].join(', ');
-    
+
     return termsList;
   }
 
   // Generate response with Google Search grounding for disease monitoring
   async generateResponseWithGrounding(prompt, language = 'en', maxRetries = 3) {
     let lastError = null;
-    
+
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
         // Create a model with Google Search grounding
@@ -507,15 +515,15 @@ CRITICAL MEDICAL RESPONSE REQUIREMENTS:
             maxOutputTokens: 2048,
           },
         });
-        
+
         const result = await modelWithGrounding.generateContent(prompt);
         const response = await result.response;
         return response.text();
-        
+
       } catch (error) {
         lastError = error;
         console.error(`Gemini Grounding API error (attempt ${attempt + 1}/${maxRetries}):`, error.message);
-        
+
         // Check if it's a rate limit or server overload error
         if ((error.status === 429 || error.status === 503) && attempt < maxRetries - 1) {
           const waitTime = error.status === 503 ? 5000 : 3000; // Wait longer for server overload
@@ -524,14 +532,14 @@ CRITICAL MEDICAL RESPONSE REQUIREMENTS:
           await new Promise(resolve => setTimeout(resolve, waitTime));
           continue;
         }
-        
+
         // If not rate limit or last attempt, break
         break;
       }
     }
-    
+
     console.error('All Grounding API attempts failed:', lastError?.message);
-    
+
     // Fall back to regular generation without grounding
     try {
       const result = await this.model.generateContent(prompt);
@@ -548,9 +556,9 @@ CRITICAL MEDICAL RESPONSE REQUIREMENTS:
     try {
       const language = userProfile.preferred_language || 'en';
       const scriptType = userProfile.script_preference || 'native';
-      
+
       let analysisPrompt = '';
-      
+
       if (mediaData) {
         // Use dedicated image analysis method
         return await this.analyzeHealthImage(mediaData, symptoms, language);
@@ -595,12 +603,12 @@ Use line breaks between sections and keep each section SHORT and practical.`;
     try {
       const language = userProfile.preferred_language || 'en';
       const scriptType = userProfile.script_preference || 'native';
-      
+
       // Get language-specific medical terms
       const medicalTermsForLanguage = this.getLanguageSpecificMedicalTerms(language);
-      
+
       let prompt = '';
-      
+
       if (category === 'disease prevention' || category.includes('disease')) {
         if (specificTopic) {
           prompt = `Give simple prevention advice for ${specificTopic} in ${language}:
@@ -643,7 +651,7 @@ Provide 4-6 specific, actionable tips that rural/semi-urban people can easily fo
 Keep it practical and culturally appropriate for Indian households.
 
 Respond in ${language} language.`;
-        
+
         // Use nutrition_hygiene conversation mode for specialized responses
         return await this.generateResponse(prompt, language, scriptType, [], 'normal', 3, 'nutrition_hygiene');
       } else if (category === 'exercise' || category.includes('exercise') || category.includes('fitness')) {
@@ -683,7 +691,7 @@ MUST include these terms: ${medicalTermsForLanguage}
 
 Respond in ${language} language. Keep SHORT and practical.`;
       }
-      
+
       const result = await this.generateResponse(prompt, language, scriptType);
       return result;
     } catch (error) {
@@ -697,7 +705,7 @@ Respond in ${language} language. Keep SHORT and practical.`;
     try {
       // Handle different image data formats
       let imagePart;
-      
+
       if (Buffer.isBuffer(imageData)) {
         // Direct buffer data
         imagePart = {
@@ -767,33 +775,25 @@ IMPORTANT: You MUST include ALL 5 sections with their exact emoji headers. Do no
       console.log('🖼️ Analyzing image with Gemini Vision...');
       const result = await this.model.generateContent([prompt, imagePart]);
       const response = await result.response;
-      
+
       const analysisResult = response.text();
       console.log('✅ Image analysis completed successfully');
       return analysisResult;
-      
+
     } catch (error) {
       console.error('❌ Image analysis error:', error.message);
-      
+
       // Enhanced error handling
       if (error.message.includes('SAFETY')) {
         return this.getSafetyFallbackMessage(language);
       }
-      
+
       if (error.message.includes('quota') || error.message.includes('429')) {
         console.log('⚠️ Rate limit hit during image analysis');
       }
-      
-      // Fallback response
-      const fallbackMessages = {
-        en: '📱 I can see you\'ve sent an image, but I\'m having trouble analyzing it right now. Please describe what you\'re seeing or concerned about in text, and I\'ll be happy to help! For urgent medical concerns, please consult a healthcare professional immediately.',
-        hi: '📱 मैं देख सकता हूं कि आपने एक छवि भेजी है, लेकिन अभी मुझे इसका विश्लेषण करने में परेशानी हो रही है। कृपया बताएं कि आप क्या देख रहे हैं या चिंतित हैं, और मैं मदद करूंगा! तत्काल चिकित्सा चिंताओं के लिए तुरंत स्वास्थ्य पेशेवर से सलाह लें।',
-        te: '📱 మీరు ఒక చిత్రం పంపించారని నేను చూడగలను, కానీ ప్రస్తుతం దాన్ని విశ్లేషించడంలో నాకు ఇబ్బంది ఉంది। దయచేసి మీరు ఏమి చూస్తున్నారో లేదా ఆందోళన చెందుతున్నారో వివరించండి, మరియు నేను సహాయం చేస్తాను!',
-        ta: '📱 நீங்கள் ஒரு படத்தை அனுப்பியுள்ளீர்கள் என்பதை என்னால் பார்க்க முடிகிறது, ஆனால் இப்போது அதை பகுப்பாய்வு செய்வதில் எனக்கு சிக்கல் உள்ளது। நீங்கள் என்ன பார்க்கிறீர்கள் அல்லது கவலைப்படுகிறீர்கள் என்பதை உரையில் விவரிக்கவும்!',
-        or: '📱 ମୁଁ ଦେଖିପାରୁଛି ଯେ ଆପଣ ଏକ ଚିତ୍ର ପଠାଇଛନ୍ତି, କିନ୍ତୁ ବର୍ତ୍ତମାନ ଏହାକୁ ବିଶ୍ଳେଷଣ କରିବାରେ ମୋର ଅସୁବିଧା ହେଉଛି। ଦୟାକରି ବର୍ଣ୍ଣନା କରନ୍ତୁ ଯେ ଆପଣ କଣ ଦେଖୁଛନ୍ତି କିମ୍ବା ଚିନ୍ତିତ!'
-      };
-      
-      return fallbackMessages[language] || fallbackMessages.en;
+
+      console.error('Gemini Vision API error:', error.message);
+      return FALLBACK_MESSAGES[language] || FALLBACK_MESSAGES.en;
     }
   }
 
@@ -813,7 +813,7 @@ IMPORTANT: You MUST include ALL 5 sections with their exact emoji headers. Do no
   async generateHealthContent(keywords, language = 'en', contentType = 'general') {
     try {
       const scriptType = 'native'; // Default to native script
-      
+
       const contentPrompts = {
         disease_info: `Provide basic information about ${keywords}. Include: what it is, common symptoms, prevention methods, and when to seek medical help.`,
         vaccination: `Provide information about ${keywords} vaccination. Include: why it's important, who should get it, when to get it, and any precautions.`,
@@ -822,7 +822,7 @@ IMPORTANT: You MUST include ALL 5 sections with their exact emoji headers. Do no
       };
 
       const prompt = contentPrompts[contentType] || contentPrompts.general;
-      
+
       return await this.generateResponse(prompt, language, scriptType);
     } catch (error) {
       console.error('Health content generation error:', error);

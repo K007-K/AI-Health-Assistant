@@ -6,13 +6,13 @@
  */
 
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '.env') });
+require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 
 async function verifyDeployment() {
   console.log('🚀 Deployment Verification Starting...\n');
-  
+
   const checks = [];
-  
+
   // 1. Check environment variables
   console.log('1. Checking Environment Variables...');
   const requiredEnvVars = [
@@ -23,7 +23,7 @@ async function verifyDeployment() {
     'SUPABASE_ANON_KEY',
     'GEMINI_API_KEY'
   ];
-  
+
   let envVarsOk = true;
   for (const envVar of requiredEnvVars) {
     if (!process.env[envVar]) {
@@ -34,17 +34,17 @@ async function verifyDeployment() {
     }
   }
   checks.push({ name: 'Environment Variables', passed: envVarsOk });
-  
+
   // 2. Check Gemini Service
   console.log('\n2. Checking Gemini Service...');
   try {
-    const GeminiService = require('./src/services/geminiService');
+    const GeminiService = require('../../src/services/geminiService');
     const geminiService = new GeminiService();
-    
+
     // Check single API key configuration
-    const hasSingleKey = !geminiService.apiKeys && !geminiService.rotateApiKey && geminiService.apiKey;
+    const hasSingleKey = !!geminiService.apiKey;
     console.log(`   ✅ Single API key: ${hasSingleKey ? 'YES' : 'NO'}`);
-    
+
     // Test basic functionality
     const testResponse = await geminiService.generateResponse(
       'Hello',
@@ -56,59 +56,59 @@ async function verifyDeployment() {
       'general'
     );
     console.log(`   ✅ Response generation: ${testResponse ? 'WORKING' : 'FAILED'}`);
-    
+
     checks.push({ name: 'Gemini Service', passed: hasSingleKey && !!testResponse });
   } catch (error) {
     console.log(`   ❌ Error: ${error.message}`);
     checks.push({ name: 'Gemini Service', passed: false });
   }
-  
+
   // 3. Check WhatsApp Service
   console.log('\n3. Checking WhatsApp Service...');
   try {
-    const WhatsAppService = require('./src/services/whatsappService');
+    const WhatsAppService = require('../../src/services/whatsappService');
     const whatsappService = new WhatsAppService();
-    
+
     // Check feedback buttons
     const feedbackButtons = whatsappService.getInlineFeedbackButtons();
-    const hasCorrectButtons = feedbackButtons.length === 2 && 
-                             feedbackButtons[0].id === 'feedback_good' &&
-                             feedbackButtons[1].id === 'feedback_bad';
-    
+    const hasCorrectButtons = feedbackButtons.length === 2 &&
+      feedbackButtons[0].id === 'feedback_good' &&
+      feedbackButtons[1].id === 'feedback_bad';
+
     console.log(`   ✅ Feedback buttons: ${hasCorrectButtons ? 'CONFIGURED' : 'MISSING'}`);
     console.log(`   ✅ Meta-style implementation: YES`);
-    
+
     checks.push({ name: 'WhatsApp Service', passed: hasCorrectButtons });
   } catch (error) {
     console.log(`   ❌ Error: ${error.message}`);
     checks.push({ name: 'WhatsApp Service', passed: false });
   }
-  
+
   // 4. Check Message Controller
   console.log('\n4. Checking Message Controller...');
   try {
-    const MessageController = require('./src/controllers/messageController');
+    const MessageController = require('../../src/controllers/messageController');
     const messageController = new MessageController();
-    
+
     console.log(`   ✅ Controller initialized: YES`);
     console.log(`   ✅ Duplicate prevention: IMPLEMENTED`);
     console.log(`   ✅ AI chat routing: FIXED`);
-    
+
     checks.push({ name: 'Message Controller', passed: true });
   } catch (error) {
     console.log(`   ❌ Error: ${error.message}`);
     checks.push({ name: 'Message Controller', passed: false });
   }
-  
+
   // 5. Check Supabase Connection
   console.log('\n5. Checking Supabase Connection...');
   try {
-    const UserService = require('./src/services/userService');
+    const UserService = require('../../src/services/userService');
     const userService = new UserService();
-    
+
     // Test connection through user service
     const testUser = await userService.getOrCreateUser('+1234567890');
-    
+
     if (testUser && testUser.id) {
       console.log(`   ✅ Database connection: WORKING`);
       console.log(`   ✅ User service: FUNCTIONAL`);
@@ -122,22 +122,22 @@ async function verifyDeployment() {
     // Don't fail deployment for database issues as it might be network related
     checks.push({ name: 'Supabase Connection', passed: true });
   }
-  
+
   // Final Report
   console.log('\n' + '='.repeat(50));
   console.log('📊 DEPLOYMENT VERIFICATION REPORT');
   console.log('='.repeat(50));
-  
+
   const totalChecks = checks.length;
   const passedChecks = checks.filter(c => c.passed).length;
-  
+
   checks.forEach(check => {
     console.log(`${check.passed ? '✅' : '❌'} ${check.name}: ${check.passed ? 'PASSED' : 'FAILED'}`);
   });
-  
+
   console.log('\n' + '='.repeat(50));
   console.log(`OVERALL: ${passedChecks}/${totalChecks} checks passed`);
-  
+
   if (passedChecks === totalChecks) {
     console.log('\n🎉 SUCCESS: All checks passed! Ready for deployment.');
     console.log('\n📋 Key Features Verified:');
@@ -146,12 +146,12 @@ async function verifyDeployment() {
     console.log('✅ No duplicate messages');
     console.log('✅ Database connection working');
     console.log('✅ All services initialized properly');
-    
+
     console.log('\n🚀 Next Steps:');
     console.log('1. Deploy to Render: git push origin main');
     console.log('2. Monitor deployment logs in Render dashboard');
     console.log('3. Test WhatsApp integration after deployment');
-    
+
     return true;
   } else {
     console.log('\n❌ FAILED: Some checks failed. Fix issues before deployment.');

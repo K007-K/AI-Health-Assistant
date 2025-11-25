@@ -8,7 +8,7 @@
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
-const GeminiService = require('./src/services/geminiService');
+const GeminiService = require('../../src/services/geminiService');
 
 async function testSingleApiKey() {
   console.log('🧪 Testing Single API Key Configuration\n');

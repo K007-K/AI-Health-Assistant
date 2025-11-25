@@ -398,6 +398,20 @@ class DiseaseOutbreakSystemTest {
   async testUserWorkflows() {
     console.log('\n👤 Testing User Workflows...');
     
+    const tests = [
+      {
+        name: 'Complete User Registration Flow',
+        test: async () => {
+          // Register user
+          const registerResult = await this.alertService.registerUserForAlerts(
+            '+919999999998',
+            uuidv4(),
+            { state: 'Delhi', district: 'New Delhi', pincode: '110001' }
+          );
+
+          // Check registration
+          const isRegistered = await this.alertService.isUserRegistered('+919999999998');
+
           // Unregister user
           const unregisterResult = await this.alertService.unregisterUserFromAlerts('+919999999998');
           

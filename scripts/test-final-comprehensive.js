@@ -15,7 +15,7 @@ class FinalComprehensiveTester {
   constructor() {
     this.geminiService = new GeminiService();
     this.results = [];
-    this.delayBetweenRequests = 1500; // Reduced delay with multiple API keys
+    this.delayBetweenRequests = 70000; // Increased to 70s to strictly respect free tier limits (1 RPM)
   }
 
   async delay(ms) {
@@ -35,16 +35,16 @@ class FinalComprehensiveTester {
         minAccuracy: 60
       },
       {
-        name: "Emergency Detection - Hindi", 
+        name: "Emergency Detection - Hindi",
         language: "hi",
         query: "मुझे तेज सीने में दर्द है और सांस नहीं आ रही",
-        category: "emergency", 
+        category: "emergency",
         expectedTerms: ["आपातकाल", "अस्पताल", "तुरंत", "डॉक्टर"],
         minAccuracy: 60
       },
       {
         name: "Emergency Detection - Telugu",
-        language: "te", 
+        language: "te",
         query: "నాకు తీవ్రమైన ఛాతీ నొప్పి మరియు ఊపిరి ఆడటం లేదు",
         category: "emergency",
         expectedTerms: ["అత్యవసరం", "ఆసుపత్రి", "వెంటనే", "వైద్యుడు"],
@@ -62,7 +62,7 @@ class FinalComprehensiveTester {
       },
       {
         name: "Fever Treatment - Hindi",
-        language: "hi", 
+        language: "hi",
         query: "मुझे बुखार है, क्या करूं?",
         category: "symptom",
         expectedTerms: ["आराम", "पानी", "दवा", "डॉक्टर"],
@@ -72,7 +72,7 @@ class FinalComprehensiveTester {
         name: "Fever Treatment - Telugu",
         language: "te",
         query: "నాకు జ్వరం వచ్చింది, ఏమి చేయాలి?",
-        category: "symptom", 
+        category: "symptom",
         expectedTerms: ["విశ్రాంతి", "నీరు", "మందు", "వైద్యుడు"],
         minAccuracy: 75
       },
@@ -105,7 +105,7 @@ class FinalComprehensiveTester {
       {
         name: "Diabetes Prevention - Hindi",
         language: "hi",
-        query: "मधुमेह कैसे रोकें?", 
+        query: "मधुमेह कैसे रोकें?",
         category: "prevention",
         expectedTerms: ["आहार", "व्यायाम", "वजन", "चीनी", "जांच"],
         minAccuracy: 80
@@ -122,7 +122,7 @@ class FinalComprehensiveTester {
       // General Health Tips
       {
         name: "General Health - Tamil",
-        language: "ta", 
+        language: "ta",
         query: "நல்ல ஆరோగ்யத்திற்கு என்ன செய்ய வேண்டும்?",
         category: "general",
         expectedTerms: ["உணவு", "உடற்பயிற்சி", "தூக்கம", "தண்ணீர்", "மருத்துவர்"],
@@ -132,7 +132,7 @@ class FinalComprehensiveTester {
         name: "General Health - Odia",
         language: "or",
         query: "ଭଲ ସ୍ୱାସ୍ଥ୍ୟ ପାଇଁ କଣ କରିବା ଉଚିତ?",
-        category: "general", 
+        category: "general",
         expectedTerms: ["ଖାଦ୍ୟ", "ବ୍ୟାୟାମ", "ନିଦ୍ରା", "ପାଣି", "ଡାକ୍ତର"],
         minAccuracy: 70
       }
@@ -153,7 +153,7 @@ class FinalComprehensiveTester {
     });
 
     const accuracy = expectedTerms.length > 0 ? (matchedTerms.length / expectedTerms.length) * 100 : 100;
-    
+
     return {
       matchedTerms,
       missedTerms,
@@ -172,8 +172,8 @@ class FinalComprehensiveTester {
 
     const indicators = disclaimerIndicators[language] || disclaimerIndicators.en;
     const lowerResponse = response.toLowerCase();
-    
-    return indicators.some(indicator => 
+
+    return indicators.some(indicator =>
       lowerResponse.includes(indicator.toLowerCase())
     );
   }
@@ -184,12 +184,12 @@ class FinalComprehensiveTester {
 
     try {
       let response = '';
-      
+
       // Test different types of queries
       if (scenario.category === 'prevention') {
         response = await this.geminiService.getPreventiveTips(
           'disease prevention',
-          { 
+          {
             preferred_language: scenario.language,
             script_preference: 'native'
           },
@@ -207,7 +207,7 @@ class FinalComprehensiveTester {
 
       // Check medical terms accuracy
       const termCheck = this.checkMedicalTermsAccuracy(response, scenario.expectedTerms, scenario.language);
-      
+
       // Check medical disclaimer
       const hasDisclaimer = this.checkMedicalDisclaimer(response, scenario.language);
 
@@ -262,7 +262,7 @@ class FinalComprehensiveTester {
 
     const pattern = languagePatterns[expectedLanguage];
     if (!pattern) return true; // Default to true for unknown languages
-    
+
     return pattern.test(response);
   }
 
@@ -352,7 +352,7 @@ class FinalComprehensiveTester {
     }
 
     console.log('\n' + '='.repeat(80));
-    
+
     return {
       totalTests,
       passedTests,
@@ -366,16 +366,19 @@ class FinalComprehensiveTester {
   async runComprehensiveTests() {
     console.log('🚀 Starting Final Comprehensive Test Suite...');
     console.log('🎯 Testing all languages, categories, and critical functionality');
-    console.log(`🔄 Using API key rotation to handle rate limits\n`);
+    console.log(`ℹ️ Using single API key with safe delays to handle rate limits\n`);
 
     const scenarios = this.getTestScenarios();
-    
+
+    // Increase delay for single key usage
+    this.delayBetweenRequests = 70000;
+
     for (let i = 0; i < scenarios.length; i++) {
       const scenario = scenarios[i];
-      
+
       console.log(`\n📍 Progress: ${i + 1}/${scenarios.length}`);
       await this.testScenario(scenario);
-      
+
       // Add delay between requests except for the last one
       if (i < scenarios.length - 1) {
         console.log(`⏳ Waiting ${this.delayBetweenRequests}ms to avoid rate limits...`);
@@ -384,11 +387,11 @@ class FinalComprehensiveTester {
     }
 
     const report = this.generateComprehensiveReport();
-    
+
     console.log(`\n🎉 Final comprehensive testing completed!`);
     console.log(`📊 Overall Success Rate: ${report.overallSuccess.toFixed(1)}%`);
     console.log(`🚀 Production Ready: ${report.productionReady ? 'YES' : 'NO'}`);
-    
+
     process.exit(report.productionReady ? 0 : 1);
   }
 }
